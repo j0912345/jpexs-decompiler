@@ -26,6 +26,7 @@ import com.jpexs.decompiler.flash.exporters.commonshape.Matrix;
 import com.jpexs.decompiler.flash.gui.FasterScrollPane;
 import com.jpexs.decompiler.flash.gui.ImagePanel;
 import com.jpexs.decompiler.flash.gui.Main;
+import com.jpexs.decompiler.flash.gui.MainPanel;
 import com.jpexs.decompiler.flash.gui.RegistrationPointPosition;
 import com.jpexs.decompiler.flash.gui.TimelinedMaker;
 import com.jpexs.decompiler.flash.gui.TransformPanel;
@@ -104,8 +105,9 @@ public class EasySwfPanel extends JPanel {
     private static final String PROPERTIES_INSTANCE = "Instance";
     private DocumentPropertiesPanel documentPropertiesPanel;
     private InstancePropertiesPanel instancePropertiesPanel;
+    private final MainPanel mainPanel;
 
-    public EasySwfPanel() {
+    public EasySwfPanel(MainPanel mainPanel) {
         setLayout(new BorderLayout());
 
         stagePanel = new ImagePanel();
@@ -532,13 +534,14 @@ public class EasySwfPanel extends JPanel {
                 if (obj instanceof Tag) {
                     Tag t = (Tag) obj;
                     libraryPreviewPanel.setTimelined(TimelinedMaker.makeTimelined(t), t.getSwf(),
-                            -1, false, true, true, true, true, false, true);
+                            -1, false, true, true, true, true, false, true, true);
                     libraryPreviewPanel.zoomFit();
                 } else {
                     libraryPreviewPanel.clearAll();
                 }
             }
         });
+        this.mainPanel = mainPanel;
     }
 
     private void updatePropertiesPanel() {
@@ -563,6 +566,9 @@ public class EasySwfPanel extends JPanel {
         if (this.timelined == timelined) {
             return;
         }
+        if (mainPanel.getCurrentView() != MainPanel.VIEW_EASY) {
+            timelined = null;
+        }
         this.timelined = timelined;
         if (timelined == null) {
             stagePanel.clearAll();
@@ -579,7 +585,7 @@ public class EasySwfPanel extends JPanel {
             libraryTreeTable.setSwf(swf);
             libraryPreviewPanel.clearAll();
             if (updateStage) {
-                stagePanel.setTimelined(timelined, swf, 0, true, true, true, true, true, false, true);
+                stagePanel.setTimelined(timelined, swf, 0, true, true, true, true, true, false, true, true);
                 stagePanel.pause();
                 stagePanel.gotoFrame(0);
             }

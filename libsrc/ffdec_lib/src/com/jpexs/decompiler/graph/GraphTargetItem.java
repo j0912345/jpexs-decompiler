@@ -87,13 +87,15 @@ public abstract class GraphTargetItem implements Serializable, Cloneable {
 
     public static final int PRECEDENCE_LOGICALOR = 12;
 
-    public static final int PRECEDENCE_CONDITIONAL = 13;
+    public static final int PRECEDENCE_NULLCOALESCE = 13;
+    
+    public static final int PRECEDENCE_CONDITIONAL = 14;
 
-    public static final int PRECEDENCE_ASSIGNMENT = 14;
+    public static final int PRECEDENCE_ASSIGNMENT = 15;
 
-    public static final int PRECEDENCE_COMMA = 15;
+    public static final int PRECEDENCE_COMMA = 16;
 
-    public static final int NOPRECEDENCE = 16;
+    public static final int NOPRECEDENCE = 17;
 
     /**
      * Source item
@@ -129,6 +131,11 @@ public abstract class GraphTargetItem implements Serializable, Cloneable {
      * Line start item
      */
     public GraphSourceItem lineStartItem;
+    
+    /**
+     * ASM Position
+     */
+    protected int pos = 0;
 
     /**
      * Gets the line start item
@@ -360,8 +367,16 @@ public abstract class GraphTargetItem implements Serializable, Cloneable {
      *
      * @return Position
      */
-    protected int getPos() {
-        return 0;
+    public int getPos() {
+        return pos;
+    }
+    
+    /**
+     * Sets position
+     * @param pos Position
+     */
+    public void setPos(int pos) {
+        this.pos = pos;
     }
 
     /**

@@ -3,12 +3,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- FLA export - accessibility for AS3 files
+- [#2375] Sound sync event/start/stop handling (for playback in FFDec)
+- [#2374] Quick filter by folder type (Ctrl+F on Resources view tag tree)
+- [#2389] Support for SPL file extension (Flash version 1 - Future Splash Animator)
+
+### Fixed
+- [#2375] Added limit of simultaneously played sounds
+- AS1/2 - Push action hilighting, GetProperty, Call action hilighting
+- [#2381] Font color values with alpha allowed in html edittext, but alpha ignored
+- [#2384] Vanishing pins on AS3 code editing save, on script deletion and few other cases
+
+## [22.0.1] - 2024-11-20
+### Added
+- AS3.1 null-conditional operator `?.` (air - swf version 50)
+- AS3.1 nullish coalescing operator `??` (air - swf version 50)
+- AS3 direct editation - verbatim strings `@"`
+
+### Fixed
+- [#2366], [#2367], [#2372] Running simple editor on background slowing down other views
+- Rendering now does not slow down UI elements
+- Using faster variant of blur
+
+## [22.0.0] - 2024-11-10
+### Added
 - Simple editor view - new simplified UI based on timeline view, 
   which resembles Flash Pro UI. Easier moving objects,
   resizing, adding frames, adding objects to stage. Instance property editation.
   Undo / redo feature. Double click movie clips to edit sub-objects.
-
 - [#1619] Option to set thread count to 0 for auto setting processor count - 1
+- [#2360] SOL file (Flash Local Shared Object - flash cookie) editor
+- Cookies folder to easy edit NPAPI SOL files (only cookies in the swf root directory)
+- Link to FFDec Wiki on the Help menu
+- On Run/Debug SWF file in FFDec, Flash cookies (SOL files) are synced
+  from temporary SWF directory to actual SWF SOL directory
 
 ### Fixed
 - [#2357] AS3 instance var/const initialization
@@ -17,9 +45,11 @@ All notable changes to this project will be documented in this file.
 - [#2357] FLA export to CS4 and lower - files exceeding 0x7FFF objects limit
 - [#2357] FLA export to CS4 and lower - speed optimization
 - [#2362] Generating error log ExecutionException - InterruptedException log on switching flash/air swc
+- Buttons were not active where they should be
 
 ### Changed
 - [#1619] Default thread count is set to 0 ( = auto)
+- AMF3 (new AMF0 aswell) references and "undefined" values written as JSON objects
 
 ## [21.1.3] - 2024-10-29
 ### Fixed
@@ -3484,7 +3514,9 @@ Major version of SWF to XML export changed to 2.
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.3...dev
+[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.1...dev
+[22.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.0...version22.0.1
+[22.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.3...version22.0.0
 [21.1.3]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.2...version21.1.3
 [21.1.2]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.1...version21.1.2
 [21.1.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.0...version21.1.1
@@ -3649,7 +3681,16 @@ Major version of SWF to XML export changed to 2.
 [alpha 9]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha8...alpha9
 [alpha 8]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha7...alpha8
 [alpha 7]: https://github.com/jindrapetrik/jpexs-decompiler/releases/tag/alpha7
+[#2375]: https://www.free-decompiler.com/flash/issues/2375
+[#2374]: https://www.free-decompiler.com/flash/issues/2374
+[#2389]: https://www.free-decompiler.com/flash/issues/2389
+[#2381]: https://www.free-decompiler.com/flash/issues/2381
+[#2384]: https://www.free-decompiler.com/flash/issues/2384
+[#2366]: https://www.free-decompiler.com/flash/issues/2366
+[#2367]: https://www.free-decompiler.com/flash/issues/2367
+[#2372]: https://www.free-decompiler.com/flash/issues/2372
 [#1619]: https://www.free-decompiler.com/flash/issues/1619
+[#2360]: https://www.free-decompiler.com/flash/issues/2360
 [#2357]: https://www.free-decompiler.com/flash/issues/2357
 [#2361]: https://www.free-decompiler.com/flash/issues/2361
 [#2362]: https://www.free-decompiler.com/flash/issues/2362

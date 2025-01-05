@@ -22,21 +22,8 @@ Unicode true
 
 !define APP_EXENAME "ffdec.exe"
 
-;!addplugindir "nsis_plugins\ansi\"
-;!addplugindir "nsis_plugins\unicode\"
-
-
 SetCompressor /SOLID lzma
 !include "StrFunc.nsh"
-;!include "nsis_plugins\JREDyna_Inetc.nsh"
-
-;Old not working
-;!define FLASH_URL "http://download.macromedia.com/pub/flashplayer/current/support/install_flash_player_ax.exe"
-
-;Not working too since 2021
-;!define FLASH_URL "http://fpdownload.macromedia.com/pub/flashplayer/latest/help/install_flash_player_ax.exe"
-
-;!include "nsis_plugins\Flash_Inetc.nsh"
 !include x64.nsh
 
 
@@ -291,11 +278,6 @@ var SMDir
 
 ;--------------------------------
 ;Languages
-
-
-
-
-
 
 !define !IfExist `!insertmacro _!IfExist ""`
 
@@ -613,10 +595,14 @@ Section "FFDec" SecDummy
   File "dist\${APP_EXENAME}"
   File "dist\ffdec.bat"
   File "dist\ffdec.jar"
+  File "dist\ffdec-cli.exe"
+  File "dist\ffdec-cli.jar"
   File "dist\icon.ico"
   File "dist\license.txt"
+  File "dist\soleditor.bat"
+  File "dist\soleditor.lnk"
   File "dist\translator.bat"
-  File "dist\translator.exe"  
+  File "dist\translator.lnk"
   
   SetOutPath "$INSTDIR"  
   File /r "dist\flashlib"
@@ -628,6 +614,7 @@ Section "FFDec" SecDummy
   CreateDirectory "$SMPROGRAMS\$SMDir"
   CreateShortCut "$SMPROGRAMS\$SMDir\Uninstall ${APP_NAME}.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
   CreateShortCut "$SMPROGRAMS\$SMDir\${APP_NAME}.lnk" "$INSTDIR\${APP_EXENAME}" "" "$INSTDIR\${APP_EXENAME}" 0
+  CreateShortCut "$SMPROGRAMS\$SMDir\$(STRING_SOL_EDITOR).lnk" "$INSTDIR\${APP_EXENAME}" "-soleditor" "$INSTDIR\${APP_EXENAME}" 2
  !insertmacro MUI_STARTMENU_WRITE_END
 
   ;Store installation folder
@@ -680,12 +667,16 @@ Section "$(STRING_ADD_CONTEXT_MENU)" SecContextMenu
     SetRegView 64
     Push "swf"
     Call AddToExtContextMenu
+    Push "spl"
+    Call AddToExtContextMenu
     Push "gfx"
     Call AddToExtContextMenu
     
     SetRegView 32
     Push "swf"
     Call AddToExtContextMenu
+    Push "spl"
+    Call AddToExtContextMenu    
     Push "gfx"
     Call AddToExtContextMenu
 
@@ -751,11 +742,15 @@ Section "Uninstall"
   SetRegView 64
   Push "swf"
   Call un.RemoveExtContextMenu
+  Push "spl"
+  Call un.RemoveExtContextMenu
   Push "gfx"
   Call un.RemoveExtContextMenu
   
   SetRegView 32
   Push "swf"
+  Call un.RemoveExtContextMenu
+  Push "spl"
   Call un.RemoveExtContextMenu
   Push "gfx"
   Call un.RemoveExtContextMenu

@@ -804,6 +804,20 @@ public abstract class MainFrameMenu implements MenuBuilder {
             ViewMessages.showMessageDialog(Main.getDefaultMessagesComponent(), translate("message.homepage").replace("%url%", homePageURL));
         }
     }
+    
+    protected void wikiActionPerformed(ActionEvent evt) {
+        if (Main.isWorking()) {
+            return;
+        }
+        if (mainFrame.getPanel().checkEdited()) {
+            return;
+        }
+
+        String wikiURL = ApplicationInfo.WIKI_PAGE;
+        if (!View.navigateUrl(wikiURL)) {
+            ViewMessages.showMessageDialog(Main.getDefaultMessagesComponent(), translate("message.wiki").replace("%url%", wikiURL));
+        }
+    }
 
     protected void aboutActionPerformed(ActionEvent evt) {
         if (Main.isWorking()) {
@@ -858,6 +872,10 @@ public abstract class MainFrameMenu implements MenuBuilder {
             return;
         }
         Main.advancedSettings();
+    }
+    
+    protected void solEditorActionPerformed(ActionEvent evt) {
+        Main.openSolEditor();
     }
 
     protected void searchMemoryActionPerformed(ActionEvent evt) {
@@ -1140,6 +1158,7 @@ public abstract class MainFrameMenu implements MenuBuilder {
         setMenuEnabled("/help/checkUpdates", !isWorking);
         //setMenuEnabled("/help/helpUs", !isWorking);
         setMenuEnabled("/help/homePage", !isWorking);
+        setMenuEnabled("/help/wiki", !isWorking);
         setMenuEnabled("_/about", !isWorking);
         setMenuEnabled("/help/about", !isWorking);
 
@@ -1332,6 +1351,8 @@ public abstract class MainFrameMenu implements MenuBuilder {
         addMenuItem("/tools/replace", translate("menu.tools.replace"), "replace32", this::replaceActionPerformed, PRIORITY_TOP, null, true, null, false);
         
         addMenuItem("/tools/abcExplorer", translate("menu.tools.abcexplorer"), "abcexplorer32", this::abcExplorerActionPerformed, PRIORITY_TOP, null, true, null, false);
+        addMenuItem("/tools/gotoDocumentClass", translate("menu.tools.gotoDocumentClass"), "gotomainclass32", this::gotoDocumentClassActionPerformed, PRIORITY_TOP, null, true, null, false);
+        addMenuItem("/tools/solEditor", translate("menu.tools.solEditor"), "soleditor32", this::solEditorActionPerformed, PRIORITY_TOP, null, true, null, false);
         if (Platform.isWindows()) {
             addMenuItem("/tools/searchMemory", translate("menu.tools.searchMemory"), "loadmemory16", this::searchMemoryActionPerformed, PRIORITY_MEDIUM, null, true, null, false);
         }
@@ -1351,7 +1372,6 @@ public abstract class MainFrameMenu implements MenuBuilder {
          //addMenuItem("/tools/debugger/debuggerInjectLoader", "Inject Loader", "debuggerreplace16", this::debuggerInjectLoader, PRIORITY_MEDIUM, null, true,false);
          addMenuItem("/tools/debugger/debuggerShowLog", translate("menu.debugger.showlog"), "debuggerlog16", this::debuggerShowLogActionPerformed, PRIORITY_MEDIUM, null, true, null,false);
          finishMenu("/tools/debugger");*/
-        addMenuItem("/tools/gotoDocumentClass", translate("menu.tools.gotoDocumentClass"), "gotomainclass32", this::gotoDocumentClassActionPerformed, PRIORITY_TOP, null, true, null, false);
         finishMenu("/tools");
 
         //Settings
@@ -1450,6 +1470,7 @@ public abstract class MainFrameMenu implements MenuBuilder {
         addMenuItem("/help", translate("menu.help"), null, null, 0, null, false, null, false);
         //addMenuItem("/help/helpUs", translate("menu.help.helpus"), "donate32", this::helpUsActionPerformed, PRIORITY_TOP, null, true, null, false);
         addMenuItem("/help/homePage", translate("menu.help.homepage"), "homepage16", this::homePageActionPerformed, PRIORITY_MEDIUM, null, true, null, false);
+        addMenuItem("/help/wiki", translate("menu.help.wiki"), "wiki16", this::wikiActionPerformed, PRIORITY_MEDIUM, null, true, null, false);
         addSeparator("/help");
         addMenuItem("/help/checkUpdates", translate("menu.help.checkupdates"), "update16", this::checkUpdatesActionPerformed, PRIORITY_MEDIUM, null, true, null, false);
         addMenuItem("/help/about", translate("menu.help.about"), "about32", this::aboutActionPerformed, PRIORITY_TOP, null, true, null, false);

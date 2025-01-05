@@ -109,6 +109,7 @@ import com.jpexs.decompiler.flash.gui.editor.LineMarkedEditorPane;
 import com.jpexs.decompiler.flash.gui.helpers.CollectionChangedAction;
 import com.jpexs.decompiler.flash.gui.helpers.ObservableList;
 import com.jpexs.decompiler.flash.gui.player.FlashPlayerPanel;
+import com.jpexs.decompiler.flash.gui.soleditor.Cookie;
 import com.jpexs.decompiler.flash.gui.taglistview.TagListTree;
 import com.jpexs.decompiler.flash.gui.taglistview.TagListTreeModel;
 import com.jpexs.decompiler.flash.gui.tagtree.AbstractTagTree;
@@ -404,7 +405,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     private final JTabbedPane detailPanel;
 
-    private QuickTreeFindPanel quickTreeFindPanel;
+    private QuickTreeFilterPanel quickTreeFindPanel;
 
     private QuickTreeFindPanel quickTagListFindPanel;
 
@@ -498,6 +499,10 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     public void replaceItemPin(TreeItem oldItem, TreeItem newItem) {
         pinsPanel.replaceItem(oldItem, newItem);
+    }
+    
+    public void refreshPinnedScriptPacks() {
+        pinsPanel.refreshScriptPacks();
     }
 
     private void handleKeyReleased(KeyEvent e) {
@@ -1301,7 +1306,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         welcomePanel = createWelcomePanel();
         add(welcomePanel, BorderLayout.CENTER);
 
-        easyPanel = new EasyPanel();
+        easyPanel = new EasyPanel(this);
 
         contentPanel = new JPanel(new CardLayout());
         contentPanel.add(welcomePanel, WELCOME_PANEL);
@@ -1826,7 +1831,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
         mainMenu.updateComponents(null);
         previewPanel.clear();
-        dumpPreviewPanel.clear();
+        dumpPreviewPanel.clear();   
+        doFilter();
         return true;
     }
 
@@ -1876,36 +1882,44 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         if (tp != null) {
             getCurrentTree().setSelectionPath(tp);
         }
+        refreshPinnedScriptPacks();
     }
 
     private boolean isFilterEmpty(String filter) {
         return filter.trim().length() < 3;
     }
 
-    private void doFilter(AbstractTagTree tree, QuickTreeFindPanel findPanel, List<List<String>> unfilteredExpandedNodes) {
+    private void doFilter(AbstractTagTree tree, QuickTreeFilterInterface findPanel, List<List<String>> unfilteredExpandedNodes) {
         TreeModel model = tree.getModel();
         String oldFilter = "";
+        List<String> oldFoldersFilter = new ArrayList<>();
         if (model instanceof FilteredTreeModel) {
             oldFilter = ((FilteredTreeModel) model).getFilter();
+            oldFoldersFilter = ((FilteredTreeModel) model).getFoldersFilter();
         }
         String newFilter = findPanel.getFilter();
+        List<String> newFoldersFilter = findPanel.getFolders();
 
-        if (isFilterEmpty(oldFilter)) {
-            unfilteredExpandedNodes.clear();
-            ;
+        if (isFilterEmpty(oldFilter) && oldFoldersFilter.isEmpty()) {
+            unfilteredExpandedNodes.clear();          
             unfilteredExpandedNodes.addAll(View.getExpandedNodes(tree));
         }
 
-        if (oldFilter.trim().equals(newFilter.trim())) {
+        if (
+                oldFilter.trim().equals(newFilter.trim())
+                && oldFoldersFilter.equals(newFoldersFilter)
+                ) {
             return;
         }
 
         TreePath[] selectionPaths = tree.getSelectionPaths();
-        tree.setModel(new FilteredTreeModel(newFilter, tree.getFullModel(), tree));
+        tree.setModel(new FilteredTreeModel(newFilter, newFoldersFilter, tree.getFullModel(), tree));
         if (!isFilterEmpty(newFilter)) {
             for (int i = 0; i < tree.getRowCount(); i++) {
                 tree.expandRow(i);
             }
+        } else if (!newFoldersFilter.isEmpty()) {
+            View.expandTreeNodes(tree, unfilteredExpandedNodes);
         } else {
             tree.setModel(tree.getFullModel());
             View.expandTreeNodes(tree, unfilteredExpandedNodes);
@@ -1915,6 +1929,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     public void doFilter() {
         View.checkAccess();
+        quickTreeFindPanel.updateFolders();
         doFilter(tagTree, quickTreeFindPanel, unfilteredTreeExpandedNodes);
         doFilter(tagListTree, quickTagListFindPanel, unfilteredTagListExpandedNodes);
     }
@@ -5646,7 +5661,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         JPanel r = new JPanel(new BorderLayout());
         r.add(resourcesClipboardPanel, BorderLayout.NORTH);
         r.add(tagTreeScrollPanel = new FasterScrollPane(tagTree), BorderLayout.CENTER);
-        quickTreeFindPanel = new QuickTreeFindPanel();
+        quickTreeFindPanel = new QuickTreeFilterPanel(tagTree);
         quickTreeFindPanel.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -5677,6 +5692,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         setTreeModel(view);
         switch (view) {
             case VIEW_DUMP:
+                easyPanel.setNoSwf();
                 pinsPanel.setVisible(false);
                 currentView = view;
                 Configuration.lastView.set(currentView);
@@ -5692,6 +5708,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 detailPanel.setVisible(false);
                 return true;
             case VIEW_RESOURCES:
+                easyPanel.setNoSwf();
                 pinsPanel.setVisible(true);
                 currentView = view;
                 Configuration.lastView.set(currentView);
@@ -5714,7 +5731,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 reload(true);
                 updateUiWithCurrentOpenable();
                 return true;
-            case VIEW_EASY:
+            case VIEW_EASY:                
                 SWF swf = getCurrentSwf();                
                 pinsPanel.setVisible(false);
                 currentView = view;
@@ -5727,6 +5744,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 }                
                 return true;
             case VIEW_TAGLIST:
+                easyPanel.setNoSwf();
                 pinsPanel.setVisible(true);
                 currentView = view;
                 Configuration.lastView.set(currentView);
@@ -5835,7 +5853,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         if (treeItem instanceof SWF) {
             SWF swf = (SWF) treeItem;
             if (internalViewer) {
-                previewPanel.showImagePanel(swf, swf, -1, true, Configuration.autoPlaySwfs.get() && Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true);
+                previewPanel.showImagePanel(swf, swf, -1, true, Configuration.autoPlaySwfs.get() && Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true, false);
             } else {
                 previewPanel.setParametersPanelVisible(false);
                 previewPanel.showFlashViewerPanel();
@@ -5852,6 +5870,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         } else if (treeItem instanceof MetadataTag) {
             MetadataTag metadataTag = (MetadataTag) treeItem;
             previewPanel.showMetaDataPanel(metadataTag);
+        } else if (treeItem instanceof Cookie) {
+            previewPanel.showCookiePanel((Cookie) treeItem);
         } else if (treeItem instanceof BinaryDataInterface) {
             BinaryDataInterface binary = (BinaryDataInterface) treeItem;
             previewPanel.showBinaryPanel(binary);
@@ -5865,8 +5885,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             ImageTag imageTag = (ImageTag) treeItem;
             previewPanel.setImageReplaceButtonVisible(!((Tag) imageTag).isReadOnly() && imageTag.importSupported(), imageTag instanceof DefineBitsJPEG3Tag || imageTag instanceof DefineBitsJPEG4Tag, false, false, false, false, false);
             SWF imageSWF = TimelinedMaker.makeTimelinedImage(imageTag);
-            previewPanel.showImagePanel(imageSWF, imageSWF, 0, false, true, true, true, true, false, false, true);
-
+            previewPanel.showImagePanel(imageSWF, imageSWF, 0, false, true, true, true, true, false, false, true, true);
         } else if (!isVideoButNotDrawable && (treeItem instanceof DrawableTag) && (!(treeItem instanceof TextTag)) && (!(treeItem instanceof FontTag)) && internalViewer) {
             final Tag tag = (Tag) treeItem;
             DrawableTag d = (DrawableTag) tag;
@@ -5887,11 +5906,11 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             if (treeItem instanceof DefineSpriteTag) {
                 previewPanel.setImageReplaceButtonVisible(false, false, false, false, false, false, !((Tag) treeItem).isReadOnly());
             }
-            previewPanel.showImagePanel(timelined, tag.getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), treeItem instanceof ShapeTag, !Configuration.playFrameSounds.get(), (treeItem instanceof DefineSpriteTag) || (treeItem instanceof ButtonTag), (treeItem instanceof DefineSpriteTag) || (treeItem instanceof ButtonTag) || (treeItem instanceof ShapeTag), true);
+            previewPanel.showImagePanel(timelined, tag.getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get() && !(treeItem instanceof ButtonTag), treeItem instanceof ShapeTag, !Configuration.playFrameSounds.get(), (treeItem instanceof DefineSpriteTag) || (treeItem instanceof ButtonTag), (treeItem instanceof DefineSpriteTag) || (treeItem instanceof ButtonTag) || (treeItem instanceof ShapeTag), true, false);
         } else if (treeItem instanceof Frame && internalViewer) {
             Frame fn = (Frame) treeItem;
             SWF swf = (SWF) fn.getOpenable();
-            previewPanel.showImagePanel(fn.timeline.timelined, swf, fn.frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true);
+            previewPanel.showImagePanel(fn.timeline.timelined, swf, fn.frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true, false);
         } else if (treeItem instanceof ShowFrameTag) {
             SWF swf;
             if (timelinedContainer instanceof DefineSpriteTag) {
@@ -5899,7 +5918,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             } else {
                 swf = (SWF) timelinedContainer;
             }
-            previewPanel.showImagePanel(timelinedContainer, swf, frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true);
+            previewPanel.showImagePanel(timelinedContainer, swf, frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true, false);
         } else if ((treeItem instanceof SoundTag)) { //&& isInternalFlashViewerSelected() && (Arrays.asList("mp3", "wav").contains(((SoundTag) tagObj).getExportFormat())))) {
             previewPanel.showImagePanel(new SerializableImage(View.loadImage("sound32")));
             previewPanel.setImageReplaceButtonVisible(false, false, false, !((SoundTag) treeItem).isReadOnly() && ((SoundTag) treeItem).importSupported(), false, false, false);
@@ -6031,7 +6050,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                     return getRect();
                 }
             };
-            previewPanel.showImagePanel(tim, origSwf, 0, true, true, !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true);
+            previewPanel.showImagePanel(tim, origSwf, 0, true, true, !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, false, true, true);
         } else if (treeItem instanceof DefineFont4Tag) {
             previewPanel.showGenericTagPanel((Tag) treeItem);
         } else {
@@ -6262,6 +6281,9 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         } else if (treeItem instanceof Scene) {
             showFolderPreviewList(treePath);
         } else if (treeItem instanceof MetadataTag) {
+            showPreview(treeItem, previewPanel, -1, null);
+            showCard(CARDPREVIEWPANEL);
+        } else if (treeItem instanceof Cookie) {
             showPreview(treeItem, previewPanel, -1, null);
             showCard(CARDPREVIEWPANEL);
         } else if (treeItem instanceof BinaryDataInterface) {

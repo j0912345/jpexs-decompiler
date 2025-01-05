@@ -19,10 +19,12 @@ package com.jpexs.decompiler.flash.abc.types.traits;
 import com.jpexs.decompiler.flash.abc.ABC;
 import com.jpexs.decompiler.flash.abc.avm2.model.CallPropertyAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ClassAVM2Item;
+import com.jpexs.decompiler.flash.abc.avm2.model.ConstructPropAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.FullMultinameAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.GetLexAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.GetPropertyAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.IntegerValueAVM2Item;
+import com.jpexs.decompiler.flash.abc.avm2.model.SetPropertyAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ThisAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.parser.script.AbcIndexing;
 import com.jpexs.decompiler.flash.abc.types.ClassInfo;
@@ -78,7 +80,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
     /**
      * Frame trait names
      */
-    private final List<String> frameTraitNames = new ArrayList<>();
+    private final List<String> frameTraitNames = new ArrayList<>();  
 
     /**
      * Deletes this trait.
@@ -147,28 +149,13 @@ public class TraitClass extends Trait implements TraitWithSlot {
     }
     
     @Override
-    public GraphTextWriter toStringHeader(Trait parent, DottedChain packageName, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, GraphTextWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, boolean insideInterface) {
+    public GraphTextWriter toStringHeader(int swfVersion, Trait parent, DottedChain packageName, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, GraphTextWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, boolean insideInterface) {
         abc.instance_info.get(class_info).getClassHeaderStr(convertData.assetsDir, writer, abc, fullyQualifiedNames, false, false /*??*/);
         return writer;
     }
-
-    /**
-     * Converts header.
-     *
-     * @param parent Parent trait
-     * @param convertData Convert data
-     * @param path Path
-     * @param abc ABC
-     * @param isStatic Is static
-     * @param exportMode Export mode
-     * @param scriptIndex Script index
-     * @param classIndex Class index
-     * @param writer Writer
-     * @param fullyQualifiedNames Fully qualified names
-     * @param parallel Parallel
-     */
+  
     @Override
-    public void convertHeader(Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, NulWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel) {
+    public void convertHeader(int swfVersion, Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, NulWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel) {
     }
 
     /**
@@ -203,7 +190,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
      * @throws InterruptedException On interrupt
      */
     @Override
-    public GraphTextWriter toString(AbcIndexing abcIndex, DottedChain packageName, Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, GraphTextWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, boolean insideInterface) throws InterruptedException {
+    public GraphTextWriter toString(int swfVersion, AbcIndexing abcIndex, DottedChain packageName, Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, GraphTextWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, boolean insideInterface) throws InterruptedException {
 
         InstanceInfo instanceInfo = abc.instance_info.get(class_info);
 
@@ -259,7 +246,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
         
         //static variables & constants
         ClassInfo classInfo = abc.class_info.get(class_info);
-        classInfo.static_traits.toString(packageName, first, abcIndex, new Class[]{TraitSlotConst.class}, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, new ArrayList<>(), isInterface);
+        classInfo.static_traits.toString(swfVersion, packageName, first, abcIndex, new Class[]{TraitSlotConst.class}, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, new ArrayList<>(), isInterface);
 
         //static initializer
         int bodyIndex = abc.findBodyIndex(classInfo.cinit_index);
@@ -275,7 +262,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
                     first.setVal(false);
                     List<MethodBody> callStack = new ArrayList<>();
                     callStack.add(abc.bodies.get(bodyIndex));
-                    abc.bodies.get(bodyIndex).toString(callStack, abcIndex, path + "/" + instanceInfoName + ".staticinitializer", exportMode, abc, this, writer, fullyQualifiedNames, new HashSet<>());
+                    abc.bodies.get(bodyIndex).toString(swfVersion, callStack, abcIndex, path + "/" + instanceInfoName + ".staticinitializer", exportMode, abc, this, writer, fullyQualifiedNames, new HashSet<>());
                     //first.setVal(true);
                     //writer.endBlock();
                 } else {
@@ -293,8 +280,16 @@ public class TraitClass extends Trait implements TraitWithSlot {
             //"/*classInitializer*/";
         }
 
+        List<String> ignoredInstanceVariableNames = new ArrayList<>();
+        if (convertData.ignoreAccessibility) {
+            ignoredInstanceVariableNames.add("__setAccDict");
+            ignoredInstanceVariableNames.add("__setTabDict");
+            ignoredInstanceVariableNames.add("__lastFrameAcc");
+            ignoredInstanceVariableNames.add("__lastFrameTab");
+        }
+        
         //instance variables
-        instanceInfo.instance_traits.toString(packageName, first, abcIndex, new Class[]{TraitSlotConst.class}, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, new ArrayList<>(), isInterface);
+        instanceInfo.instance_traits.toString(swfVersion, packageName, first, abcIndex, new Class[]{TraitSlotConst.class}, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, ignoredInstanceVariableNames, isInterface);
 
         //instance initializer - constructor
         if (!instanceInfo.isInterface()) {
@@ -319,7 +314,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
                 if (body != null) {
                     List<MethodBody> callStack = new ArrayList<>();
                     callStack.add(body);
-                    body.toString(callStack, abcIndex, path + "/" + instanceInfoName + ".initializer", exportMode, abc, this, writer, fullyQualifiedNames, new HashSet<>());
+                    body.toString(swfVersion, callStack, abcIndex, path + "/" + instanceInfoName + ".initializer", exportMode, abc, this, writer, fullyQualifiedNames, new HashSet<>());
                 }
             }
 
@@ -329,10 +324,24 @@ public class TraitClass extends Trait implements TraitWithSlot {
         }
 
         //static methods
-        classInfo.static_traits.toString(packageName, first, abcIndex, new Class[]{TraitClass.class, TraitFunction.class, TraitMethodGetterSetter.class}, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, new ArrayList<>(), isInterface);
+        classInfo.static_traits.toString(swfVersion, packageName, first, abcIndex, new Class[]{TraitClass.class, TraitFunction.class, TraitMethodGetterSetter.class}, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, new ArrayList<>(), isInterface);
 
+        List<String> ignoredInstanceTraitNames = new ArrayList<>();
+        if (convertData.ignoreFrameScripts) {
+            ignoredInstanceTraitNames.addAll(frameTraitNames);         
+        }
+        if (convertData.ignoreAccessibility) {            
+            for (Trait t : instanceInfo.instance_traits.traits) {
+                String traitName = t.getName(abc).getName(abc.constants, new ArrayList<>(), true, false);                        ;
+                if (traitName.startsWith("__setAcc_")
+                        || traitName.startsWith("__setTab_")) {
+                    ignoredInstanceTraitNames.add(traitName);
+                }
+            }            
+        }
+        
         //instance methods
-        instanceInfo.instance_traits.toString(packageName, first, abcIndex, new Class[]{TraitClass.class, TraitFunction.class, TraitMethodGetterSetter.class}, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, convertData.ignoreFrameScripts ? frameTraitNames : new ArrayList<>(), isInterface);
+        instanceInfo.instance_traits.toString(swfVersion, packageName, first, abcIndex, new Class[]{TraitClass.class, TraitFunction.class, TraitMethodGetterSetter.class}, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, ignoredInstanceTraitNames, isInterface);
 
         if (first.getVal()) {
             writer.newLine();
@@ -342,27 +351,9 @@ public class TraitClass extends Trait implements TraitWithSlot {
         writer.newLine();
         return writer;
     }
-
-    /**
-     * Converts trait.
-     *
-     * @param abcIndex ABC indexing
-     * @param parent Parent trait
-     * @param convertData Convert data
-     * @param path Path
-     * @param abc ABC
-     * @param isStatic Is static
-     * @param exportMode Export mode
-     * @param scriptIndex Script index
-     * @param classIndex Class index
-     * @param writer Writer
-     * @param fullyQualifiedNames Fully qualified names
-     * @param parallel Parallel
-     * @param scopeStack Scope stack
-     * @throws InterruptedException On interrupt
-     */
+    
     @Override
-    public void convert(AbcIndexing abcIndex, Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, NulWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, ScopeStack scopeStack) throws InterruptedException {
+    public void convert(int swfVersion, AbcIndexing abcIndex, Trait parent, ConvertData convertData, String path, ABC abc, boolean isStatic, ScriptExportMode exportMode, int scriptIndex, int classIndex, NulWriter writer, List<DottedChain> fullyQualifiedNames, boolean parallel, ScopeStack scopeStack) throws InterruptedException {
 
         fullyQualifiedNames = new ArrayList<>();
 
@@ -404,7 +395,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
                 }
             }
 
-            abc.bodies.get(bodyIndex).convert(callStack, abcIndex, convertData, path + "/" + instanceInfoName + ".staticinitializer", exportMode, true, classInfo.cinit_index, scriptIndex, class_info, abc, this, newScopeStack, GraphTextWriter.TRAIT_CLASS_INITIALIZER, writer, fullyQualifiedNames, classInfo.static_traits, true, new HashSet<>());
+            abc.bodies.get(bodyIndex).convert(swfVersion, callStack, abcIndex, convertData, path + "/" + instanceInfoName + ".staticinitializer", exportMode, true, classInfo.cinit_index, scriptIndex, class_info, abc, this, newScopeStack, GraphTextWriter.TRAIT_CLASS_INITIALIZER, writer, fullyQualifiedNames, classInfo.static_traits, true, new HashSet<>());
 
             newScopeStack.push(new ClassAVM2Item(abc.instance_info.get(class_info).getName(abc.constants)));
             classInitializerIsEmpty = !writer.getMark();
@@ -417,7 +408,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
                 MethodBody constructorBody = abc.bodies.get(bodyIndex);
                 List<MethodBody> callStack = new ArrayList<>();
                 callStack.add(constructorBody);
-                constructorBody.convert(callStack, abcIndex, convertData, path + "/" + instanceInfoName + ".initializer", exportMode, false, instanceInfo.iinit_index, scriptIndex, class_info, abc, this, new ScopeStack(), GraphTextWriter.TRAIT_INSTANCE_INITIALIZER, writer, fullyQualifiedNames, instanceInfo.instance_traits, true, new HashSet<>());
+                constructorBody.convert(swfVersion, callStack, abcIndex, convertData, path + "/" + instanceInfoName + ".initializer", exportMode, false, instanceInfo.iinit_index, scriptIndex, class_info, abc, this, new ScopeStack(), GraphTextWriter.TRAIT_INSTANCE_INITIALIZER, writer, fullyQualifiedNames, instanceInfo.instance_traits, true, new HashSet<>());
 
                 if (convertData.ignoreFrameScripts) {
                     //find all addFrameScript(xx,this.method) in constructor
@@ -441,7 +432,7 @@ public class TraitClass extends Trait implements TraitWithSlot {
                             if (ti instanceof CallPropertyAVM2Item) {
                                 CallPropertyAVM2Item callProp = (CallPropertyAVM2Item) ti;
                                 if (callProp.propertyName instanceof FullMultinameAVM2Item) {
-                                    FullMultinameAVM2Item propName = (FullMultinameAVM2Item) callProp.propertyName;
+                                    FullMultinameAVM2Item propName = (FullMultinameAVM2Item) callProp.propertyName;                                    
                                     if ("addFrameScript".equals(propName.resolvedMultinameName)) {
                                         for (int i = 0; i < callProp.arguments.size(); i += 2) {
                                             if (callProp.arguments.get(i) instanceof IntegerValueAVM2Item) {
@@ -462,6 +453,110 @@ public class TraitClass extends Trait implements TraitWithSlot {
                                         }
                                         constructorBody.convertedItems.remove(j);
                                         j--;
+                                    } else if (
+                                            propName.resolvedMultinameName != null
+                                            && (
+                                                propName.resolvedMultinameName.startsWith("__setAcc_")
+                                                || propName.resolvedMultinameName.startsWith("__setTab_")
+                                            )
+                                            && callProp.arguments.isEmpty()
+                                            ) {
+                                        //accessibilityTraitNames.add(propName.resolvedMultinameName);
+                                        constructorBody.convertedItems.remove(j);
+                                        j--;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (convertData.ignoreAccessibility) {
+                    if (constructorBody.convertedItems != null) {
+                        for (int j = 0; j < constructorBody.convertedItems.size(); j++) {
+                            GraphTargetItem ti = constructorBody.convertedItems.get(j);
+                            if (ti instanceof CallPropertyAVM2Item) {
+                                CallPropertyAVM2Item callProp = (CallPropertyAVM2Item) ti;
+                                
+                                if (callProp.propertyName instanceof FullMultinameAVM2Item) {
+                                    FullMultinameAVM2Item propName = (FullMultinameAVM2Item) callProp.propertyName;
+                                    if ("addEventListener".equals(propName.resolvedMultinameName)) {
+                                        //addEventListener(Event.FRAME_CONSTRUCTED,this.__setAcc_handler,false,0,true);
+                                        if (callProp.arguments.size() != 5) {
+                                            continue;
+                                        }
+                                        if (!(callProp.arguments.get(0) instanceof GetPropertyAVM2Item)) {
+                                            continue;
+                                        }
+                                        GetPropertyAVM2Item gp = (GetPropertyAVM2Item) callProp.arguments.get(0);
+                                        if (!(gp.propertyName instanceof FullMultinameAVM2Item)) {
+                                            continue;
+                                        }
+                                        FullMultinameAVM2Item fm = (FullMultinameAVM2Item) gp.propertyName;
+                                        if (!"FRAME_CONSTRUCTED".equals(fm.resolvedMultinameName)) {
+                                            continue;
+                                        }
+                                        if (!(callProp.arguments.get(1) instanceof GetPropertyAVM2Item)) {
+                                            continue;
+                                        }
+                                        gp = (GetPropertyAVM2Item) callProp.arguments.get(1);
+                                        if (!(gp.propertyName instanceof FullMultinameAVM2Item)) {
+                                            continue;
+                                        }
+                                        fm = (FullMultinameAVM2Item) gp.propertyName;
+                                        if (!("__setAcc_handler".equals(fm.resolvedMultinameName)
+                                              || "__setTab_handler".equals(fm.resolvedMultinameName))) {
+                                            continue;
+                                        }
+                                        constructorBody.convertedItems.remove(j);
+                                        j--;
+                                    }
+                                
+                                    if (
+                                        propName.resolvedMultinameName != null
+                                        && (
+                                            propName.resolvedMultinameName.startsWith("__setAcc_")
+                                            || propName.resolvedMultinameName.startsWith("__setTab_")
+                                        )
+                                        && callProp.arguments.isEmpty()
+                                        ) {
+                                        //accessibilityTraitNames.add(propName.resolvedMultinameName);
+                                        constructorBody.convertedItems.remove(j);
+                                        j--;
+                                    }
+                                }
+                            }
+                            if (ti instanceof SetPropertyAVM2Item) {
+                                if (ti.value instanceof ConstructPropAVM2Item) {
+                                    ConstructPropAVM2Item cons = (ConstructPropAVM2Item) ti.value;
+                                    if (cons.propertyName instanceof FullMultinameAVM2Item) {
+                                        FullMultinameAVM2Item fm = (FullMultinameAVM2Item) cons.propertyName;
+                                        if ("AccessibilityProperties".equals(fm.resolvedMultinameName)) {
+                                            constructorBody.convertedItems.remove(j);
+                                            j--;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                SetPropertyAVM2Item setProp = (SetPropertyAVM2Item) ti;
+                                if (setProp.object instanceof GetPropertyAVM2Item) {
+                                    GetPropertyAVM2Item parentGetProp = (GetPropertyAVM2Item) setProp.object;
+                                    if (parentGetProp.propertyName instanceof FullMultinameAVM2Item) {
+                                        FullMultinameAVM2Item parentProp = (FullMultinameAVM2Item) parentGetProp.propertyName;
+                                        if ("accessibilityProperties".equals(parentProp.resolvedMultinameName)) {
+                                            if (parentGetProp.object instanceof GetPropertyAVM2Item) {
+                                                GetPropertyAVM2Item parentParentGetProp = (GetPropertyAVM2Item) parentGetProp.object;
+                                                if (parentParentGetProp.propertyName instanceof FullMultinameAVM2Item) {
+                                                    FullMultinameAVM2Item parentParentProp = (FullMultinameAVM2Item) parentParentGetProp.propertyName;
+                                                    if ("root".equals(parentParentProp.resolvedMultinameName)) {
+                                                        if (parentParentGetProp.object instanceof ThisAVM2Item) {
+                                                            constructorBody.convertedItems.remove(j);
+                                                            j--;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -472,9 +567,9 @@ public class TraitClass extends Trait implements TraitWithSlot {
         }
 
         //static variables,constants & methods
-        classInfo.static_traits.convert(abcIndex, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, newScopeStack);
+        classInfo.static_traits.convert(swfVersion, abcIndex, this, convertData, path + "/" + instanceInfoName, abc, true, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, newScopeStack);
 
-        instanceInfo.instance_traits.convert(abcIndex, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, newScopeStack);
+        instanceInfo.instance_traits.convert(swfVersion, abcIndex, this, convertData, path + "/" + instanceInfoName, abc, false, exportMode, false, scriptIndex, class_info, writer, fullyQualifiedNames, parallel, newScopeStack);
     }
 
     /**

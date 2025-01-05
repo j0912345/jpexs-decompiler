@@ -235,6 +235,9 @@ SingleCharacter = [^\r\n\'\\]
 OIdentifierCharacter = [^\r\n\u00A7\\]
 Preprocessor = \u00A7\u00A7 {Identifier}
 
+VerbatimStringCharacter = [^\r\n\"]
+VerbatimString = "@\"" {VerbatimStringCharacter}* "\""
+
 NamespaceSuffix = "#" {DecIntegerLiteral}
 
 RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
@@ -296,6 +299,12 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
   "final"                        { return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.FINAL, yytext()); }
   "native"                       { return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.NATIVE, yytext()); }
 
+
+  {VerbatimString}               { 
+                                    String verbatimString = yytext();
+                                    verbatimString = verbatimString.substring(2, verbatimString.length() - 1);
+                                    return new ParsedSymbol(SymbolGroup.STRING, SymbolType.STRING, verbatimString); }
+
   /* operators */
 
   "("                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.PARENT_OPEN, yytext());  }
@@ -313,6 +322,8 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
   "<"                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.LOWER_THAN, yytext());  }
   "!"                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NOT, yytext());  }
   "~"                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NEGATE, yytext());  }
+  "?."                           { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NULL_DOT, yytext());  }
+  "??"                           { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NULL_COALESCE, yytext());  }
   "?"                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.TERNAR, yytext());  }
   ":"                            { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.COLON, yytext());  }
   "==="                          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.STRICT_EQUALS, yytext());  }

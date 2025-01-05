@@ -47,10 +47,7 @@ import com.jpexs.decompiler.flash.timeline.Frame;
 import com.jpexs.decompiler.flash.timeline.Timeline;
 import com.jpexs.decompiler.flash.timeline.Timelined;
 import com.jpexs.decompiler.flash.types.BUTTONCONDACTION;
-import com.jpexs.decompiler.flash.types.CXFORMWITHALPHA;
-import com.jpexs.decompiler.flash.types.ColorTransform;
 import com.jpexs.decompiler.flash.types.ConstantColorColorTransform;
-import com.jpexs.decompiler.flash.types.MATRIX;
 import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.decompiler.flash.types.SOUNDINFO;
@@ -105,7 +102,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +132,9 @@ import org.pushingpixels.substance.api.SubstanceSkin;
  */
 public final class ImagePanel extends JPanel implements MediaDisplay {
 
+    
+    private static final int MAX_SOUND_CHANNELS = 8; //TODO: Maybe add to Advanced settings
+    
     private static final Logger logger = Logger.getLogger(ImagePanel.class.getName());
 
     private final List<MediaDisplayListener> listeners = new ArrayList<>();
@@ -263,6 +262,8 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     private boolean autoPlayed = false;
 
     private boolean frozen = false;
+    
+    private boolean frozenButtons = false;
 
     private boolean muted = false;
 
@@ -329,7 +330,11 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     private final List<Integer> parentDepths = new ArrayList<>();
 
     private final List<Timelined> parentTimelineds = new ArrayList<>();
-        
+
+    public void setFrozenButtons(boolean frozenButtons) {
+        this.frozenButtons = frozenButtons;
+    }                
+    
     public boolean isMultiSelect() {
         return multiSelect;
     }   
@@ -763,7 +768,8 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     }
 
     public void fireMediaDisplayStateChanged() {
-        for (MediaDisplayListener l : listeners) {
+        List<MediaDisplayListener> ls = new ArrayList<>(listeners);
+        for (MediaDisplayListener l : ls) {
             l.mediaDisplayStateChanged(this);
         }
     }
@@ -2572,7 +2578,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                     lastMouseEvent = e;
                     redraw();
                     ButtonTag button = iconPanel.mouseOverButton;
-                    if (button != null && !doFreeTransform && !frozen) {
+                    if (button != null && !doFreeTransform && !frozenButtons) {
                         DefineButtonSoundTag sounds = button.getSounds();
                         if (!muted && sounds != null && sounds.buttonSoundChar2 != 0) { // OverUpToOverDown
                             CharacterTag soundCharTag = swf.getCharacter(sounds.buttonSoundChar2);
@@ -2617,7 +2623,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                     lastMouseEvent = e;
                     redraw();
                     ButtonTag button = iconPanel.mouseOverButton;
-                    if (!muted && button != null && !doFreeTransform && !frozen) {
+                    if (!muted && button != null && !doFreeTransform && !frozenButtons) {
                         DefineButtonSoundTag sounds = button.getSounds();
                         if (sounds != null && sounds.buttonSoundChar3 != 0) { // OverDownToOverUp
                             CharacterTag soundCharTag = swf.getCharacter(sounds.buttonSoundChar3);
@@ -2660,7 +2666,12 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
             // then we can draw immediately to avoid long waiting between frames.
             // This can happen on SWFs with small frameRate
             if (Float.compare(getFrameLoss(), 0f) == 0) {
-                drawFrame(thisTimer, true);
+                thisTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        drawFrame(thisTimer, true);
+                    }                    
+                }, 0);                
             }
         }
     }
@@ -2891,7 +2902,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
     private Timer setTimelinedTimer = null;
 
-    public void setTimelined(final Timelined drawable, final SWF swf, int frame, boolean showObjectsUnderCursor, boolean autoPlay, boolean frozen, boolean alwaysDisplay, boolean muted, boolean mutable, boolean allowZoom) {
+    public void setTimelined(final Timelined drawable, final SWF swf, int frame, boolean showObjectsUnderCursor, boolean autoPlay, boolean frozen, boolean alwaysDisplay, boolean muted, boolean mutable, boolean allowZoom, boolean frozenButtons) {
         Stage stage = new Stage(drawable) {
             @Override
             public void callFrame(int frame) {
@@ -2999,6 +3010,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
             autoPlayed = autoPlay;
             this.alwaysDisplay = alwaysDisplay;
             this.frozen = frozen;
+            this.frozenButtons = frozenButtons;
             this.muted = muted;
             this.resample = Configuration.previewResampleSound.get();
             this.mutable = mutable;
@@ -3588,7 +3600,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
         renderContext.mouseButton = mouseButton;
         renderContext.stateUnderCursor = new ArrayList<>();
-        renderContext.enableButtons = !frozen;
+        renderContext.enableButtons = !frozenButtons;
 
         SerializableImage img;
         try {
@@ -3611,78 +3623,51 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
             if (display) {
                 Stopwatch sw = Stopwatch.startNew();
 
+                Reference<Rectangle2D> boundsRef = new Reference<>(null);
+
+                RECT rect = getTopTimelined().getRect();
+
                 synchronized (ImagePanel.this) {
-                    synchronized (lock) {
-                        Reference<Rectangle2D> boundsRef = new Reference<>(null);
-
-                        RECT rect = getTopTimelined().getRect();
-
+                    synchronized (lock) {                        
                         _viewRect = getViewRect();
+                    }
+                }
 
-                        Matrix trans2 = transform == null ? new Matrix() : transform.clone();
+                Matrix trans2 = transform == null ? new Matrix() : transform.clone();
 
-                        trans2 = toImageMatrix(trans2);
-                        
-                        AffineTransform tempTrans2 = null;
-                        if (transformUpdated != null) {
-                            Matrix matrixUpdated = new Matrix(transformUpdated);
-                            //Matrix p = getParentMatrix();
-                            //matrixUpdated = p.concatenate(matrixUpdated);
-                            matrixUpdated = toImageMatrix(matrixUpdated);
-                            tempTrans2 = matrixUpdated.toTransform();
-                        }
+                trans2 = toImageMatrix(trans2);
 
-                        //HERE                       
-                        RECT timRect = timelined.getRect();
-                        double offsetX = (SWF.unitDivisor * iconPanel.getWidth() / zoomDouble / 2 - timRect.getWidth() / 2);
-                        double offsetY = (SWF.unitDivisor * iconPanel.getHeight() / zoomDouble / 2 - timRect.getHeight() / 2);
-                        offsetX *= zoomDouble;
-                        offsetY *= zoomDouble;
-                        offsetX /= SWF.unitDivisor;
-                        offsetY /= SWF.unitDivisor;
+                AffineTransform tempTrans2 = null;
+                if (transformUpdated != null) {
+                    Matrix matrixUpdated = new Matrix(transformUpdated);
+                    matrixUpdated = toImageMatrix(matrixUpdated);
+                    tempTrans2 = matrixUpdated.toTransform();
+                }
 
-                        if (offsetX < 0) {
-                            offsetX = -offsetX;
-                            //offsetX = 0;                           
-                        }
-                        if (offsetY < 0) {
-                            offsetY = -offsetY;
-                            //offsetY = 0;
-                        }
+                Rectangle realRect = new Rectangle(rect.Xmin, rect.Ymin, rect.Xmax - rect.Xmin, rect.Ymax - rect.Ymin);
+                realRect.x *= zoomDouble;
+                realRect.y *= zoomDouble;
+                realRect.width *= zoomDouble;
+                realRect.height *= zoomDouble;
+                realRect.x /= SWF.unitDivisor;
+                realRect.y /= SWF.unitDivisor;
+                realRect.width /= SWF.unitDivisor;
+                realRect.height /= SWF.unitDivisor;
+                realRect.x += offsetPoint.getX();
+                realRect.y += offsetPoint.getY();
 
-                        offsetX = -offsetX;
-                        offsetY = -offsetY;
+                Point2D rawRegistrationPoint = registrationPoint == null ? null : toImagePoint(registrationPoint);                        
+                Reference<Point2D> registrationPointRef = new Reference<>(rawRegistrationPoint);
+                if (!autoPlayed) {
+                    img = getImagePlay();
+                } else if (_viewRect.getHeight() < 0 || _viewRect.getWidth() < 0) {
+                    img = new SerializableImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
+                } else {
+                    img = getFrame(realRect, rect, _viewRect, swf, frame, frozen ? 0 : time, timelined, renderContext, selectedDepths, doFreeTransform, zoomDouble, registrationPointRef, boundsRef, trans2, tempTrans2 == null ? null : new Matrix(tempTrans2), transform, selectionMode, parentTimelineds, parentDepths, parentFrames, getParentMatrix());                    
+                }
 
-                        Rectangle realRect = new Rectangle(rect.Xmin, rect.Ymin, rect.Xmax - rect.Xmin, rect.Ymax - rect.Ymin);
-                        realRect.x *= zoomDouble;
-                        realRect.y *= zoomDouble;
-                        realRect.width *= zoomDouble;
-                        realRect.height *= zoomDouble;
-                        realRect.x /= SWF.unitDivisor;
-                        realRect.y /= SWF.unitDivisor;
-                        realRect.width /= SWF.unitDivisor;
-                        realRect.height /= SWF.unitDivisor;
-                        realRect.x += offsetPoint.getX();
-                        realRect.y += offsetPoint.getY();
-
-                        Point2D rawRegistrationPoint = registrationPoint == null ? null : toImagePoint(registrationPoint);
-                        if (rawRegistrationPoint != null) {
-                            //rawRegistrationPoint.setLocation(rawRegistrationPoint.getX()+offsetX, rawRegistrationPoint.getY() + offsetY);
-                        }
-                        Reference<Point2D> registrationPointRef = new Reference<>(rawRegistrationPoint);
-                        if (!autoPlayed) {
-                            img = getImagePlay();
-                        } else if (_viewRect.getHeight() < 0 || _viewRect.getWidth() < 0) {
-                            img = new SerializableImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
-                        } else {
-                            img = getFrame(realRect, rect, _viewRect, swf, frame, frozen ? 0 : time, timelined, renderContext, selectedDepths, doFreeTransform, zoomDouble, registrationPointRef, boundsRef, trans2, tempTrans2 == null ? null : new Matrix(tempTrans2), transform, selectionMode, parentTimelineds, parentDepths, parentFrames, getParentMatrix());
-                        }
-                        /*if(freeTransformDepth > -1) 
-                        {
-                            Graphics2D gg = (Graphics2D) img.getBufferedImage().getGraphics();
-                            gg.setColor(Color.green);
-                            gg.drawRect(0, 0, img.getWidth() - 1, img.getHeight() - 1);
-                        }*/
+                synchronized (ImagePanel.this) {
+                    synchronized (lock) {                                               
 
                         Rectangle2D newBounds = getTransformBounds();
                         if (newBounds != null) {
@@ -3693,10 +3678,9 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                         newBounds.getCenterY());
                             }
                         }
-                        //System.out.println("drawFrame "+frame);
-                    }
+                    }                    
                 }
-
+                    
                 sw.stop();
                 if (sw.getElapsedMilliseconds() > 100) {
                     if (Configuration.showSlowRenderingWarning.get()) {
@@ -3709,7 +3693,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 }
             }
 
-            if (!shownAgain && autoPlayed) {
+            if (autoPlayed) { //!shownAgain
                 if (!muted) {
                     List<Integer> sounds = new ArrayList<>();
                     List<String> soundClasses = new ArrayList<>();
@@ -3758,7 +3742,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 }
             }
 
-            boolean handCursor = renderContext.mouseOverButton != null || !autoPlayed && !frozen;
+            boolean handCursor = renderContext.mouseOverButton != null || !autoPlayed && !frozenButtons;
 
             if (showObjectsUnderCursor && autoPlayed) {
 
@@ -3880,23 +3864,47 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                         }
                     }
 
-                    drawReady = true;
-                    synchronized (delayObject) {
-                        delayObject.notify();
-                    }
+                    drawReady = true;                    
                 }
+            }
+            synchronized (delayObject) {
+                delayObject.notify();
             }
         }
     }
 
     private void playSound(SoundTag st, SOUNDINFO soundInfo, Timer thisTimer) {
+        synchronized (ImagePanel.this) {
+            if (soundInfo.syncNoMultiple || soundInfo.syncStop) {
+                for (int s = soundPlayers.size() - 1; s >= 0; s--) {
+                    SoundTagPlayer sp = soundPlayers.get(s);
+                    if (sp.getTag() == st) {
+                        if (soundInfo.syncNoMultiple) {
+                            //already playing same sound, return
+                            return;
+                        }
+                        if (soundInfo.syncStop) {
+                            sp.stop();
+                        }
+                    }
+                }
+                
+                if (soundInfo.syncStop) {
+                    return;
+                }                
+            }
+            
+            if (soundPlayers.size() > MAX_SOUND_CHANNELS) {
+                return;
+            }            
+        }
         final SoundTagPlayer sp;
         try {
             int loopCount = 1;
             if (soundInfo != null && soundInfo.hasLoops) {
                 loopCount = Math.max(1, soundInfo.loopCount);
             }
-
+            
             sp = new SoundTagPlayer(soundInfo, st, loopCount, false, resample);
             sp.addEventListener(new MediaDisplayListener() {
                 @Override
@@ -4029,13 +4037,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                     long delay = getMsPerFrame();
                     if (isSingleFrame) {
                         drawFrame(thisTimer, true);
-                        /*synchronized (ImagePanel.this) {
-                            thisTimer.cancel();
-                            if (timer == thisTimer) {
-                                timer = null;
-                            }
-                        }*/
-
+                        
                         fireMediaDisplayStateChanged();
                     } else {
                         //Time before drawing current frame

@@ -58,6 +58,7 @@ import com.jpexs.decompiler.flash.gui.abc.AddClassDialog;
 import com.jpexs.decompiler.flash.gui.abc.As3ClassLinkageDialog;
 import com.jpexs.decompiler.flash.gui.abc.ClassesListTreeModel;
 import com.jpexs.decompiler.flash.gui.action.AddScriptDialog;
+import com.jpexs.decompiler.flash.gui.soleditor.Cookie;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.flash.packers.Packer;
 import com.jpexs.decompiler.flash.tags.ABCContainerTag;
@@ -916,7 +917,12 @@ public class TagTreeContextMenu extends JPopupMenu {
         boolean wasFrame = false;
         Timelined frameTimelined = null;
         for (TreeItem item : items) {
-            if (item instanceof Tag) {
+            if (item instanceof Cookie) {
+                if (wasFrame) {
+                    return false;
+                }            
+                wasNotFrame = true;
+            } else if (item instanceof Tag) {
                 if (wasFrame) {
                     return false;
                 }
@@ -1475,6 +1481,8 @@ public class TagTreeContextMenu extends JPopupMenu {
                     addInsideAddAllTags = true;
                 }
             }
+            
+            boolean isCookie = firstItem instanceof Cookie;
 
             addTagInsideMenu.removeAll();
             addAddTagInsideMenuItems(firstItem);
@@ -1487,7 +1495,7 @@ public class TagTreeContextMenu extends JPopupMenu {
             addTagBeforeMenu.removeAll();
 
             addAddTagBeforeAfterMenuItems(true, addTagBeforeMenu, firstItem, this::addTagBeforeActionPerformed);
-            addTagBeforeMenu.setVisible(addTagBeforeMenu.getItemCount() > 0);
+            addTagBeforeMenu.setVisible(!isCookie && addTagBeforeMenu.getItemCount() > 0);
 
             addTagAfterMenu.removeAll();
             addAddTagBeforeAfterMenuItems(false, addTagAfterMenu, firstItem, this::addTagAfterActionPerformed);
@@ -1497,7 +1505,7 @@ public class TagTreeContextMenu extends JPopupMenu {
                 othersMenu.setIcon(View.getIcon("folder16"));
                 addAddTagMenuItems(null, othersMenu, firstItem, this::addTagAfterActionPerformed);
                 addTagAfterMenu.add(othersMenu);*/
-            addTagAfterMenu.setVisible(addTagAfterMenu.getItemCount() > 0);
+            addTagAfterMenu.setVisible(!isCookie && addTagAfterMenu.getItemCount() > 0);
 
             if ((firstItem instanceof CharacterTag)) {
                 CharacterTag cht = (CharacterTag) firstItem;
@@ -3964,6 +3972,10 @@ public class TagTreeContextMenu extends JPopupMenu {
                 itemsToRemove.add(item);
                 itemsToRemoveParents.add(((BUTTONRECORD) item).getTag());
                 itemsToRemoveSprites.add(new Object());
+            } else if (item instanceof Cookie) {
+                itemsToRemove.add(item);
+                itemsToRemoveParents.add(new Object());
+                itemsToRemoveSprites.add(new Object());
             }
         }
 
@@ -4030,6 +4042,11 @@ public class TagTreeContextMenu extends JPopupMenu {
                             Object item = itemsToRemove.get(i);
                             Object parent = itemsToRemoveParents.get(i);
 
+                            if (item instanceof Cookie) {
+                                Cookie cookie = (Cookie) item;
+                                ((Cookie) item).getSolFile().delete();
+                            }
+                            
                             if (item instanceof BUTTONRECORD) {
                                 ButtonTag button = (ButtonTag) parent;
                                 button.getRecords().remove((BUTTONRECORD) item);
@@ -4204,6 +4221,7 @@ public class TagTreeContextMenu extends JPopupMenu {
                     mainPanel.refreshTree();
                 }
                 mainPanel.savePins();
+                mainPanel.updateClassesList();
             }
         }
     }

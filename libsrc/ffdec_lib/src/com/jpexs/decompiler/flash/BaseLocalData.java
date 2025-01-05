@@ -43,6 +43,11 @@ public abstract class BaseLocalData {
      * Second pass data
      */
     public SecondPassData secondPassData = null;
+    
+    /**
+     * SWF version
+     */
+    public int swfVersion = -1;
 
     /**
      * Constructor.

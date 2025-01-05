@@ -63,7 +63,6 @@ addexport
 addfunction
 additionalmodules
 additionalparam
-addplugindir
 addproperty
 addressproperty
 addrfix
@@ -176,7 +175,7 @@ asv
 ata
 atags
 Atclause
-atext
+AText
 ati
 atleast
 atmax
@@ -196,7 +195,6 @@ audiosamplesize
 auds
 aufgerufen
 aufruft
-aurl
 Authenticode
 autoboxing
 Autobuild
@@ -219,6 +217,7 @@ AVISF
 avistreamheader
 AVIX
 avm
+AVMPLUS
 avt
 awidth
 awt
@@ -862,7 +861,6 @@ doubletype
 Doubrovkine
 dowhile
 downloadnow
-downloadsuccessful
 downmix
 downmixing
 DOWNRESULT
@@ -1198,6 +1196,7 @@ fntttf
 focalgradient
 focusrect
 folderopen
+folderscripts
 foldersounds
 foldersprites
 followsymlinks
@@ -1248,7 +1247,6 @@ framesizeloaded
 framesloaded
 frc
 frect
-freeactionscript
 freetransform
 frest
 Friesen
@@ -1291,6 +1289,7 @@ gbc
 gbevin
 gbf
 Gby
+gc'ed
 gct
 gdi
 Geert
@@ -1444,7 +1443,6 @@ hiliter
 hinst
 HITTEST
 HIWORD
-HKCR
 HKCU
 HKEYBy
 HKLM
@@ -1509,7 +1507,6 @@ icns
 icoimage
 iconifying
 iconinfo
-ICONSTOP
 ict
 icting
 ictx
@@ -1519,8 +1516,6 @@ Iddle
 IDecoder
 idelay
 identifierdeobfuscation
-IDIGNORE
-IDRETRY
 idscan
 Idtags
 IDTYPE
@@ -1604,7 +1599,6 @@ includeemptydirs
 includesfile
 Indexnumber
 ine
-inetc
 inexpr
 infinally
 infoflags
@@ -1657,7 +1651,6 @@ insv
 intag
 intbias
 intbiasshift
-intcmp
 Intelli
 intellij
 interdomain
@@ -1735,7 +1728,6 @@ javac
 Javactive
 javactivex
 javagl
-Javahome
 javalayer
 javaresource
 javascriptsyntaxkit
@@ -1753,7 +1745,6 @@ JCommand
 jctb
 JDKs
 JDOC
-jdone
 jdwp
 Jef
 Jelliffe
@@ -1774,7 +1765,6 @@ jlayer
 jlc
 jletter
 jletterdigit
-jloop
 jlp
 jmf
 jmods
@@ -1791,8 +1781,6 @@ JPGA
 JPGB
 JPGC
 JPGD
-jpghtml
-jpos
 jpproxy
 jpt
 jrb
@@ -1818,7 +1806,6 @@ JTrackable
 JTri
 jtt
 jttdata
-jtxt
 junindent
 JUunit
 JVER
@@ -1965,6 +1952,7 @@ LOADURL
 LOADVARIABLES
 LOADVARIABLESNUM
 loadversion
+LOCALAPPDATA
 localcount
 localfile
 localreg
@@ -2059,6 +2047,7 @@ lresult
 lsa
 lsb
 LSHIFTEQ
+lso
 lstart
 ltarget
 lthrow
@@ -2264,12 +2253,17 @@ Mval
 mvn
 mxmlc
 MXOFF
+myarray
 myas
+mybool
+mybytearray
 mycheckbox
 mycircle
 myclass
 myclip
 myconst
+mydata
+mydictionary
 mydir
 myf
 myfilecomp
@@ -2278,20 +2272,28 @@ MYFONT
 mygraph
 myhash
 myjson
+mylongstring
 mymethod
 myname
 myns
+mynull
+mynumber
 myobj
 mypackage
 mypkg
 myprop
 myrect
+myref
 myregexp
 myslot
 mystar
 mystvar
+mytypedobject
+myundefined
 myvargetonly
 myvarsetonly
+myvectorint
+myxml
 Naashorn
 nabc
 nai
@@ -2486,6 +2488,7 @@ NOTUPDATED
 NOTZONE
 NOUNLOAD
 NOZORDER
+npapi
 nparams
 npe
 npp
@@ -2521,6 +2524,7 @@ NTranslate
 NTSTATUS
 NTVDM
 ntype
+NULLCOALESCE
 nullpointer
 NULLREGION
 Nullsoft
@@ -2730,6 +2734,7 @@ popups
 Poskanzer
 powerstate
 poxyran
+ppapi
 ppkg
 pplace
 ppos
@@ -2891,11 +2896,14 @@ realmaster
 Recents
 recentsearch
 RECORDSEPARATOR
+RECORDSET
 RECOVERYALREADYDONE
 RECOVERYINPROGRESS
 rectx
 recursesubdirs
 redistributors
+refobj
+reftest
 REFTYPE
 refu
 REGDB
@@ -3172,7 +3180,7 @@ setsuper
 settarget
 SETUPAPI
 SETUPFILE
-setupfinished
+SETUPFINISHED
 SETUPOUTCOME
 setvariable
 setzen
@@ -3193,6 +3201,7 @@ shapenum
 shaperecord
 shapesfolder
 SHAPEWITHSTYLE
+sharedobjects
 sharepoint
 shead
 SHELLEXECUTEINFO
@@ -3270,6 +3279,7 @@ SOFE
 SOFF
 softsound
 SOI
+soleditor
 SOMECACHES
 somemethod
 somens
@@ -3499,7 +3509,6 @@ techsmith
 tellcmds
 tellist
 telltarget
-telse
 tempdatastream
 temporaire
 temporaryreg
@@ -3548,7 +3557,6 @@ TGet
 Tgl
 TGoto
 TGUID
-tgz
 thebuffer
 thel
 thepic
@@ -3773,8 +3781,6 @@ UPDATEREQUIRED
 upgrademodulepath
 upravit
 URIEx
-urlcheckfailed
-urlgetsuccessfull
 urshift
 URSHIFTEQ
 usb
@@ -3956,6 +3962,7 @@ xcopy
 XCount
 XCursor
 xdg
+xdt
 xelem
 XEnd
 XENROLL
@@ -4063,7 +4070,6 @@ YXDOMAIN
 YXRRSET
 yybegin
 yychar
-yyclose
 yyeof
 YYINITIAL
 yylength
