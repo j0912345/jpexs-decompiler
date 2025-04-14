@@ -2,6 +2,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- [#2427] Commandline export with use of imported SWFs (importAssets tag)
+
+### Fixed
+- [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
+- [#2391] Double not operator in ternar operator expression
+- [#2436] PDF export clipping - missing colors / text
+- [#2437] AS1 P-code - do not group pushes automatically
+- [#2437] AS1 - use Constant pool only on FP5+
+- [#2430] AS1/2/3 - Missing syntax hilighting of "new" keyword and few others
+- [#2428] Charset setting on FLA export in format MX and below
+- [#2428] Default charset for SWFS v5 and lower is WINDOWS-1252
+- [#2418] AS3 - initialization of class static vars in script initializer (Haxe)
+- [#2397] DefineScalingGrid - improper scaling on negative Xmin, Ymin
+- [#2425] ZIP/SWC reading - "Only DEFLATED entries can have EXT descriptor" message
 
 ## [22.0.2] - 2025-01-17
 ### Added
@@ -18,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - [#2394] Broken AS1/2 deobfuscation on incorrect length of ActionStrictMode,
 - [#2394] AS1/2 ActionStrictMode with mode larger than 1 now ignored
 - [#2393] AS1/2 ActionGotoFrame2 P-code trailing comma
+- [#2407] Replace commandline command for AS1/2 scripts must use export names
 
 ## [22.0.1] - 2024-11-20
 ### Added
@@ -3687,6 +3703,16 @@ Major version of SWF to XML export changed to 2.
 [alpha 9]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha8...alpha9
 [alpha 8]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha7...alpha8
 [alpha 7]: https://github.com/jindrapetrik/jpexs-decompiler/releases/tag/alpha7
+[#2427]: https://www.free-decompiler.com/flash/issues/2427
+[#2424]: https://www.free-decompiler.com/flash/issues/2424
+[#2391]: https://www.free-decompiler.com/flash/issues/2391
+[#2436]: https://www.free-decompiler.com/flash/issues/2436
+[#2437]: https://www.free-decompiler.com/flash/issues/2437
+[#2430]: https://www.free-decompiler.com/flash/issues/2430
+[#2428]: https://www.free-decompiler.com/flash/issues/2428
+[#2418]: https://www.free-decompiler.com/flash/issues/2418
+[#2397]: https://www.free-decompiler.com/flash/issues/2397
+[#2425]: https://www.free-decompiler.com/flash/issues/2425
 [#2375]: https://www.free-decompiler.com/flash/issues/2375
 [#2374]: https://www.free-decompiler.com/flash/issues/2374
 [#2389]: https://www.free-decompiler.com/flash/issues/2389
@@ -3694,6 +3720,7 @@ Major version of SWF to XML export changed to 2.
 [#2384]: https://www.free-decompiler.com/flash/issues/2384
 [#2394]: https://www.free-decompiler.com/flash/issues/2394
 [#2393]: https://www.free-decompiler.com/flash/issues/2393
+[#2407]: https://www.free-decompiler.com/flash/issues/2407
 [#2366]: https://www.free-decompiler.com/flash/issues/2366
 [#2367]: https://www.free-decompiler.com/flash/issues/2367
 [#2372]: https://www.free-decompiler.com/flash/issues/2372
