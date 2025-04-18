@@ -458,19 +458,19 @@ public class PinsPanel extends JPanel {
         }
     }
     
-    public void refreshScriptPacks() {
-        for (int b = 0; b < buttons.size(); b++) {
-            PinButton button = buttons.get(b);
-            if (button.getItem() instanceof ScriptPack) {
-                ScriptPack sp = (ScriptPack) button.getItem();                
-                List<ScriptPack> packs = sp.abc.getScriptPacks(null, sp.allABCs);
-                for (ScriptPack sp2 : packs) {
-                    if (Objects.equals(sp.getClassPath(), sp2.getClassPath())) {
-                        replaceItem(sp, sp2);
-                        break;
-                    }
-                }
-            }
-        }
-    }
+//    public void refreshScriptPacks() {
+//        for (int b = 0; b < buttons.size(); b++) {
+//            PinButton button = buttons.get(b);
+//            if (button.getItem() instanceof ScriptPack) {
+//                ScriptPack sp = (ScriptPack) button.getItem();                
+//                List<ScriptPack> packs = sp.abc.getScriptPacks(null, sp.allABCs);
+//                for (ScriptPack sp2 : packs) {
+//                    if (Objects.equals(sp.getClassPath(), sp2.getClassPath())) {
+//                        replaceItem(sp, sp2);
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//    }
 }
