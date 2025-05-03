@@ -25,7 +25,8 @@ Unicode true
 SetCompressor /SOLID lzma
 !include "StrFunc.nsh"
 !include x64.nsh
-
+; Asociation - triggers Nemesis detection in VirusTotal :-(
+;!include Integration.nsh
 
 !define APP_SHORTVERNAME "JPEXS FFDec v. ${APP_VER}"
 
@@ -362,10 +363,65 @@ var SMDir
   Exch $R2
 !macroend
 
-
 !define REG_CLASSES_HKEY HKLM
 
+/* ; Asociation - triggers Nemesis detection in VirusTotal :-(
 
+var className
+!define VERB "ffdec"
+!define VERB_NAME "Open with FFDec"
+!define VERB_RESOURCE_ID "1001"
+var ext
+
+Function un.RemoveExtContextMenu
+  pop $ext
+  ; ----------- Remove "Open With"
+  DeleteRegKey ${REG_CLASSES_HKEY} "Software\Classes\Applications\${APP_EXENAME}"
+  ReadRegStr $className ${REG_CLASSES_HKEY} "Software\Classes\.$ext" ""
+  IfErrors step2
+    DeleteRegKey ${REG_CLASSES_HKEY} "Software\Classes\$className\shell\${VERB}"
+  step2:  
+  DeleteRegKey ${REG_CLASSES_HKEY} "Software\Classes\SystemFileAssociations\.$ext\Shell\${VERB}"
+FunctionEnd
+
+Function AddToExtContextMenu
+    pop $ext
+    
+    ; ------------ Register "Open With"
+    WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\Applications\${APP_EXENAME}\shell\open" "" ${VERB}
+    WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\Applications\${APP_EXENAME}\shell\open\command" "" '"$INSTDIR\${APP_EXENAME}" "%1"'
+    WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\.$ext\OpenWithList\${APP_EXENAME}" "" ""  
+
+    ; ------------ Associate file extension
+    !insertmacro IfKeyExists ${REG_CLASSES_HKEY} "Software\Classes" ".$ext"
+     Pop $R0
+     ${If} $R0 == 0
+           WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\.$ext" "" "ShockwaveFlash.ShockwaveFlash"
+     ${EndIf}
+
+     ReadRegStr $className ${REG_CLASSES_HKEY} "Software\Classes\.$ext" ""
+     !insertmacro IfKeyExists ${REG_CLASSES_HKEY} "Software\Classes" $className
+     Pop $R0
+     ${If} $R0 == 0
+          WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\$className" "" "Flash Movie"
+     ${EndIf}
+
+     WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\$className\shell\${VERB}" "" "${VERB_NAME}"
+     WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\$className\shell\${VERB}\command" "" '"$INSTDIR\${APP_EXENAME}" "%1"'
+     WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\$className\shell\${VERB}" "MUIVerb" '@$INSTDIR\${APP_EXENAME},-${VERB_RESOURCE_ID}'
+    
+          
+     ; ----------- Associate global verb - if anybody changes default app, it won't remove the verbs
+     !insertmacro IfKeyExists ${REG_CLASSES_HKEY} "Software\Classes" "SystemFileAssociations"
+     Pop $R0
+     ${If} $R0 == 1
+        WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\SystemFileAssociations\.$ext\Shell\${VERB}" "" "${VERB_NAME}"
+        WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\SystemFileAssociations\.$ext\Shell\${VERB}\Command" "" '"$INSTDIR\${APP_EXENAME}" "%1"'
+        WriteRegStr ${REG_CLASSES_HKEY} "Software\Classes\SystemFileAssociations\.$ext\Shell\${VERB}" "MUIVerb" '@$INSTDIR\${APP_EXENAME},-${VERB_RESOURCE_ID}'           
+     ${EndIf}
+FunctionEnd
+
+*/
 Section "FFDec" SecDummy
                                       
   SetShellVarContext all
@@ -443,13 +499,35 @@ Function .onInit
   SectionSetFlags ${SecDummy} $0  
 FunctionEnd
 
+/* ; Asociation - triggers Nemesis detection in VirusTotal :-(
+Section "$(STRING_ADD_CONTEXT_MENU)" SecContextMenu
+    SetRegView 64
+    Push "swf"
+    Call AddToExtContextMenu
+    Push "spl"
+    Call AddToExtContextMenu
+    Push "gfx"
+    Call AddToExtContextMenu
+    
+    SetRegView 32
+    Push "swf"
+    Call AddToExtContextMenu
+    Push "spl"
+    Call AddToExtContextMenu    
+    Push "gfx"
+    Call AddToExtContextMenu
+    
+    ${NotifyShell_AssocChanged}
+SectionEnd
+*/
 ;--------------------------------
 ;Descriptions
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} "$(STRING_SECTION_APP)"
- ;   !insertmacro MUI_DESCRIPTION_TEXT ${SecContextMenu} "$(STRING_SECTION_CONTEXT_MENU)"
+  ;  Asociation - triggers Nemesis detection in VirusTotal :-(
+  ;  !insertmacro MUI_DESCRIPTION_TEXT ${SecContextMenu} "$(STRING_SECTION_CONTEXT_MENU)"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecShortcut} "$(STRING_SECTION_SHORTCUT)"
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -498,6 +576,26 @@ Section "Uninstall"
   RmDir /r "$SMPROGRAMS\$SMDir\*.*"
   RmDir "$SMPROGRAMS\$SMDir"   
   
+  /* ; Asociation - triggers Nemesis detection in VirusTotal :-(
+  SetRegView 64
+  Push "swf"
+  Call un.RemoveExtContextMenu
+  Push "spl"
+  Call un.RemoveExtContextMenu
+  Push "gfx"
+  Call un.RemoveExtContextMenu
+  
+  SetRegView 32
+  Push "swf"
+  Call un.RemoveExtContextMenu
+  Push "spl"
+  Call un.RemoveExtContextMenu
+  Push "gfx"
+  Call un.RemoveExtContextMenu
+
+  ${NotifyShell_AssocChanged}
+  
+  */
 
   StrCmp $uninstlocal 1 0 +5
     SetShellVarContext current      

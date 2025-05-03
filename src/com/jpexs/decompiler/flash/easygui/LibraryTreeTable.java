@@ -148,16 +148,52 @@ public class LibraryTreeTable extends JTreeTable {
         @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
             JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-            if (!leaf) {
+            /*if (!leaf) {
                 if (expanded) {
                     label.setIcon(View.getIcon("folderopen16"));
                 } else {
                     label.setIcon(View.getIcon("folder16"));
                 }
-            }
+            }*/
             if (value instanceof DefaultMutableTreeNode) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                 Object object = node.getUserObject();
+                if (object instanceof LibraryFolder) {
+                    String folderName = ((LibraryFolder) object).getName();
+                    String prefix = "folder";
+                    switch (folderName) {
+                        case "images":
+                            label.setIcon(View.getIcon(prefix + "images16"));
+                            break;
+                        case "graphics":
+                            label.setIcon(View.getIcon(prefix + "shapes16"));
+                            break;
+                        case "shapeTweens":
+                            label.setIcon(View.getIcon(prefix + "morphshapes16"));
+                            break;
+                        case "texts":
+                            label.setIcon(View.getIcon(prefix + "texts16"));
+                            break;
+                        case "fonts":
+                            label.setIcon(View.getIcon(prefix + "fonts16"));
+                            break;
+                        case "movieClips":
+                            label.setIcon(View.getIcon(prefix + "sprites16"));
+                            break;
+                        case "buttons":
+                            label.setIcon(View.getIcon(prefix + "buttons16"));
+                            break;
+                        case "sounds":
+                            label.setIcon(View.getIcon(prefix + "sounds16"));
+                            break;
+                        case "videos":
+                            label.setIcon(View.getIcon(prefix + "movies16"));
+                            break;
+                        default:
+                            label.setIcon(View.getIcon("folder16"));
+                            break;
+                    }
+                }
                 if (object instanceof ImageTag) {
                     ImageTag it = (ImageTag) object;
                     label.setIcon(View.getIcon("image16"));
@@ -211,6 +247,23 @@ public class LibraryTreeTable extends JTreeTable {
         }
     }
 
+    private static class LibraryFolder {
+        private String name;
+
+        public LibraryFolder(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return EasyStrings.translate("library.folder." + name);
+        }                
+
+        public String getName() {
+            return name;
+        }                
+    }
+    
     private static class LibraryTreeTableModel implements TreeTableModel {
 
         private DefaultMutableTreeNode root;
@@ -218,15 +271,15 @@ public class LibraryTreeTable extends JTreeTable {
         public LibraryTreeTableModel(SWF swf) {
             DefaultMutableTreeNode root = new DefaultMutableTreeNode("SWF");
 
-            DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.images"));
-            DefaultMutableTreeNode graphicsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.graphics"));
-            DefaultMutableTreeNode shapeTweensNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.shapeTweens"));
-            DefaultMutableTreeNode textsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.texts"));
-            DefaultMutableTreeNode fontsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.fonts"));
-            DefaultMutableTreeNode movieClipsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.movieClips"));
-            DefaultMutableTreeNode buttonsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.buttons"));
-            DefaultMutableTreeNode soundsNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.sounds"));
-            DefaultMutableTreeNode videosNode = new DefaultMutableTreeNode(EasyStrings.translate("library.folder.videos"));
+            DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode(new LibraryFolder("images"));
+            DefaultMutableTreeNode graphicsNode = new DefaultMutableTreeNode(new LibraryFolder("graphics"));
+            DefaultMutableTreeNode shapeTweensNode = new DefaultMutableTreeNode(new LibraryFolder("shapeTweens"));
+            DefaultMutableTreeNode textsNode = new DefaultMutableTreeNode(new LibraryFolder("texts"));
+            DefaultMutableTreeNode fontsNode = new DefaultMutableTreeNode(new LibraryFolder("fonts"));
+            DefaultMutableTreeNode movieClipsNode = new DefaultMutableTreeNode(new LibraryFolder("movieClips"));
+            DefaultMutableTreeNode buttonsNode = new DefaultMutableTreeNode(new LibraryFolder("buttons"));
+            DefaultMutableTreeNode soundsNode = new DefaultMutableTreeNode(new LibraryFolder("sounds"));
+            DefaultMutableTreeNode videosNode = new DefaultMutableTreeNode(new LibraryFolder("videos"));
 
             this.root = root;
 

@@ -21,6 +21,7 @@ import com.jpexs.decompiler.flash.SourceGeneratorLocalData;
 import com.jpexs.decompiler.flash.abc.ABC;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2Code;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2ConstantPool;
+import com.jpexs.decompiler.flash.abc.avm2.graph.AVM2GraphTargetDialect;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instructions;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.InstructionDefinition;
@@ -450,7 +451,7 @@ public class AVM2SourceGenerator implements SourceGenerator {
                 AssignableAVM2Item.setTemp(localData, this, collectionReg)
         ));
 
-        GraphTargetItem assigned = new GraphTargetItem() {
+        GraphTargetItem assigned = new GraphTargetItem(AVM2GraphTargetDialect.INSTANCE) {
             @Override
             public GraphTextWriter appendTo(GraphTextWriter writer, LocalData localData) throws InterruptedException {
                 return null;
@@ -770,7 +771,7 @@ public class AVM2SourceGenerator implements SourceGenerator {
                  */
                 List<NameValuePair> pairs = new ArrayList<>();
                 for (String tname : skinParts.keySet()) {
-                    pairs.add(new NameValuePair(new StringAVM2Item(null, null, tname), skinParts.get(tname) ? new TrueItem(null, null) : new FalseItem(null, null)));
+                    pairs.add(new NameValuePair(new StringAVM2Item(null, null, tname), skinParts.get(tname) ? new TrueItem(AVM2GraphTargetDialect.INSTANCE, null, null) : new FalseItem(AVM2GraphTargetDialect.INSTANCE, null, null)));
                 }
 
                 NewObjectAVM2Item sltVal = new NewObjectAVM2Item(null, null, pairs);
@@ -826,7 +827,6 @@ public class AVM2SourceGenerator implements SourceGenerator {
             }
         }
 
-        //List<AVM2Instruction> cinitcode = new ArrayList<>();
         List<AVM2Instruction> initcode = new ArrayList<>();
         for (GraphTargetItem ti : commands) {
             if ((ti instanceof SlotAVM2Item) || (ti instanceof ConstAVM2Item)) {
@@ -854,13 +854,6 @@ public class AVM2SourceGenerator implements SourceGenerator {
                         continue;
                     }
                 }
-                /*if (isStatic && val != null) {
-                    cinitcode.add(ins(AVM2Instructions.FindProperty, traitName(ns, tname)));
-                    localData.isStatic = true;
-                    cinitcode.addAll(toInsList(val.toSource(localData, this)));
-                    cinitcode.add(ins(isConst ? AVM2Instructions.InitProperty : AVM2Instructions.SetProperty, traitName(ns, tname)));
-                }
-                 */
                 if (!isStatic && val != null) {
                     //do not init basic values, that can be stored in trait
                     if (!(val instanceof IntegerValueAVM2Item)
@@ -881,11 +874,18 @@ public class AVM2SourceGenerator implements SourceGenerator {
         MethodBody initBody = null;
         if (!isInterface) {
             initBody = abcIndex.getSelectedAbc().findBody(init);
-            initBody.getCode().code.addAll(iinit == null ? 0 : 2, initcode); //after getlocal0,pushscope
 
-            /*if (cinitBody.getCode().code.get(cinitBody.getCode().code.size() - 1).definition instanceof ReturnVoidIns) {
-                cinitBody.getCode().code.addAll(2, cinitcode); //after getlocal0,pushscope
-            }*/
+            int len = 0;
+            for (AVM2Instruction ins : initcode) {
+                len += ins.getBytesLength();
+            }
+
+            initBody.getCode().code.addAll(iinit == null ? 0 : 2, initcode); //after getlocal0,pushscope
+            for (ABCException ex : initBody.exceptions) {
+                ex.start += len;
+                ex.end += len;
+                ex.target += len;
+            }
         }
         cinitBody.markOffsets();
         cinitBody.autoFillStats(abcIndex.getSelectedAbc(), initScope + (implementsStr.isEmpty() ? 0 : 1), true);

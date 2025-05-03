@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - [#2427] Commandline export with use of imported SWFs (importAssets tag)
+- Auto detect scale factor on Hi-dpi displays
+- [#1826] (Optional) Extending shape area by half pixel to fix antialias conflation artifacts
+  (Can be turned on in advanced settings)
+- Icons for Simple editor library folders
+- [#2448] Simple editor - Option to turn off half transparent parent layers
+- Localized "Open with FFDec" context menu (switch association off/on to apply if already installed)
 
 ### Fixed
 - [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
@@ -20,6 +26,33 @@ All notable changes to this project will be documented in this file.
 - Drawing points and shape paths highlighting did not respect UI scale factor
 - [#2416] FLA export - shape fixing in some cases
 - [#2394] FLA export - shape tweens in some cases
+- Not resetting timeline after shape tag type conversion
+- [#2400] Transforming - buttons must use hit test frame outline
+- [#2413] AS3 direct editation - try/catch clause in instance initializer
+- [#2386] Editor mode - not able to save shape/morphshape points
+- Loading icon did not respect UI scale factor
+- Editor (JSyntaxPane) incorrectly draws line numbers panel on Hi-dpi displays
+- Substance LAF - Shadow in text (mostly in window titles) drawn incorrectly
+- Incorrect icons for `New empty` action - with dashed borders
+- [#2443] SVG importer - converting cubic bezier curves to quadratic
+- [#2444] SVG importer - improper stroke width when using width/height with viewBox
+- [#2444] SVG importer - stroke width not respecting transforms
+- [#2415] AS3 direct editation - nested functions - prefer callstack variables over prototype chain
+- AS3 - AIR float support - incorrect writing float values to output stream
+- AS3 - AIR float support - ABC Explorer incorrectly calculating float usages (For clean action, etc.)
+- [#2446] Nightly version asked for update to previous stable
+- [#2447] SVG import - gradients can inherit (href) from other gradient types (radial vs linear)
+- [#2450] Morphshape replace button/menu is not working (throws exception due to missing icon)
+- [#2355] AS1/2/3 Simplify expressions feature colliding with some other features like hex values
+- Exception on FFDec start when simple editor is on
+- [#2419] AS3 - There should be empty line after class header
+- AS 1/2/3 - Fast switching of scripts causing incorrect caret position remembered
+- AS 1/2 - Remembering caret position for frames
+- Cleaner file association
+
+### Removed
+- Windows installer does not associate SWF files anymore as it caused false positives on some AVs.
+  You can associate them later in FFDec settings.
 
 ## [22.0.2] - 2025-01-17
 ### Added
@@ -3707,6 +3740,8 @@ Major version of SWF to XML export changed to 2.
 [alpha 8]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha7...alpha8
 [alpha 7]: https://github.com/jindrapetrik/jpexs-decompiler/releases/tag/alpha7
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
+[#1826]: https://www.free-decompiler.com/flash/issues/1826
+[#2448]: https://www.free-decompiler.com/flash/issues/2448
 [#2424]: https://www.free-decompiler.com/flash/issues/2424
 [#2391]: https://www.free-decompiler.com/flash/issues/2391
 [#2436]: https://www.free-decompiler.com/flash/issues/2436
@@ -3718,6 +3753,17 @@ Major version of SWF to XML export changed to 2.
 [#2425]: https://www.free-decompiler.com/flash/issues/2425
 [#2416]: https://www.free-decompiler.com/flash/issues/2416
 [#2394]: https://www.free-decompiler.com/flash/issues/2394
+[#2400]: https://www.free-decompiler.com/flash/issues/2400
+[#2413]: https://www.free-decompiler.com/flash/issues/2413
+[#2386]: https://www.free-decompiler.com/flash/issues/2386
+[#2443]: https://www.free-decompiler.com/flash/issues/2443
+[#2444]: https://www.free-decompiler.com/flash/issues/2444
+[#2415]: https://www.free-decompiler.com/flash/issues/2415
+[#2446]: https://www.free-decompiler.com/flash/issues/2446
+[#2447]: https://www.free-decompiler.com/flash/issues/2447
+[#2450]: https://www.free-decompiler.com/flash/issues/2450
+[#2355]: https://www.free-decompiler.com/flash/issues/2355
+[#2419]: https://www.free-decompiler.com/flash/issues/2419
 [#2375]: https://www.free-decompiler.com/flash/issues/2375
 [#2374]: https://www.free-decompiler.com/flash/issues/2374
 [#2389]: https://www.free-decompiler.com/flash/issues/2389

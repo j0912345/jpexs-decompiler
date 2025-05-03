@@ -83,11 +83,13 @@ import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinReg;
 import java.awt.Component;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.MenuItem;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.Window;
+import java.awt.geom.AffineTransform;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -102,6 +104,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -1274,7 +1277,7 @@ public class Main {
 
                                 if (selFile == null && (url.startsWith("http://") || url.startsWith("https://"))) {
                                     try {
-                                        URL u = new URL(url);
+                                        URL u = URI.create(url).toURL();
                                         SWF ret = open(u.openStream(), null, url); //?
                                         loadedStatus.add("YES");
                                         return ret;
@@ -2530,6 +2533,14 @@ public class Main {
         System.setProperty("sun.java2d.noddraw", "true");
 
         if (System.getProperty("sun.java2d.uiScale") == null) { //it was not set by commandline, etc.       
+            if (!Configuration.uiScale.hasValue()) {
+                GraphicsConfiguration configuration = View.getMainDefaultScreenDevice().getDefaultConfiguration();
+
+                AffineTransform transform = configuration.getDefaultTransform();
+                if (transform != null) {
+                    Configuration.uiScale.set(transform.getScaleX());
+                }
+            }
             System.setProperty("sun.java2d.uiScale", "" + Configuration.uiScale.get());
         }
 
@@ -3317,7 +3328,7 @@ public class Main {
     private static JsonValue urlGetJson(String getUrl) {
         try {
             String proxyAddress = Configuration.updateProxyAddress.get();
-            URL url = new URL(getUrl);
+            URL url = URI.create(getUrl).toURL();
 
             URLConnection uc;
             if (proxyAddress != null && !proxyAddress.isEmpty()) {
@@ -3343,8 +3354,8 @@ public class Main {
 
     public static boolean checkForUpdates() {
         String currentVersion = ApplicationInfo.version;
-        if (currentVersion.equals("unknown")) {
-            // sometimes during development the version information is not available
+        if (currentVersion.equals("unknown") || currentVersion.equals("0.0.0")) {
+            // during development the version information is not available
             return false;
         }
 
@@ -3354,14 +3365,17 @@ public class Main {
         if (!showStable && !showNightly) {
             return false;
         }
-
+                
+        String stableTagName = "version" + ApplicationInfo.version_major + "." + ApplicationInfo.version_minor + "." + ApplicationInfo.version_release;
+        String ignoreVersion = "-";
+        
         String currentTagName;
         if (ApplicationInfo.nightly) {
             currentTagName = "nightly" + ApplicationInfo.version_build;
         } else {
-            currentTagName = "version" + ApplicationInfo.version_major + "." + ApplicationInfo.version_minor + "." + ApplicationInfo.version_release;
+            currentTagName = stableTagName;
         }
-
+        
         if (!showNightly) {
             //prereleases are not shown as latest, when checking latest nightly, this is useless
             JsonValue latestVersionInfoJson = urlGetJson(ApplicationInfo.GITHUB_RELEASES_LATEST_URL);
@@ -3369,7 +3383,7 @@ public class Main {
                 return false;
             }
             String latestTagName = latestVersionInfoJson.asObject().get("tag_name").asString();
-            if (currentTagName.equals(latestTagName)) {
+            if (currentTagName.equals(latestTagName) || stableTagName.equals(latestTagName)) {
                 //no new version
                 return false;
             }
@@ -3384,7 +3398,7 @@ public class Main {
         for (int i = 0; i < arr.size(); i++) {
             JsonObject versionObj = arr.get(i).asObject();
             String tagName = versionObj.get("tag_name").asString();
-            if (currentVersion.equals(tagName)) {
+            if (currentVersion.equals(tagName) || stableTagName.equals(tagName)) {
                 //Stop at current version, do not display more
                 break;
             }
