@@ -344,7 +344,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private JPersistentSplitPane displayEditTransformSplitPane;
 
     private JPersistentSplitPane imageTransformSplitPane;
-    
+
     private DocumentListener cookieDocumentListener;
 
     public void setReadOnly(boolean readOnly) {
@@ -753,7 +753,6 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         cookieFilenameField = new JTextField(30);
         amfVersionLabel = new JLabel();
         cookieEditor = new LineMarkedEditorPane();
-        
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.add(new JLabel(AppStrings.translate(SolEditorFrame.class, "filename")));
@@ -764,7 +763,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         cookieCard.add(topPanel, BorderLayout.NORTH);
         cookieCard.add(new FasterScrollPane(cookieEditor), BorderLayout.CENTER);
         cookieCard.add(createCookieButtonsPanel(), BorderLayout.SOUTH);
-        
+
         cookieEditor.setContentType("text/javascript");
 
         cookieDocumentListener = new DocumentListener() {
@@ -782,8 +781,8 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
             public void changedUpdate(DocumentEvent e) {
                 setCookieModified(true);
             }
-            
-        };        
+
+        };
         return cookieCard;
     }
 
@@ -997,15 +996,31 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 int pointsPos = 0;
                 int x = 0;
                 int y = 0;
+                StyleChangeRecord lastStyleChangeRecord = null;
+                boolean wasMoveTo = false;
                 for (int i = 0; i < selectedRecords.size(); i++) {
                     SHAPERECORD rec = selectedRecords.get(i);
                     if (rec instanceof StyleChangeRecord) {
                         StyleChangeRecord scr = (StyleChangeRecord) rec;
+                        lastStyleChangeRecord = scr;
                         if (scr.stateMoveTo) {
                             scr.moveDeltaX = points.get(pointsPos).x;
                             scr.moveDeltaY = points.get(pointsPos).y;
                             scr.calculateBits();
                             pointsPos++;
+                            wasMoveTo = true;
+                        }
+                    }
+                    if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                        if (lastStyleChangeRecord != null) {
+                            lastStyleChangeRecord.moveDeltaX = points.get(pointsPos).x;
+                            lastStyleChangeRecord.moveDeltaY = points.get(pointsPos).y;
+                            if (lastStyleChangeRecord.moveDeltaX != 0 || lastStyleChangeRecord.moveDeltaY != 0) {
+                                lastStyleChangeRecord.stateMoveTo = true;
+                                lastStyleChangeRecord.calculateBits();
+                            }
+                            pointsPos++;
+                            wasMoveTo = true;
                         }
                     }
                     if (rec instanceof StraightEdgeRecord) {
@@ -1074,13 +1089,25 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                     int importantRecordPos = importantRecordPosRef.getVal();
                     int otherPosition = 0;
                     int otherImportantRecordPos = 0;
+                    boolean wasMoveTo = false;
+                    StyleChangeRecord lastStyleChangeRecord = null;
                     for (int i = 0; i < otherRecords.size(); i++) {
                         SHAPERECORD rec = otherRecords.get(i);
                         if (rec instanceof StyleChangeRecord) {
                             StyleChangeRecord scr = (StyleChangeRecord) rec;
+                            lastStyleChangeRecord = scr;
                             if (scr.stateMoveTo) {
                                 otherPosition++;
                                 otherImportantRecordPos++;
+                                wasMoveTo = true;
+                            }
+                        }
+                        
+                        if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                            if (lastStyleChangeRecord != null) {
+                                otherPosition++;
+                                otherImportantRecordPos++;
+                                wasMoveTo = true;
                             }
                         }
                         if (rec instanceof StraightEdgeRecord) {
@@ -1109,13 +1136,24 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 int x = 0;
                 int y = 0;
                 int importantRecordPos = 0;
+                boolean wasMoveTo = false;
+                StyleChangeRecord lastStyleChangeRecord = null;
                 for (int i = 0; i < selectedRecords.size(); i++) {
                     SHAPERECORD rec = selectedRecords.get(i);
                     if (rec instanceof StyleChangeRecord) {
                         StyleChangeRecord scr = (StyleChangeRecord) rec;
+                        lastStyleChangeRecord = scr;
                         if (scr.stateMoveTo) {
                             pointsPos++;
                             importantRecordPos++;
+                            wasMoveTo = true;
+                        }
+                    }
+                    if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                        if (lastStyleChangeRecord != null) {
+                            pointsPos++;
+                            importantRecordPos++;
+                            wasMoveTo = true;
                         }
                     }
                     if (rec instanceof StraightEdgeRecord) {
@@ -1213,13 +1251,24 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                     int importantRecordPos = importantRecordPosRef.getVal();
                     int otherPosition = 0;
                     int otherImportantRecordPos = 0;
+                    StyleChangeRecord lastStyleChangeRecord = null;
+                    boolean wasMoveTo = false;
                     for (int i = 0; i < otherRecords.size(); i++) {
                         SHAPERECORD rec = otherRecords.get(i);
                         if (rec instanceof StyleChangeRecord) {
                             StyleChangeRecord scr = (StyleChangeRecord) rec;
+                            lastStyleChangeRecord = scr;
                             if (scr.stateMoveTo) {
                                 otherPosition++;
                                 otherImportantRecordPos++;
+                                wasMoveTo = true;
+                            }
+                        }
+                        if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                            if (lastStyleChangeRecord != null) {
+                                otherPosition++;
+                                otherImportantRecordPos++;
+                                wasMoveTo = true;
                             }
                         }
                         if (rec instanceof StraightEdgeRecord) {
@@ -1248,7 +1297,10 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 int importantRecordPos = 0;
                 int x = 0;
                 int y = 0;
-
+                
+                
+                StyleChangeRecord lastStyleChangeRecord = null;
+                boolean wasMoveTo = false;
                 for (int i = 0; i < selectedRecords.size(); i++) {
                     SHAPERECORD rec = selectedRecords.get(i);
                     SHAPERECORD prevRec = i == 0 ? null : selectedRecords.get(i - 1);
@@ -1256,9 +1308,18 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
                     if (rec instanceof StyleChangeRecord) {
                         StyleChangeRecord scr = (StyleChangeRecord) rec;
+                        lastStyleChangeRecord = scr;
                         if (scr.stateMoveTo) {
                             pointsPos++;
                             importantRecordPos++;
+                            wasMoveTo = true;
+                        }
+                    }
+                    if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                        if (lastStyleChangeRecord != null) {
+                            pointsPos++;
+                            importantRecordPos++;
+                            wasMoveTo = true;
                         }
                     }
                     if (rec instanceof StraightEdgeRecord) {
@@ -1689,7 +1750,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         showCardLeft(FLASH_VIEWER_CARD);
     }
 
-    public void showImagePanel(Timelined timelined, SWF swf, int frame, boolean showObjectsUnderCursor, boolean autoPlay, boolean frozen, boolean alwaysDisplay, boolean muted, boolean mutable, boolean allowFreeTransform, boolean allowZoom, boolean frozenButtons) {
+    public void showImagePanel(Timelined timelined, SWF swf, int frame, boolean showObjectsUnderCursor, boolean autoPlay, boolean frozen, boolean alwaysDisplay, boolean muted, boolean mutable, boolean allowFreeTransform, boolean allowZoom, boolean frozenButtons, boolean canHaveRuler) {
         showCardLeft(DRAW_PREVIEW_CARD);
         parametersPanel.setVisible(false);
         imagePlayControls.setMedia(imagePanel);
@@ -1699,7 +1760,14 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         }
         imageTransformSaveButton.setVisible(false);
         imageTransformCancelButton.setVisible(false);
-        imagePanel.setTimelined(timelined, swf, frame, showObjectsUnderCursor, autoPlay, frozen, alwaysDisplay, muted, mutable, allowZoom, frozenButtons);
+        imagePanel.setTimelined(timelined, swf, frame, showObjectsUnderCursor, autoPlay, frozen, alwaysDisplay, muted, mutable, allowZoom, frozenButtons, canHaveRuler);
+        if (canHaveRuler) {
+            if (timelined instanceof Tag) {
+                imagePanel.setGuidesCharacter(swf, ((CharacterTag) timelined).getCharacterId());
+            } else {
+                imagePanel.setGuidesCharacter(swf, -1);
+            }
+        }
     }
 
     public void showImagePanel(SerializableImage image) {
@@ -1738,7 +1806,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
     private void showFontPage(FontTag fontTag) {
         if (!MainPanel.isAdobeFlashPlayerEnabled() /*|| ft instanceof GFxDefineCompactedFont*/) {
-            showImagePanel(TimelinedMaker.makeTimelined(fontTag), fontTag.getSwf(), fontPageNum, true, true, true, true, true, false, false, false, true);
+            showImagePanel(TimelinedMaker.makeTimelined(fontTag), fontTag.getSwf(), fontPageNum, true, true, true, true, true, false, false, false, true, false);
         }
     }
 
@@ -1757,7 +1825,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
     public void showTextPanel(TextTag textTag) {
         if (!MainPanel.isAdobeFlashPlayerEnabled() /*|| ft instanceof GFxDefineCompactedFont*/) {
-            showImagePanel(TimelinedMaker.makeTimelined(textTag), textTag.getSwf(), 0, true, true, true, true, true, false, false, true, true);
+            showImagePanel(TimelinedMaker.makeTimelined(textTag), textTag.getSwf(), 0, true, true, true, true, true, false, false, true, true, true);
         }
 
         showCardRight(CARDTEXTPANEL);
@@ -2028,16 +2096,25 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         displayEditImagePanel.selectDepth(-1);
         if (tag instanceof ShapeTag) {
             Timelined tim = TimelinedMaker.makeTimelined(tag);
-            displayEditImagePanel.setTimelined(tim, ((Tag) tag).getSwf(), 0, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true);
+            displayEditImagePanel.setTimelined(tim, ((Tag) tag).getSwf(), 0, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true, true);
+            displayEditImagePanel.setGuidesCharacter(tag.getSwf(), ((CharacterTag) tag).getCharacterId());
         }
         if (tag instanceof MorphShapeTag) {
             Timelined tim = TimelinedMaker.makeTimelined(tag);
-            displayEditImagePanel.setTimelined(tim, ((Tag) tag).getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true);
+            displayEditImagePanel.setTimelined(tim, ((Tag) tag).getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true, true);
+            displayEditImagePanel.setGuidesCharacter(tag.getSwf(), ((CharacterTag) tag).getCharacterId());
             morphDisplayMode = MORPH_ANIMATE;
             displayEditShowAnimationButton.setSelected(true);
         }
         if (tag instanceof PlaceObjectTypeTag) {
-            displayEditImagePanel.setTimelined(((Tag) tag).getTimelined(), ((Tag) tag).getSwf(), frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, true, true);
+            displayEditImagePanel.setTimelined(((Tag) tag).getTimelined(), ((Tag) tag).getSwf(), frame, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), true, true, true, true);
+            Timelined tim = ((Tag) tag).getTimelined();
+            if (tim instanceof Tag) {
+                displayEditImagePanel.setGuidesCharacter(tag.getSwf(), ((CharacterTag) tim).getCharacterId());
+            } else {
+                displayEditImagePanel.setGuidesCharacter(tag.getSwf(), -1);
+            }
+
             PlaceObjectTypeTag place = (PlaceObjectTypeTag) tag;
             displayEditImagePanel.selectDepth(place.getDepth());
         }
@@ -2379,12 +2456,15 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private void transformSHAPE(Matrix matrix, SHAPE shape, int shapeNum) {
         int x = 0;
         int y = 0;
+        StyleChangeRecord lastStyleChangeRecord = null;
+        boolean wasMoveTo = false;
         for (SHAPERECORD rec : shape.shapeRecords) {
             if (rec instanceof StyleChangeRecord) {
                 StyleChangeRecord scr = (StyleChangeRecord) rec;
+                lastStyleChangeRecord = scr;
                 if (scr.stateNewStyles) {
                     transformStyles(matrix, scr.fillStyles, scr.lineStyles, shapeNum);
-                }
+                }                
                 if (scr.stateMoveTo) {
                     Point nextPoint = new Point(scr.moveDeltaX, scr.moveDeltaY);
                     x = scr.changeX(x);
@@ -2392,6 +2472,21 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                     Point nextPoint2 = matrix.transform(nextPoint);
                     scr.moveDeltaX = nextPoint2.x;
                     scr.moveDeltaY = nextPoint2.y;
+                    scr.calculateBits();
+                    wasMoveTo = true;
+                }
+            }
+            
+            if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {                
+                if (lastStyleChangeRecord != null) {
+                    Point nextPoint2 = matrix.transform(new Point(x, y));
+                    if (nextPoint2.x != 0 || nextPoint2.y != 0) {
+                        lastStyleChangeRecord.stateMoveTo = true;
+                        lastStyleChangeRecord.moveDeltaX = nextPoint2.x;
+                        lastStyleChangeRecord.moveDeltaY = nextPoint2.y;
+                        lastStyleChangeRecord.calculateBits();
+                        wasMoveTo = true;
+                    }
                 }
             }
             if (rec instanceof StraightEdgeRecord) {
@@ -2718,19 +2813,22 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private void showAnimationDisplayEditTagButtonActionPerformed(ActionEvent evt) {
         morphDisplayMode = MORPH_ANIMATE;
         Timelined tim = TimelinedMaker.makeTimelined(displayEditTag);
-        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true);
+        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), -1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true, true);
+        displayEditImagePanel.setGuidesCharacter(displayEditTag.getSwf(), ((CharacterTag) displayEditTag).getCharacterId());
     }
 
     private void showStartDisplayEditTagButtonActionPerformed(ActionEvent evt) {
         morphDisplayMode = MORPH_START;
         Timelined tim = TimelinedMaker.makeTimelined(displayEditTag);
-        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), 0, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true);
+        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), 0, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true, true);
+        displayEditImagePanel.setGuidesCharacter(displayEditTag.getSwf(), ((CharacterTag) displayEditTag).getCharacterId());
     }
 
     private void showEndDisplayEditTagButtonActionPerformed(ActionEvent evt) {
         morphDisplayMode = MORPH_END;
         Timelined tim = TimelinedMaker.makeTimelined(displayEditTag);
-        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), tim.getFrameCount() - 1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true);
+        displayEditImagePanel.setTimelined(tim, displayEditTag.getSwf(), tim.getFrameCount() - 1, true, Configuration.autoPlayPreviews.get(), !Configuration.animateSubsprites.get(), false, !Configuration.playFrameSounds.get(), false, true, true, true);
+        displayEditImagePanel.setGuidesCharacter(displayEditTag.getSwf(), ((CharacterTag) displayEditTag).getCharacterId());
     }
 
     private void editPointsDisplayEditTagButtonActionPerformed(ActionEvent evt) {
@@ -2745,7 +2843,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         replaceShapeUpdateBoundsButton.setVisible(false);
         replaceMorphShapeUpdateBoundsButton.setVisible(false);
         displayEditEditPointsButton.setVisible(false);
-        
+
         displayEditSaveButton.setEnabled(true);
         displayEditCancelButton.setEnabled(true);
 
@@ -2802,7 +2900,17 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         int y = 0;
 
         List<DisplayPoint> points = new ArrayList<>();
+        boolean wasMoveTo = false;
+        StyleChangeRecord lastStyleChangeRecord = null;
         for (SHAPERECORD rec : selectedRecords) {
+            if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
+                if (lastStyleChangeRecord != null) {
+                    DisplayPoint point = new DisplayPoint(0, 0);
+                    points.add(point);
+                    wasMoveTo = true;
+                }
+            }
+            
             if (rec instanceof StraightEdgeRecord) {
                 StraightEdgeRecord ser = (StraightEdgeRecord) rec;
                 DisplayPoint point = new DisplayPoint(x + ser.deltaX, y + ser.deltaY);
@@ -2815,11 +2923,14 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 points.add(controlPoint);
                 points.add(anchorPoint);
             }
+            
             if (rec instanceof StyleChangeRecord) {
                 StyleChangeRecord scr = (StyleChangeRecord) rec;
+                lastStyleChangeRecord = scr;
                 if (scr.stateMoveTo) {
                     DisplayPoint point = new DisplayPoint(scr.moveDeltaX, scr.moveDeltaY);
                     points.add(point);
+                    wasMoveTo = true;
                 }
             }
 
@@ -3075,7 +3186,8 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
             }
         };
 
-        imagePanel.setTimelined(tim, origSwf, 0, true, true, true, true, true, false, true, true);
+        imagePanel.setTimelined(tim, origSwf, 0, true, true, true, true, true, false, true, true, true);
+        imagePanel.setGuidesCharacter(displayedCharacter.getSwf(), ((CharacterTag) displayedCharacter).getCharacterId());
         imagePanel.selectDepth(-1);
 
         replaceSpriteButton.setVisible(false);
@@ -3187,7 +3299,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         int pageCount = getFontPageCount(fontTag);
         fontPageNum = (fontPageNum + pageCount - 1) % pageCount;
         if (!MainPanel.isAdobeFlashPlayerEnabled() /*|| ft instanceof GFxDefineCompactedFont*/) {
-            imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true);
+            imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);
         }
     }
 
@@ -3196,7 +3308,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         int pageCount = getFontPageCount(fontTag);
         fontPageNum = (fontPageNum + 1) % pageCount;
         if (!MainPanel.isAdobeFlashPlayerEnabled() /*|| ft instanceof GFxDefineCompactedFont*/) {
-            imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true);
+            imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);
         }
     }
 
