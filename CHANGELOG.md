@@ -14,6 +14,15 @@ All notable changes to this project will be documented in this file.
 - Objects dragging - show touch point and snap it to 9 important points around object rectangle
 - [#2370] Snap to guides, objects and pixels, Snap align, toggle with magnet icon
 - [#2370] Show/Hide guides, lock guides, clear guides actions from icon menu
+- Display grid, snap to grid
+- [#2370] Snap align border space, object spacing, center alignment
+- [#2370] Setting for color and snap accuracy for guides, grid
+- [#2370] Dialogs for editing grid, guides and snapping
+- [#2453] SVG export/import - use image-rendering attribute for image smoothing
+- Option to enter custom zoom level by clicking on zoom percentage label
+- Show in Simple editor context menu item for timelined items (sprites, buttons, swfs)
+- Simple editor - change background color
+- Simple editor - filters (read only yet)
 
 ### Fixed
 - [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
@@ -54,8 +63,17 @@ All notable changes to this project will be documented in this file.
 - AS 1/2 - Remembering caret position for frames
 - Cleaner file association
 - Editing shape points / transform when first edge has no moveTo flag (coordinates 0, 0)
+- Exceptions when closing non-ribbon window
+- [PR215] ffdec.sh - Ignore all java options when checking version
+- Text search was not available as context menu option for AS3 scripts folder
+- [#2454] SVG export - color matrix not applied to images
+- [PR216] ffdec.sh - Support BSD version of sed in java version checks
+- Simple editor - adding a library item to the last frame adds a frame
+- Simple editor - white square on top left corner of the timeline
 
 ### Removed
+- Option to preview flash items via ActiveX component is no longer available.
+  FFDec now supports its internal flash viewer only.
 - Windows installer does not associate SWF files anymore as it caused false positives on some AVs.
   You can associate them later in FFDec settings.
 
@@ -3748,6 +3766,7 @@ Major version of SWF to XML export changed to 2.
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448
 [#2370]: https://www.free-decompiler.com/flash/issues/2370
+[#2453]: https://www.free-decompiler.com/flash/issues/2453
 [#2424]: https://www.free-decompiler.com/flash/issues/2424
 [#2391]: https://www.free-decompiler.com/flash/issues/2391
 [#2436]: https://www.free-decompiler.com/flash/issues/2436
@@ -3770,6 +3789,7 @@ Major version of SWF to XML export changed to 2.
 [#2450]: https://www.free-decompiler.com/flash/issues/2450
 [#2355]: https://www.free-decompiler.com/flash/issues/2355
 [#2419]: https://www.free-decompiler.com/flash/issues/2419
+[#2454]: https://www.free-decompiler.com/flash/issues/2454
 [#2375]: https://www.free-decompiler.com/flash/issues/2375
 [#2374]: https://www.free-decompiler.com/flash/issues/2374
 [#2389]: https://www.free-decompiler.com/flash/issues/2389
@@ -4911,6 +4931,8 @@ Major version of SWF to XML export changed to 2.
 [#32]: https://www.free-decompiler.com/flash/issues/32
 [#31]: https://www.free-decompiler.com/flash/issues/31
 [#27]: https://www.free-decompiler.com/flash/issues/27
+[PR215]: https://github.com/jindrapetrik/jpexs-decompiler/pull/215
+[PR216]: https://github.com/jindrapetrik/jpexs-decompiler/pull/216
 [PR203]: https://github.com/jindrapetrik/jpexs-decompiler/pull/203
 [PR190]: https://github.com/jindrapetrik/jpexs-decompiler/pull/190
 [PR194]: https://github.com/jindrapetrik/jpexs-decompiler/pull/194

@@ -18,12 +18,18 @@ package com.jpexs.decompiler.flash.gui.player;
 
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.configuration.ConfigurationItemChangeListener;
+import com.jpexs.decompiler.flash.ecma.EcmaNumberToString;
 import com.jpexs.decompiler.flash.gui.AppStrings;
+import com.jpexs.decompiler.flash.gui.GridDialog;
+import com.jpexs.decompiler.flash.gui.GuidesDialog;
+import com.jpexs.decompiler.flash.gui.Main;
 import com.jpexs.decompiler.flash.gui.PopupButton;
 import com.jpexs.decompiler.flash.gui.View;
-import com.jpexs.decompiler.flash.gui.abc.SnapOptionsButton;
+import com.jpexs.decompiler.flash.gui.ViewMessages;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -93,19 +99,64 @@ public class ZoomPanel extends JPanel implements MediaDisplayListener {
                 lockGuidesMenuItem.addActionListener(ZoomPanel.this::guidesLockActionPerformed);
                 JMenuItem clearGuidesMenuItem = new JMenuItem(AppStrings.translate("guides_options.clear"));
                 clearGuidesMenuItem.addActionListener(ZoomPanel.this::guidesClearActionPerformed);
+                JMenuItem editGuidesMenuItem = new JMenuItem(AppStrings.translate("guides_options.edit"));
+                editGuidesMenuItem.addActionListener(ZoomPanel.this::guidesEditActionPerformed);
 
                 menu.add(showGuidesMenuItem);
                 menu.add(lockGuidesMenuItem);
                 menu.add(clearGuidesMenuItem);
+                menu.add(editGuidesMenuItem);
 
                 return menu;
             }
         };
 
-        guidesOptionsButton.setToolTipText(AppStrings.translate("button.guides_options.hint"));
+        guidesOptionsButton.setToolTipText(AppStrings.translate("button.guides_options"));
 
         snapOptionsButton = new SnapOptionsButton();
+        
+        PopupButton gridButton = new PopupButton(View.getIcon("grid16")) {
+            @Override
+            protected JPopupMenu getPopupMenu() {
+                JPopupMenu menu = new JPopupMenu();
+                JCheckBoxMenuItem showGridCheckBoxMenuItem = new JCheckBoxMenuItem(AppStrings.translate("grid_options.show_grid"));
+                showGridCheckBoxMenuItem.addActionListener(ZoomPanel.this::showGridCheckBoxMenuItemActionPerformed);
+                showGridCheckBoxMenuItem.setSelected(Configuration.showGrid.get());
+                menu.add(showGridCheckBoxMenuItem);
+                
+                JMenuItem editGridMenuItem = new JMenuItem(AppStrings.translate("grid_options.edit"));
+                editGridMenuItem.addActionListener(ZoomPanel.this::editGridMenuItemActionPerformed);
+                menu.add(editGridMenuItem);
+                
+                return menu;
+            }            
+        };
+        gridButton.setToolTipText(AppStrings.translate("button.grid_options"));       
 
+        
+        percentLabel.setToolTipText(AppStrings.translate("zoom.hint"));
+        percentLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                double currentZoom = roundZoom(getRealZoom() * 100, 3);
+                String newZoomStr = ViewMessages.showInputDialog(ZoomPanel.this, AppStrings.translate("zoom.enter"), AppStrings.translate("zoom"), View.getIcon("zoom32"), EcmaNumberToString.stringFor(currentZoom));
+                if (newZoomStr != null) {
+                    try {
+                        double newZoom = Double.parseDouble(newZoomStr) / 100;
+                        if (newZoom <= 0) {
+                            return;
+                        }
+                        realZoom = newZoom;
+                        zoomToFit = false;
+                        updateZoom();
+                    } catch (NumberFormatException nfe) {
+                        //ignore
+                    }
+                    
+                }
+            }            
+        });
+        
         setLayout(new FlowLayout());
         add(percentLabel);
         add(zoomInButton);
@@ -113,10 +164,21 @@ public class ZoomPanel extends JPanel implements MediaDisplayListener {
         add(zoomNoneButton);
         add(zoomFitButton);
         add(rulerButton);
+        add(gridButton);
         add(guidesOptionsButton);
         add(snapOptionsButton);
 
         display.addEventListener(this);
+    }
+    
+    
+    private void editGridMenuItemActionPerformed(ActionEvent evt) {
+        new GridDialog(Main.getDefaultDialogsOwner()).setVisible(true);
+    }
+    
+    private void showGridCheckBoxMenuItemActionPerformed(ActionEvent evt) {
+        JCheckBoxMenuItem source = (JCheckBoxMenuItem) evt.getSource();
+        Configuration.showGrid.set(source.isSelected());
     }
 
     private void guidesShowActionPerformed(ActionEvent evt) {
@@ -129,6 +191,10 @@ public class ZoomPanel extends JPanel implements MediaDisplayListener {
         Configuration.lockGuides.set(source.isSelected());
     }
 
+    private void guidesEditActionPerformed(ActionEvent evt) {
+        new GuidesDialog(Main.getDefaultDialogsOwner(), display).setVisible(true);
+    }
+    
     private void guidesClearActionPerformed(ActionEvent evt) {
         display.clearGuides();
     }

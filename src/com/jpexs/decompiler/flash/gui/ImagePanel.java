@@ -25,13 +25,13 @@ import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.configuration.ConfigurationItemChangeListener;
 import com.jpexs.decompiler.flash.configuration.CustomConfigurationKeys;
 import com.jpexs.decompiler.flash.configuration.SwfSpecificCustomConfiguration;
+import com.jpexs.decompiler.flash.ecma.EcmaNumberToString;
 import com.jpexs.decompiler.flash.ecma.Undefined;
 import com.jpexs.decompiler.flash.exporters.commonshape.ExportRectangle;
 import com.jpexs.decompiler.flash.exporters.commonshape.Matrix;
 import com.jpexs.decompiler.flash.gui.player.MediaDisplay;
 import com.jpexs.decompiler.flash.gui.player.MediaDisplayListener;
 import com.jpexs.decompiler.flash.gui.player.Zoom;
-import com.jpexs.decompiler.flash.math.BezierEdge;
 import com.jpexs.decompiler.flash.math.BezierUtils;
 import com.jpexs.decompiler.flash.tags.DefineButton2Tag;
 import com.jpexs.decompiler.flash.tags.DefineButtonSoundTag;
@@ -44,7 +44,6 @@ import com.jpexs.decompiler.flash.tags.base.DisplayObjectCacheKey;
 import com.jpexs.decompiler.flash.tags.base.DrawableTag;
 import com.jpexs.decompiler.flash.tags.base.PlaceObjectTypeTag;
 import com.jpexs.decompiler.flash.tags.base.RenderContext;
-import com.jpexs.decompiler.flash.tags.base.ShapeTag;
 import com.jpexs.decompiler.flash.tags.base.SoundTag;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.timeline.DepthState;
@@ -57,10 +56,6 @@ import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.decompiler.flash.types.SOUNDINFO;
 import com.jpexs.decompiler.flash.types.filters.BlendComposite;
-import com.jpexs.decompiler.flash.types.shaperecords.CurvedEdgeRecord;
-import com.jpexs.decompiler.flash.types.shaperecords.SHAPERECORD;
-import com.jpexs.decompiler.flash.types.shaperecords.StraightEdgeRecord;
-import com.jpexs.decompiler.flash.types.shaperecords.StyleChangeRecord;
 import com.jpexs.helpers.ByteArrayRange;
 import com.jpexs.helpers.Cache;
 import com.jpexs.helpers.Reference;
@@ -195,8 +190,6 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
     private int time = 0;
 
-    //private int selectedDepth = -1;
-    //private int freeTransformDepth = -1;
     private boolean doFreeTransform = false;
 
     private Zoom zoom = new Zoom();
@@ -313,9 +306,9 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     private DisplayPoint snapAlignYPoint1 = null;
     private DisplayPoint snapAlignYPoint2 = null;
 
-    private static final int SNAP_DISTANCE = 10;
-
     private static final int SNAP_ALIGN_DISTANCE = 5;
+
+    private static final int SNAP_TO_OBJECTS_DISTANCE = 10;
 
     private static final int SNAP_ALIGN_AFTER_LINE = 50;
 
@@ -385,8 +378,6 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
     private List<Double> guidesY = new ArrayList<>();
 
-    private static final Color GUIDES_COLOR = Color.green;
-
     private static final int GUIDE_THICKNESS = 20;
 
     private static final int GUIDE_FONT_HEIGHT = 11;
@@ -398,6 +389,14 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     private SWF guidesSwf = null;
 
     private int guidesCharacterId = -1;
+    
+    private static int getSnapGuidesDistance() {
+        return Configuration.guidesSnapAccuracy.get().getDistance();
+    }
+
+    private static int getSnapGridDistance() {
+        return Configuration.gridSnapAccuracy.get().getDistance();
+    }
 
     @Override
     public boolean canHaveRuler() {
@@ -725,12 +724,19 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
     public synchronized void selectDepths(List<Integer> depths) {
 
         depths = new ArrayList<>(depths);
-        for (int i = 0; i < depths.size(); i++) {
-            int depth = depths.get(i);
-            Frame fr = timelined.getTimeline().getFrame(frame);
-            if (fr == null || !fr.layers.containsKey(depth)) {
-                depths.remove(i);
-                i--;
+        
+        
+        if (timelined == null) {
+            depths = new ArrayList<>();
+        } else {
+            Frame fr = timelined.getTimeline().getFrame(frame);            
+
+            for (int i = 0; i < depths.size(); i++) {
+                int depth = depths.get(i);
+                if (fr == null || !fr.layers.containsKey(depth)) {
+                    depths.remove(i);
+                    i--;
+                }
             }
         }
 
@@ -911,6 +917,54 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
         this.resample = resample;
     }
 
+    private static void drawGridSwf(Graphics2D g, Rectangle realRect, double zoom) {
+        g.setColor(Configuration.gridColor.get());
+        double x;
+        double y;
+        int ix;
+        int iy;
+        int minIx = 0;
+        int minIy = 0;
+        int maxIx;
+        int maxIy;
+
+        ix = 0;
+        while ((double) realRect.x + ix * Configuration.gridHorizontalSpace.get() * zoom < realRect.getMaxX()) {
+            ix++;
+        }
+        maxIx = ix - 1;
+
+        iy = 0;
+        while ((double) realRect.y + iy * Configuration.gridVerticalSpace.get() * zoom < realRect.getMaxY()) {
+            iy++;
+        }
+        maxIy = iy - 1;
+
+        for (ix = minIx; ix <= maxIx; ix++) {
+            x = realRect.x + ix * Configuration.gridHorizontalSpace.get() * zoom;
+            Point2D p1 = new Point2D.Double(x, realRect.getMinY());
+            Point2D p2 = new Point2D.Double(x, realRect.getMaxY());
+            g.drawLine(
+                    (int) Math.round(p1.getX()),
+                    (int) Math.round(p1.getY()),
+                    (int) Math.round(p2.getX()),
+                    (int) Math.round(p2.getY())
+            );
+        }
+
+        for (iy = minIy; iy <= maxIy; iy++) {
+            y = realRect.y + iy * Configuration.gridVerticalSpace.get() * zoom;
+            Point2D p1 = new Point2D.Double(realRect.getMinX(), y);
+            Point2D p2 = new Point2D.Double(realRect.getMaxX(), y);
+            g.drawLine(
+                    (int) Math.round(p1.getX()),
+                    (int) Math.round(p1.getY()),
+                    (int) Math.round(p2.getX()),
+                    (int) Math.round(p2.getY())
+            );
+        }
+    }
+
     private class IconPanel extends JPanel {
 
         private SerializableImage _img;
@@ -961,6 +1015,68 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
         VolatileImage renderImage;
 
+        private void drawGridNoSwf(Graphics2D g2, int x, int y) {
+            double zoomDouble = getRealZoom();
+            g2.setColor(Configuration.gridColor.get());
+            double gx;
+            double gy;
+            int ix = 0;
+            int iy = 0;
+            int minIx;
+            int minIy;
+            int maxIx;
+            int maxIy;
+            double sx = x + offsetPoint.getX();
+            double sy = y + offsetPoint.getY();
+
+            while (sx + ix * Configuration.gridHorizontalSpace.get() * zoomDouble > 0) {
+                ix--;
+            }
+            minIx = ix;
+            ix = 0;
+            while (sx + ix * Configuration.gridHorizontalSpace.get() * zoomDouble < getWidth()) {
+                ix++;
+            }
+            maxIx = ix;
+
+            while (sy + iy * Configuration.gridVerticalSpace.get() * zoomDouble > 0) {
+                iy--;
+            }
+            minIy = iy;
+
+            iy = 0;
+            while (sy + iy * Configuration.gridVerticalSpace.get() * zoomDouble < getHeight()) {
+                iy++;
+            }
+            maxIy = iy;
+
+            for (ix = minIx; ix <= maxIx; ix++) {
+                gx = sx + ix * Configuration.gridHorizontalSpace.get() * zoomDouble;
+
+                Point2D p1 = new Point2D.Double(gx, sy + minIy * Configuration.gridVerticalSpace.get() * zoomDouble);
+                Point2D p2 = new Point2D.Double(gx, sy + maxIy * Configuration.gridVerticalSpace.get() * zoomDouble);
+                g2.drawLine(
+                        (int) Math.round(p1.getX()),
+                        (int) Math.round(p1.getY()),
+                        (int) Math.round(p2.getX()),
+                        (int) Math.round(p2.getY())
+                );
+            }
+
+            for (iy = minIy; iy <= maxIy; iy++) {
+                gy = sy + iy * Configuration.gridVerticalSpace.get() * zoomDouble;
+
+                Point2D p1 = new Point2D.Double(sx + minIx * Configuration.gridHorizontalSpace.get() * zoomDouble, gy);
+                Point2D p2 = new Point2D.Double(sx + maxIx * Configuration.gridHorizontalSpace.get() * zoomDouble, gy);
+                g2.drawLine(
+                        (int) Math.round(p1.getX()),
+                        (int) Math.round(p1.getY()),
+                        (int) Math.round(p2.getX()),
+                        (int) Math.round(p2.getY())
+                );
+            }
+        }
+
         public void render() {
             SerializableImage img = getImg();
             /*if (img == null) {
@@ -1001,7 +1117,17 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                             y = (int) offsetPoint.getY();
                         }
 
+                        double zoomDouble = zoom.fit ? getZoomToFit() : zoom.value;
+
+                        if (Configuration.showGrid.get() && !(timelined instanceof SWF) && !Configuration.gridOverObjects.get()) {
+                            drawGridNoSwf(g2, x, y);
+                        }
+
                         g2.drawImage(img.getBufferedImage(), x, y, x + img.getWidth(), y + img.getHeight(), 0, 0, img.getWidth(), img.getHeight(), null);
+
+                        if (Configuration.showGrid.get() && !(timelined instanceof SWF) && Configuration.gridOverObjects.get()) {
+                            drawGridNoSwf(g2, x, y);
+                        }
 
                         if (hilightedEdge != null || hilightedPoints != null) {
                             hilightEdgeColor += hilightEdgeColorStep;
@@ -1010,7 +1136,6 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                 hilightEdgeColor += hilightEdgeColorStep * 2;
                             }
                             RECT timRect = timelined.getRect();
-                            double zoomDouble = zoom.fit ? getZoomToFit() : zoom.value;
                             AffineTransform trans = new AffineTransform();
                             trans.translate(offsetPoint.getX(), offsetPoint.getY());
                             trans.scale(1 / SWF.unitDivisor, 1 / SWF.unitDivisor);
@@ -1104,7 +1229,6 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                         if (!(timelined instanceof SWF) && (doFreeTransform || hilightedPoints != null)) {
                             int axisX = 0;
                             int axisY = 0;
-                            double zoomDouble = zoom.fit ? getZoomToFit() : zoom.value;
                             RECT timRect = timelined.getRect();
                             axisX = (int) Math.round(offsetPoint.getX());
                             axisY = (int) Math.round(offsetPoint.getY());
@@ -1340,6 +1464,49 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
             MouseInputAdapter mouseInputAdapter = new MouseInputAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
+
+                    if (e.getClickCount() == 2) {
+                        if (Configuration.showGuides.get() && !Configuration.lockGuides.get()) {
+                            Point mousePoint = e.getPoint();
+                            for (int d = 0; d < guidesX.size(); d++) {
+                                Double guide = guidesX.get(d);
+                                int guideInPanel = (int) Math.round(guide * getRealZoom() + offsetPoint.getX());
+                                if (mousePoint.x == guideInPanel) {
+                                    String newPositionStr = ViewMessages.showInputDialog(ImagePanel.this, AppStrings.translate("move_guide.position"), AppStrings.translate("move_guide"), View.getIcon("guidemovex32"), EcmaNumberToString.stringFor(guide));
+                                    if (newPositionStr != null) {
+                                        try {
+                                            double newPosition = Double.parseDouble(newPositionStr);
+                                            guidesX.set(d, newPosition);
+                                            saveGuides();
+                                            repaint();
+                                        } catch (NumberFormatException nfe) {
+                                            //ignore
+                                        }
+                                    }
+                                    return;
+                                }
+                            }
+
+                            for (int d = 0; d < guidesY.size(); d++) {
+                                Double guide = guidesY.get(d);
+                                int guideInPanel = (int) Math.round(guide * getRealZoom() + offsetPoint.getY());
+                                if (mousePoint.y == guideInPanel) {
+                                    String newPositionStr = ViewMessages.showInputDialog(ImagePanel.this, AppStrings.translate("move_guide.position"), AppStrings.translate("move_guide"), View.getIcon("guidemovey32"), EcmaNumberToString.stringFor(guide));
+                                    if (newPositionStr != null) {
+                                        try {
+                                            double newPosition = Double.parseDouble(newPositionStr);
+                                            guidesY.set(d, newPosition);
+                                            saveGuides();
+                                            repaint();
+                                        } catch (NumberFormatException nfe) {
+                                            //ignore
+                                        }
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    }
 
                     if (e.getClickCount() == 2 && selectionMode && !transformSelectionMode) {
 
@@ -1849,6 +2016,14 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
 
                                     if (timelined instanceof SWF) {
                                         RECT stageRect = timelined.getRect();
+
+                                        stageRect = new RECT(
+                                                (int) Math.round(stageRect.Xmin + Configuration.snapAlignStageBorder.get() * SWF.unitDivisor),
+                                                (int) Math.round(stageRect.Xmax - Configuration.snapAlignStageBorder.get() * SWF.unitDivisor),
+                                                (int) Math.round(stageRect.Ymin + Configuration.snapAlignStageBorder.get() * SWF.unitDivisor),
+                                                (int) Math.round(stageRect.Ymax - Configuration.snapAlignStageBorder.get() * SWF.unitDivisor)
+                                        );
+
                                         Matrix scaleMatrix = Matrix.getScaleInstance(zoomDouble / SWF.unitDivisor);
                                         Matrix matrix = new Matrix();
                                         matrix = matrix.concatenate(Matrix.getTranslateInstance(offsetPoint.getX(), offsetPoint.getY()));
@@ -1959,20 +2134,39 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                                 BoundedTag bt = (BoundedTag) ct;
                                                 RECT rect = bt.getRect();
 
-                                                Matrix matrix = new Matrix();
+                                                Matrix scaleMatrix = Matrix.getScaleInstance(zoomDouble / SWF.unitDivisor);
+                                                Matrix translateMatrix = Matrix.getTranslateInstance(offsetPoint.getX(), offsetPoint.getY());
+
+                                                Matrix matrix = translateMatrix.concatenate(scaleMatrix);
+
+                                                Matrix dsMatrix = new Matrix();
                                                 if (ds.matrix != null) {
-                                                    matrix = matrix.preConcatenate(new Matrix(ds.matrix));
+                                                    dsMatrix = new Matrix(ds.matrix);
                                                 }
 
-                                                Matrix scaleMatrix = Matrix.getScaleInstance(zoomDouble / SWF.unitDivisor);
+                                                Rectangle2D bounds = dsMatrix.transform(new Rectangle2D.Double(rect.Xmin, rect.Ymin, rect.Xmax - rect.Xmin, rect.Ymax - rect.Ymin));
+                                                bounds = new Rectangle2D.Double(
+                                                        bounds.getX() - Configuration.snapAlignObjectHorizontalSpace.get() * SWF.unitDivisor,
+                                                        bounds.getY() - Configuration.snapAlignObjectVerticalSpace.get() * SWF.unitDivisor,
+                                                        bounds.getWidth() + 2 * Configuration.snapAlignObjectHorizontalSpace.get() * SWF.unitDivisor,
+                                                        bounds.getHeight() + 2 * Configuration.snapAlignObjectVerticalSpace.get() * SWF.unitDivisor
+                                                );
 
-                                                matrix = matrix.preConcatenate(scaleMatrix);
-                                                matrix = matrix.preConcatenate(Matrix.getTranslateInstance(offsetPoint.getX(), offsetPoint.getY()));
-
-                                                Rectangle2D bounds = matrix.transform(new Rectangle2D.Double(rect.Xmin, rect.Ymin, rect.Xmax - rect.Xmin, rect.Ymax - rect.Ymin));
+                                                bounds = matrix.transform(bounds);
 
                                                 if (!snapAlignedX) {
-                                                    if (Math.abs(bounds.getMinX() - selectedBounds.getMinX()) < SNAP_ALIGN_DISTANCE) {
+                                                    if (Configuration.snapAlignCenterAlignmentVertical.get() && Math.abs(bounds.getCenterX() - selectedBounds.getCenterX()) < SNAP_ALIGN_DISTANCE) {
+                                                        snapOffsetX = bounds.getCenterX() - selectedBounds.getCenterX();
+                                                        snapAlignXPoint1 = new DisplayPoint(
+                                                                (int) Math.round(bounds.getCenterX()),
+                                                                (int) Math.round(Math.min(bounds.getMinY(), selectedBounds.getMinY()) - SNAP_ALIGN_AFTER_LINE)
+                                                        );
+                                                        snapAlignXPoint2 = new DisplayPoint(
+                                                                (int) Math.round(bounds.getCenterX()),
+                                                                (int) Math.round(Math.max(bounds.getMaxY(), selectedBounds.getMaxY()) + SNAP_ALIGN_AFTER_LINE)
+                                                        );
+                                                        snapAlignedX = true;
+                                                    } else if (Math.abs(bounds.getMinX() - selectedBounds.getMinX()) < SNAP_ALIGN_DISTANCE) {
                                                         snapOffsetX = bounds.getMinX() - selectedBounds.getMinX();
                                                         snapAlignXPoint1 = new DisplayPoint(
                                                                 (int) Math.round(bounds.getMinX()),
@@ -2020,7 +2214,18 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                                 }
 
                                                 if (!snapAlignedY) {
-                                                    if (Math.abs(bounds.getMinY() - selectedBounds.getMinY()) < SNAP_ALIGN_DISTANCE) {
+                                                    if (Configuration.snapAlignCenterAlignmentHorizontal.get() && Math.abs(bounds.getCenterY() - selectedBounds.getCenterY()) < SNAP_ALIGN_DISTANCE) {
+                                                        snapOffsetY = bounds.getCenterY() - selectedBounds.getCenterY();
+                                                        snapAlignYPoint1 = new DisplayPoint(
+                                                                (int) Math.round(Math.min(bounds.getMinX(), selectedBounds.getMinX()) - SNAP_ALIGN_AFTER_LINE),
+                                                                (int) Math.round(bounds.getCenterY())
+                                                        );
+                                                        snapAlignYPoint2 = new DisplayPoint(
+                                                                (int) Math.round(Math.max(bounds.getMaxX(), selectedBounds.getMaxX()) + SNAP_ALIGN_AFTER_LINE),
+                                                                (int) Math.round(bounds.getCenterY())
+                                                        );
+                                                        snapAlignedY = true;
+                                                    } else if (Math.abs(bounds.getMinY() - selectedBounds.getMinY()) < SNAP_ALIGN_DISTANCE) {
                                                         snapOffsetY = bounds.getMinY() - selectedBounds.getMinY();
                                                         snapAlignYPoint1 = new DisplayPoint(
                                                                 (int) Math.round(Math.min(bounds.getMinX(), selectedBounds.getMinX()) - SNAP_ALIGN_AFTER_LINE),
@@ -2127,7 +2332,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                             nearestPoint = windowPoint;
                                         }
                                     }
-                                    if (distance < SNAP_DISTANCE) {
+                                    if (distance < SNAP_TO_OBJECTS_DISTANCE) {
                                         snapOffsetX = nearestPoint.getX() - touchPointPos.getX();
                                         snapOffsetY = nearestPoint.getY() - touchPointPos.getY();
                                     }
@@ -2149,7 +2354,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                     }
                                 }
 
-                                if (distance < SNAP_DISTANCE) {
+                                if (distance < getSnapGuidesDistance()) {
                                     snapOffsetX = nearestGuideX - touchPointPos.getX();
                                 }
                             }
@@ -2168,8 +2373,29 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                                     }
                                 }
 
-                                if (distance < SNAP_DISTANCE) {
+                                if (distance < getSnapGuidesDistance()) {
                                     snapOffsetY = nearestGuideY - touchPointPos.getY();
+                                }
+                            }
+                        }
+
+                        if (Configuration.showGrid.get() && Configuration.snapToGrid.get()) {
+                            if (snapOffsetX == null) {
+                                int positionPxX = (int) Math.round((touchPointPos.getX() - offsetPoint.getX()) / zoomDouble);
+                                int d = (positionPxX / Configuration.gridHorizontalSpace.get()) * Configuration.gridHorizontalSpace.get();
+                                if ((positionPxX - d) * zoomDouble < getSnapGridDistance()) {
+                                    snapOffsetX = d * zoomDouble - touchPointPos.getX() + offsetPoint.getX();
+                                } else if ((d + Configuration.gridHorizontalSpace.get() - positionPxX) * zoomDouble < getSnapGridDistance()) {
+                                    snapOffsetX = (d + Configuration.gridHorizontalSpace.get()) * zoomDouble - touchPointPos.getX() + offsetPoint.getX();
+                                }
+                            }
+                            if (snapOffsetY == null) {
+                                int positionPxY = (int) Math.round((touchPointPos.getY() - offsetPoint.getY()) / zoomDouble);
+                                int d = (positionPxY / Configuration.gridVerticalSpace.get()) * Configuration.gridVerticalSpace.get();
+                                if ((positionPxY - d) * zoomDouble < getSnapGridDistance()) {
+                                    snapOffsetY = d * zoomDouble - touchPointPos.getY() + offsetPoint.getY();
+                                } else if ((d + Configuration.gridVerticalSpace.get() - positionPxY) * zoomDouble < getSnapGridDistance()) {
+                                    snapOffsetY = (d + Configuration.gridVerticalSpace.get()) * zoomDouble - touchPointPos.getY() + offsetPoint.getY();
                                 }
                             }
                         }
@@ -3159,7 +3385,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 }
             }
 
-            g2d.setColor(GUIDES_COLOR);
+            g2d.setColor(Configuration.guidesColor.get());
             if (draggingGuideX && lastMouseEvent != null) {
                 g2d.drawLine(guideDragX, 0, guideDragX, getHeight());
             }
@@ -3598,10 +3824,18 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 g2.fillRect(0, 0, GUIDE_THICKNESS, GUIDE_THICKNESS);
 
                 if (guideDragX > -1) {
-                    g2.setColor(GUIDES_COLOR);
+                    g2.setColor(Configuration.guidesColor.get());
                     g2.drawLine(GUIDE_THICKNESS + guideDragX, 0, GUIDE_THICKNESS + guideDragX, GUIDE_THICKNESS);
                 }
 
+                if (!selectedDepths.isEmpty() && transform != null) {
+                    Rectangle2D transformBounds = transformUpdated == null ?  getTransformBounds() : getTransformBounds(new Matrix(transformUpdated));
+                    g2.setColor(getForeground());
+
+                    Rectangle2D imgBounds = toImageRect(transformBounds);
+                    g2.drawLine((int) Math.round(leftOffset + imgBounds.getMinX()), 0, (int) Math.round(leftOffset + imgBounds.getMinX()), getHeight());
+                    g2.drawLine((int) Math.round(leftOffset + imgBounds.getMaxX()), 0, (int) Math.round(leftOffset + imgBounds.getMaxX()), getHeight());
+                }
             }
         };
         topRuler.setPreferredSize(new Dimension(1, GUIDE_THICKNESS));
@@ -3672,8 +3906,17 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 g2.draw(gp);
 
                 if (guideDragY > -1) {
-                    g2.setColor(GUIDES_COLOR);
+                    g2.setColor(Configuration.guidesColor.get());
                     g2.drawLine(0, guideDragY, GUIDE_THICKNESS, guideDragY);
+                }
+                
+                if (!selectedDepths.isEmpty() && transform != null) {
+                    Rectangle2D transformBounds = transformUpdated == null ?  getTransformBounds() : getTransformBounds(new Matrix(transformUpdated));
+                    g2.setColor(getForeground());
+
+                    Rectangle2D imgBounds = toImageRect(transformBounds);
+                    g2.drawLine(0, (int) Math.round(imgBounds.getMinY()), getWidth(), (int) Math.round(imgBounds.getMinY()));
+                    g2.drawLine(0, (int) Math.round(imgBounds.getMaxY()), getWidth(), (int) Math.round(imgBounds.getMaxY()));
                 }
             }
         };
@@ -4633,6 +4876,11 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
             g.fillRect(realRect.x, realRect.y, realRect.width, realRect.height);
         }
 
+        if (Configuration.showGrid.get() && (drawable instanceof SWF) && !Configuration.gridOverObjects.get()) {
+            Graphics2D g = (Graphics2D) image.getBufferedImage().getGraphics();
+            drawGridSwf(g, realRect, zoom);
+        }
+
         parentMatrix = new Matrix();
         List<Integer> ignoreDepths = new ArrayList<>();
         for (int i = 0; i < parentTimelineds.size(); i++) {
@@ -4774,6 +5022,12 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
                 }
             }
         }
+
+        if (Configuration.showGrid.get() && (drawable instanceof SWF) && Configuration.gridOverObjects.get()) {
+            Graphics2D g = (Graphics2D) image.getBufferedImage().getGraphics();
+            drawGridSwf(g, realRect, zoom);
+        }
+
         img = image;
 
         /*if (shouldCache) {
@@ -5812,7 +6066,7 @@ public final class ImagePanel extends JPanel implements MediaDisplay {
         }
         if (totalBounds == null) {
             return new Rectangle2D.Double(0, 0, 1, 1);
-        }
+        }        
         return totalBounds;
     }
 
