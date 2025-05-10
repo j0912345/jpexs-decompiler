@@ -3296,11 +3296,11 @@ public class TagTreeContextMenu extends JPopupMenu {
                 doAbc2.name = className;
                 doAbc = doAbc2;
             }
-
-            List<ABC> abcs = new ArrayList<>();
-            for (ABCContainerTag ct : swf.getAbcList()) {
-                abcs.add(ct.getABC());
-            }
+//            unused variable
+//            List<ABC> abcs = new ArrayList<>();
+//            for (ABCContainerTag ct : swf.getAbcList()) {
+//                abcs.add(ct.getABC());
+//            }
 
             String pkg = className.contains(".") ? className.substring(0, className.lastIndexOf(".")) : "";
             String classSimpleName = className.contains(".") ? className.substring(className.lastIndexOf(".") + 1) : className;
