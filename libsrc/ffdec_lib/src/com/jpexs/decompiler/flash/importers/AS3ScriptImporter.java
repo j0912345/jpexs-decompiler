@@ -26,6 +26,7 @@ import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,7 +59,7 @@ public class AS3ScriptImporter {
     public int importScripts(As3ScriptReplacerInterface scriptReplacer, String scriptsFolder, List<ScriptPack> packs, List<SWF> dependencies) throws InterruptedException {
         return importScripts(scriptReplacer, scriptsFolder, packs, null, dependencies);
     }
-
+    
     /**
      * Imports scripts from a folder.
      * @param scriptReplacer Replacer for the scripts
@@ -73,7 +74,41 @@ public class AS3ScriptImporter {
         if (!scriptsFolder.endsWith(File.separator)) {
             scriptsFolder += File.separator;
         }
-
+        
+        File currentSearchingFolder = new File(scriptsFolder);
+        ArrayList<File> unsearchedFolders = new ArrayList<>();
+        ArrayList<File> allFiles = new ArrayList<>();
+        int searchIterations = 0;
+        int maxSearchIterations = 10000;
+        for(searchIterations = 0; searchIterations < maxSearchIterations; searchIterations++)
+        {
+            for(File file : currentSearchingFolder.listFiles())
+            {
+                if(file.isFile() && file.getName().endsWith(".as"))
+                {
+                    allFiles.add(file);
+                }
+                if(file.isDirectory())
+                {
+                    unsearchedFolders.add(file);
+                }
+                if(unsearchedFolders.isEmpty())
+                {
+                    break;
+                }
+                else
+                {
+                    currentSearchingFolder = unsearchedFolders.get(0);
+                }
+            }
+        }
+        if(searchIterations >= maxSearchIterations)
+        {
+            logger.log(Level.WARNING,
+                    "Exhausted %i% iterations while trying to recursively search a directory for script import.".replace("%i%", String.valueOf(searchIterations))
+                    + "Any previously non-existent scripts not encountered yet will not be created and imported.");
+        }
+        
         int importCount = 0;
         for (ScriptPack pack : packs) {
             if (CancellableWorker.isInterrupted()) {
