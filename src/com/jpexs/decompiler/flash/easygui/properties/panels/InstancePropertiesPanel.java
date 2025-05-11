@@ -28,7 +28,9 @@ import com.jpexs.decompiler.flash.easygui.properties.PropertyChangeDoableOperati
 import com.jpexs.decompiler.flash.easygui.properties.PropertyValidationInterface;
 import com.jpexs.decompiler.flash.exporters.commonshape.Matrix;
 import com.jpexs.decompiler.flash.gui.BoundsChangeListener;
+import com.jpexs.decompiler.flash.gui.PopupButton;
 import com.jpexs.decompiler.flash.gui.RegistrationPointPosition;
+import com.jpexs.decompiler.flash.gui.View;
 import com.jpexs.decompiler.flash.gui.ViewMessages;
 import com.jpexs.decompiler.flash.tags.base.PlaceObjectTypeTag;
 import com.jpexs.decompiler.flash.tags.converters.PlaceObjectTypeConverter;
@@ -37,7 +39,16 @@ import com.jpexs.decompiler.flash.timeline.Timelined;
 import com.jpexs.decompiler.flash.types.CXFORMWITHALPHA;
 import com.jpexs.decompiler.flash.types.ColorTransform;
 import com.jpexs.decompiler.flash.types.RGBA;
+import com.jpexs.decompiler.flash.types.filters.BEVELFILTER;
+import com.jpexs.decompiler.flash.types.filters.BLURFILTER;
+import com.jpexs.decompiler.flash.types.filters.COLORMATRIXFILTER;
+import com.jpexs.decompiler.flash.types.filters.CONVOLUTIONFILTER;
+import com.jpexs.decompiler.flash.types.filters.DROPSHADOWFILTER;
 import com.jpexs.decompiler.flash.types.filters.FILTER;
+import com.jpexs.decompiler.flash.types.filters.GLOWFILTER;
+import com.jpexs.decompiler.flash.types.filters.GRADIENTBEVELFILTER;
+import com.jpexs.decompiler.flash.types.filters.GRADIENTGLOWFILTER;
+import com.jpexs.helpers.Helper;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -51,22 +62,26 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 
 /**
  *
@@ -334,38 +349,114 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
 
         JPanel filtersPanel = new JPanel(new BorderLayout());
         filtersTable = new FiltersTreeTable();
+        
+        JPanel filtersToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));               
+        PopupButton addFilterButton = new PopupButton(View.getIcon("add16")) {
+            @Override
+            @SuppressWarnings("unchecked")
+            protected JPopupMenu getPopupMenu() {
+                JPopupMenu menu = new JPopupMenu();
+                JMenuItem removeAllMenuItem = new JMenuItem(EasyStrings.translate("property.instance.filters.menu.add.removeAll"));
+                removeAllMenuItem.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        filtersTable.clearFilters();
+                    }                    
+                });
+                menu.add(removeAllMenuItem);
+                menu.addSeparator();
+                Class[] possilbleFilters = new Class[] {
+                    DROPSHADOWFILTER.class,
+                    BLURFILTER.class,
+                    GLOWFILTER.class,
+                    BEVELFILTER.class,
+                    GRADIENTGLOWFILTER.class,
+                    GRADIENTBEVELFILTER.class,
+                    COLORMATRIXFILTER.class,
+                    CONVOLUTIONFILTER.class
+                };
+                
+                for (Class filterClass : possilbleFilters) {
+                    
+                    String filterName = filterClass.getSimpleName();
+                    filterName = filterName.substring(0, filterName.length() - "FILTER".length());
+                    filterName = EasyStrings.translate("filter." + filterName.toLowerCase());
+                    
+                    JMenuItem filterMenuItem = new JMenuItem(filterName);
+                    filterMenuItem.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            FILTER filter;
+                            try {                                
+                                filter = (FILTER) filterClass.getConstructor().newInstance();
+                            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+                                return;
+                            }
+                            filtersTable.addFilter(filter);
+                        }                        
+                    });
+                    menu.add(filterMenuItem);
+                }
+                return menu;
+            }            
+        };
+        addFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.add"));
+        
+        JButton removeFilterButton = new JButton(View.getIcon("removeobject16"));
+        removeFilterButton.setEnabled(false);
+        removeFilterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filtersTable.removeSelectedFilter();
+            }
+        });
+        removeFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.remove"));
+        
+        
+        filtersTable.getTree().addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                removeFilterButton.setEnabled(filtersTable.isFilterSelected());
+            }           
+        });
+        
+        
+        filtersToolbar.add(addFilterButton);
+        filtersToolbar.add(removeFilterButton);
+        
         JScrollPane sp = new JScrollPane(filtersTable);
         filtersPanel.add(sp, BorderLayout.CENTER);
+        filtersPanel.add(filtersToolbar, BorderLayout.SOUTH);
         sp.getViewport().setBackground(filtersTable.getBackground());
-        //filtersPanel.setBorder(BorderFactory.createLineBorder(Color.red, 5));
-        //sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        filtersTable.addFilterChangedListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                List<FILTER> newFilters = filtersTable.getFilters();
+                if (newFilters != null) {
+                    undoManager.doOperation(new PlaceChangeDoableOperation("instance.filters", 3) {
+                        List<FILTER> applyFilters = Helper.deepCopy(newFilters);
+
+                        @Override
+                        public void doPlaceOperation(PlaceObjectTypeTag placeObject, DepthState depthState) {
+                            placeObject.setFilters(applyFilters);
+                        }
+                    }, swfPanel.getSwf());
+                }
+            }
+        });
 
         propertiesPanel = new JPanel();
-        //propertiesPanel.setLayout(new BoxLayout(propertiesPanel, BoxLayout.Y_AXIS));
-        //propertiesPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 5));
         propertiesPanel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
         propertiesPanel.setLayout(new GridBagLayout());
 
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = -1;
-        /*gbc.anchor = GridBagConstraints.FIRST_LINE_START;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbcc.weightx = 1;*/
 
         addCard(propertiesPanel, "positionSize", null, positionSizePanel, gbc, false);
-
-        //gbc.gridy++;
         addCard(propertiesPanel, "colorEffect", null, colorEffectPanel, gbc, false);
-
-        //gbc.gridy++;
         addCard(propertiesPanel, "display", null, displayPanel, gbc, false);
-
-        //gbc.gridy++;      
-        //gbc.fill = GridBagConstraints.BOTH; //GridBagConstraints.BOTH;
-        //gbc.weighty = 1;
         addCard(propertiesPanel, "filters", null, filtersPanel, gbc, true);
 
         setCardOpened("positionSize", true);
@@ -825,12 +916,13 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
             }
 
         }
+
         if (filters.size() == 1) {
             List<FILTER> oneFilters = filters.iterator().next();
             if (oneFilters == null) {
                 filtersTable.setFilters(new ArrayList<>());
             } else {
-                filtersTable.setFilters(oneFilters);
+                filtersTable.setFilters(Helper.deepCopy(oneFilters));
             }
         } else if (filters.isEmpty()) {
             filtersTable.setFilters(new ArrayList<>());
