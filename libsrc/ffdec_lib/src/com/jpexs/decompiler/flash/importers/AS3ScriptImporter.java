@@ -88,7 +88,7 @@ public class AS3ScriptImporter {
         {
             for(File file : currentSearchingFolder.listFiles())
             {
-                if(file.isFile() && file.getName().endsWith(".as"))
+                if(file.isFile() && file.getAbsolutePath().endsWith(".as"))
                 {
                     allFiles.add(file);
                 }
