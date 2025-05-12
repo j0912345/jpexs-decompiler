@@ -22,6 +22,7 @@ import com.jpexs.decompiler.flash.abc.ScriptPack;
 import com.jpexs.decompiler.flash.exporters.modes.ScriptExportMode;
 import com.jpexs.decompiler.flash.exporters.settings.ScriptExportSettings;
 import com.jpexs.decompiler.flash.treeitems.Openable;
+import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
 import java.io.File;
@@ -75,10 +76,13 @@ public class AS3ScriptImporter {
             scriptsFolder += File.separator;
         }
         
+        ArrayList<File> newFiles = new ArrayList<>();
+        
+        ArrayList<File> allFiles = new ArrayList<>();
         File currentSearchingFolder = new File(scriptsFolder);
         ArrayList<File> unsearchedFolders = new ArrayList<>();
-        ArrayList<File> allFiles = new ArrayList<>();
         int searchIterations = 0;
+        // TODO: maxSearchIterations should probably be a setting.
         int maxSearchIterations = 10000;
         for(searchIterations = 0; searchIterations < maxSearchIterations; searchIterations++)
         {
@@ -98,7 +102,7 @@ public class AS3ScriptImporter {
                 }
                 else
                 {
-                    currentSearchingFolder = unsearchedFolders.get(0);
+                    currentSearchingFolder = unsearchedFolders.remove(0);
                 }
             }
         }
@@ -108,6 +112,26 @@ public class AS3ScriptImporter {
                     "Exhausted %i% iterations while trying to recursively search a directory for script import.".replace("%i%", String.valueOf(searchIterations))
                     + "Any previously non-existent scripts not encountered yet will not be created and imported.");
         }
+        
+        
+        for(int i = 0; i < allFiles.size(); i++)
+        {
+            File curFile = allFiles.get(i);
+            String fileRelativePath = curFile.getAbsolutePath().substring(scriptsFolder.length());
+            fileRelativePath = fileRelativePath.split("\\.as")[0];
+            fileRelativePath = fileRelativePath.replace("\\/", ".");
+            if(packs.get(0).abc.findScriptPacksByPath(fileRelativePath, packs.get(0).allABCs).isEmpty())
+            {
+                newFiles.add(curFile);
+            }
+        }
+        // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
+        String newFilesLogMessage = "";
+        for(int i = 0; i < newFiles.size(); i++)
+        {
+            newFilesLogMessage += "%name%, ".replace("%name%", newFiles.get(i).getName());
+        }
+        logger.log(Level.INFO, newFilesLogMessage);
         
         int importCount = 0;
         for (ScriptPack pack : packs) {
@@ -120,6 +144,8 @@ public class AS3ScriptImporter {
             try {
                 File file = pack.getExportFile(scriptsFolder, new ScriptExportSettings(ScriptExportMode.AS, false, false, false, false, true));
                 if (file.exists()) {
+                    // do we really need to Openable openable = pack.getOpenable(); and
+                    // SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf(); every loop?
                     Openable openable = pack.getOpenable();
                     SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
                     swf.informListeners("importing_as", file.getAbsolutePath());
