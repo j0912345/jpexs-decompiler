@@ -77,6 +77,7 @@ public class AS3ScriptImporter {
         }
         
         ArrayList<File> newFiles = new ArrayList<>();
+        ArrayList<String> newFileDotPaths = new ArrayList<>();
         
         ArrayList<File> allFiles = new ArrayList<>();
         File currentSearchingFolder = new File(scriptsFolder);
@@ -113,6 +114,7 @@ public class AS3ScriptImporter {
         }
         if(searchIterations >= maxSearchIterations)
         {
+            // TODO: set this back to a warning after i remove the debug warnings
             logger.log(Level.SEVERE,
                     "Exhausted %i% iterations while trying to recursively search a directory for importing scripts.".replace("%i%", String.valueOf(searchIterations))
                     + "\nAny previously non-existent scripts not encountered yet will not be created and imported.");
@@ -124,17 +126,19 @@ public class AS3ScriptImporter {
             File curFile = allFiles.get(i);
             String fileRelativePath = curFile.getAbsolutePath().substring(scriptsFolder.length());
             fileRelativePath = fileRelativePath.split("\\.as")[0];
-            fileRelativePath = fileRelativePath.replace("\\/", ".");
+            fileRelativePath = fileRelativePath.replace("/", ".").replace("\\", ".");
+            // apparently paths with slashes also are detected correctly for this function?
             if(packs.get(0).abc.findScriptPacksByPath(fileRelativePath, packs.get(0).allABCs).isEmpty())
             {
                 newFiles.add(curFile);
+                newFileDotPaths.add(fileRelativePath);
             }
         }
         // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
         String newFilesLogMessage = "";
-        for(int i = 0; i < newFiles.size(); i++)
+        for(int i = 0; i < newFileDotPaths.size(); i++)
         {
-            newFilesLogMessage += "%name%, ".replace("%name%", newFiles.get(i).getName());
+            newFilesLogMessage += "%name%, ".replace("%name%", newFileDotPaths.get(i));
         }
         logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
         
