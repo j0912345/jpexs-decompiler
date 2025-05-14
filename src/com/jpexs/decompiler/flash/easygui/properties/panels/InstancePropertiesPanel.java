@@ -440,6 +440,7 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
                         @Override
                         public void doPlaceOperation(PlaceObjectTypeTag placeObject, DepthState depthState) {
                             placeObject.setFilters(applyFilters);
+                            depthState.filters = applyFilters;
                         }
                     }, swfPanel.getSwf());
                 }
@@ -954,6 +955,7 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
                 int convNum = placeObjectBefore.getPlaceObjectNum() < minPlace ? minPlace : placeObjectBefore.getPlaceObjectNum();
                 PlaceObjectTypeConverter conv = new PlaceObjectTypeConverter();
                 PlaceObjectTypeTag placeObjectAfter = conv.convertTagType(placeObjectBefore, timelined.getSwf(), convNum, false);
+                placeObjectAfter.setTimelined(timelined);
                 placeObjectsAfter.add(placeObjectAfter);
             }
         }

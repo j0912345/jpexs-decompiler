@@ -16,6 +16,7 @@
  */
 package com.jpexs.decompiler.flash.easygui;
 
+import com.jpexs.decompiler.flash.easygui.properties.ConvolutionMatrixEditor;
 import com.jpexs.decompiler.flash.easygui.properties.GradientEditor;
 import com.jpexs.decompiler.flash.easygui.properties.PropertyEditor;
 import com.jpexs.decompiler.flash.ecma.EcmaNumberToString;
@@ -23,16 +24,18 @@ import com.jpexs.decompiler.flash.ecma.EcmaScript;
 import com.jpexs.decompiler.flash.gui.AppStrings;
 import com.jpexs.decompiler.flash.gui.View;
 import com.jpexs.decompiler.flash.gui.generictageditors.BooleanEditor;
-import com.jpexs.decompiler.flash.gui.generictageditors.ChangeListener;
 import com.jpexs.decompiler.flash.gui.generictageditors.ColorEditor;
 import com.jpexs.decompiler.flash.gui.generictageditors.FloatEditor;
-import com.jpexs.decompiler.flash.gui.generictageditors.GenericTagEditor;
 import com.jpexs.decompiler.flash.gui.generictageditors.NumberEditor;
 import com.jpexs.decompiler.flash.gui.generictageditors.ValueNormalizer;
+import com.jpexs.decompiler.flash.types.BasicType;
 import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.decompiler.flash.types.RGBA;
 import com.jpexs.decompiler.flash.types.annotations.Reserved;
 import com.jpexs.decompiler.flash.types.annotations.SWFType;
+import com.jpexs.decompiler.flash.types.filters.COLORMATRIXFILTER;
+import com.jpexs.decompiler.flash.types.filters.CONVOLUTIONFILTER;
+import com.jpexs.decompiler.flash.types.filters.ColorMatrixConvertor;
 import com.jpexs.decompiler.flash.types.filters.FILTER;
 import de.javagl.treetable.JTreeTable;
 import de.javagl.treetable.TreeTableModel;
@@ -42,10 +45,15 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -55,6 +63,7 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.BorderFactory;
+import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -63,6 +72,7 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
+import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.CellEditorListener;
@@ -163,7 +173,143 @@ public class FiltersTreeTable extends JTreeTable {
                     getCellEditor().stopCellEditing();
                 }
             }            
-        });*/
+        });*/           
+        setDragEnabled(true);
+        setTransferHandler(new TreeTransferHandler());
+        setDropMode(DropMode.INSERT_ROWS);
+    }
+
+    private static class TreeTransferHandler extends TransferHandler {
+
+        private DataFlavor nodesFlavor;
+        private DefaultMutableTreeNode[] nodesToRemove;
+
+        public TreeTransferHandler() {
+            try {
+                String mimeType = DataFlavor.javaJVMLocalObjectMimeType
+                        + ";class=\"" + DefaultMutableTreeNode[].class.getName() + "\"";
+                nodesFlavor = new DataFlavor(mimeType);
+            } catch (ClassNotFoundException e) {
+                //ignore
+            }
+        }
+
+        @Override
+        public boolean canImport(TransferHandler.TransferSupport support) {
+            return support.isDrop() && support.isDataFlavorSupported(nodesFlavor);
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            //JTree tree = (JTree) c;
+            JTree tree = ((FiltersTreeTable) c).getTree();
+            TreePath[] paths = tree.getSelectionPaths();
+            if (paths == null) {
+                return null;
+            }
+
+            DefaultMutableTreeNode[] nodes = new DefaultMutableTreeNode[paths.length];
+            for (int i = 0; i < paths.length; i++) {
+                nodes[i] = (DefaultMutableTreeNode) paths[i].getLastPathComponent();
+            }
+            nodesToRemove = nodes;
+            return new NodesTransferable(nodes);
+        }
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
+
+        @Override
+        public boolean importData(TransferHandler.TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
+            try {
+                JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
+                int rowNum = dl.getRow();
+                FiltersTreeTable filterTable = (FiltersTreeTable) support.getComponent();
+
+                TreePath path = filterTable.getTree().getPathForRow(rowNum);
+                DefaultMutableTreeNode rowNode = rowNum == -1 || path == null ? null : (DefaultMutableTreeNode) path.getLastPathComponent();
+                int childIndex = -1;
+                if (rowNum > -1) {
+                    if (rowNode != null) {
+                        childIndex = rowNode.getParent().getIndex(rowNode);
+                    }
+                }
+
+                FiltersTreeTableModel model = (FiltersTreeTableModel) filterTable.getTree().getModel();
+                DefaultMutableTreeNode parent = rowNode == null ? null : (DefaultMutableTreeNode) rowNode.getParent();
+                if (parent != null && parent != model.getRoot()) {
+                    return false;
+                }
+                parent = (DefaultMutableTreeNode) filterTable.getTree().getModel().getRoot();
+
+                DefaultMutableTreeNode[] nodes = (DefaultMutableTreeNode[]) support.getTransferable().getTransferData(nodesFlavor);
+
+                for (DefaultMutableTreeNode node : nodes) {
+                    if (!(node.getUserObject() instanceof FilterName)) {
+                        return false;
+                    }
+                }
+
+                for (DefaultMutableTreeNode node : nodes) {
+                    boolean expanded = filterTable.getTree().isExpanded(new TreePath(new Object[]{parent, node}));
+                    FILTER filter = ((FilterName) node.getUserObject()).filter;
+                    int newChildIndex = (childIndex == -1) ? parent.getChildCount() : childIndex++;
+                    model.addFilter(newChildIndex, filter);
+                    if (expanded) {
+                        filterTable.getTree().expandPath(new TreePath(new Object[]{parent, parent.getChildAt(newChildIndex)}));
+                    }
+                }
+                return true;
+            } catch (UnsupportedFlavorException | IOException e) {
+                //ignore
+            }
+
+            return false;
+        }
+
+        @Override
+        protected void exportDone(JComponent source, Transferable data, int action) {
+            if (action == MOVE) {
+                FiltersTreeTable filtersTable = (FiltersTreeTable) source;
+                FiltersTreeTableModel model = (FiltersTreeTableModel) filtersTable.getTree().getModel();
+                for (DefaultMutableTreeNode node : nodesToRemove) {
+                    model.removeFilter(node.getParent().getIndex(node));
+                }
+                filtersTable.fireFilterChanged();
+            }
+        }
+
+        public class NodesTransferable implements Transferable {
+
+            DefaultMutableTreeNode[] nodes;
+
+            public NodesTransferable(DefaultMutableTreeNode[] nodes) {
+                this.nodes = nodes;
+            }
+
+            @Override
+            public Object getTransferData(DataFlavor flavor) {
+                if (!isDataFlavorSupported(flavor)) {
+                    return null;
+                }
+                return nodes;
+            }
+
+            @Override
+            public DataFlavor[] getTransferDataFlavors() {
+                return new DataFlavor[]{nodesFlavor};
+            }
+
+            @Override
+            public boolean isDataFlavorSupported(DataFlavor flavor) {
+                return nodesFlavor.equals(flavor);
+            }
+        }
     }
 
     public void addFilterChangedListener(ActionListener l) {
@@ -305,7 +451,91 @@ public class FiltersTreeTable extends JTreeTable {
             FilterField filterField = filterValue.filterField;
 
             editor = null;
-            if ("gradientColors".equals(filterField.field.getName())) {
+            if (filterField.special > 0) {
+                editor = new NumberEditor(filterField.toString(), filterField.filter, filterField.field, -1, int.class, new SWFType() {
+                    @Override
+                    public BasicType value() {
+                        return BasicType.SI16;
+                    }
+
+                    @Override
+                    public BasicType alternateValue() {
+                        return null;
+                    }
+
+                    @Override
+                    public String alternateCondition() {
+                        return "";
+                    }
+
+                    @Override
+                    public int count() {
+                        return 0;
+                    }
+
+                    @Override
+                    public String countField() {
+                        return "";
+                    }
+
+                    @Override
+                    public int countAdd() {
+                        return 0;
+                    }
+
+                    @Override
+                    public boolean canAdd() {
+                        return false;
+                    }
+
+                    @Override
+                    public Class<? extends Annotation> annotationType() {
+                        return SWFType.class;
+                    }
+
+                }) {
+                    @Override
+                    protected void saveValue(Object newValue) {
+                        float[] matrix = (float[]) super.loadValue();
+                        ColorMatrixConvertor convertor = new ColorMatrixConvertor(matrix);
+                        switch (filterField.special) {
+                            case FilterField.SPECIAL_BRIGHTNESS:
+                                convertor.setBrightness((int) newValue);
+                                break;
+                            case FilterField.SPECIAL_CONTRAST:
+                                convertor.setContrast((int) newValue);
+                                break;
+                            case FilterField.SPECIAL_SATURATION:
+                                convertor.setSaturation((int) newValue);
+                                break;
+                            case FilterField.SPECIAL_HUE:
+                                convertor.setHue((int) newValue);
+                                break;
+                        }
+                        matrix = convertor.getMatrix();
+                        super.saveValue(matrix);
+                    }
+
+                    @Override
+                    protected Object loadValue() {
+                        float[] matrix = (float[]) super.loadValue();
+                        ColorMatrixConvertor convertor = new ColorMatrixConvertor(matrix);
+                        switch (filterField.special) {
+                            case FilterField.SPECIAL_BRIGHTNESS:
+                                return convertor.getBrightness();
+                            case FilterField.SPECIAL_CONTRAST:
+                                return convertor.getContrast();
+                            case FilterField.SPECIAL_SATURATION:
+                                return convertor.getSaturation();
+                            case FilterField.SPECIAL_HUE:
+                                return convertor.getHue();
+                        }
+                        return 0;
+                    }
+                };
+            } else if ("matrix".equals(filterField.field.getName()) && filterField.filter instanceof CONVOLUTIONFILTER) {
+                editor = new ConvolutionMatrixEditor((CONVOLUTIONFILTER) filterField.filter);
+            } else if ("gradientColors".equals(filterField.field.getName())) {
                 editor = new GradientEditor(filterField.filter);
             } else if (realValue.getClass() == Boolean.class) {
                 editor = new BooleanEditor(filterField.toString(), filterField.filter, filterField.field, -1, Boolean.class);
@@ -340,14 +570,12 @@ public class FiltersTreeTable extends JTreeTable {
 
             if (editor != null) {
 
-                editor.addChangeListener(new ChangeListener() {
+                /*editor.addChangeListener(new ChangeListener() {
                     @Override
                     public void change(PropertyEditor editor) {
-                        editor.save();
-                        filtersTable.fireFilterChanged();
+                        editor.save();                        
                     }
-                });
-
+                });*/
                 if (table instanceof JTreeTable) {
                     JTreeTable treeTable = (JTreeTable) table;
                     if (treeTable.isRowSelected(row)) {
@@ -390,6 +618,10 @@ public class FiltersTreeTable extends JTreeTable {
             if (realValue.getClass() == Double.class || realValue.getClass() == Float.class) {
                 return true;
             }
+
+            if (filterValue.filterField.special > 0) {
+                return true;
+            }
             if (realValue.getClass() == Boolean.class) {
                 return false;
             }
@@ -399,10 +631,12 @@ public class FiltersTreeTable extends JTreeTable {
         @Override
         public boolean stopCellEditing() {
             editor.save();
+            filtersTable.fireFilterChanged();
             List<CellEditorListener> listeners2 = new ArrayList<>(listeners);
             for (CellEditorListener l : listeners2) {
                 l.editingStopped(new ChangeEvent(editor));
             }
+            filtersTable.repaint();
             return true;
         }
 
@@ -453,9 +687,34 @@ public class FiltersTreeTable extends JTreeTable {
                     case "distance":
                         units = " px";
                 }
-                label.setText(value.toString() + units);
+
                 Object fieldValue = filterValue.getValue();
-                if (fieldValue != null) {
+
+                if (filterValue.filterField.special > 0) {
+                    float[] matrix = (float[]) fieldValue;
+                    ColorMatrixConvertor convertor = new ColorMatrixConvertor(matrix);
+                    switch (filterValue.filterField.special) {
+                        case FilterField.SPECIAL_BRIGHTNESS:
+                            label.setText("" + convertor.getBrightness());
+                            break;
+                        case FilterField.SPECIAL_CONTRAST:
+                            label.setText("" + convertor.getContrast());
+                            break;
+                        case FilterField.SPECIAL_SATURATION:
+                            label.setText("" + convertor.getSaturation());
+                            break;
+                        case FilterField.SPECIAL_HUE:
+                            label.setText("" + convertor.getHue());
+                            break;
+                    }
+                } else {
+                    label.setText(value.toString() + units);
+                }
+                if (fieldValue != null) {                    
+                    if ("matrix".equals(filterValue.filterField.field.getName()) && filterValue.filterField.filter instanceof CONVOLUTIONFILTER) {
+                        component = new ConvolutionMatrixEditor((CONVOLUTIONFILTER) filterValue.filterField.filter);
+                    }
+                    
                     if ("gradientColors".equals(filterValue.filterField.field.getName())) {
                         component = new GradientEditor(filterValue.filterField.filter);
                     }
@@ -469,28 +728,9 @@ public class FiltersTreeTable extends JTreeTable {
                         panel.setOpaque(false);
                         component = panel;
                     }
-                    if (fieldValue.getClass() == RGBA.class) {
-                        JPanel panel = new JPanel(new BorderLayout());
-                        JButton buttonChange = new JButton("") {
-
-                            @Override
-                            protected void paintComponent(Graphics g) {
-                                g.setColor(getBackground());
-                                g.fillRect(0, 0, getWidth(), getHeight());
-                                super.paintBorder(g);
-                            }
-
-                        };
-                        buttonChange.setToolTipText(AppStrings.translate("button.selectcolor.hint"));
-                        buttonChange.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                        buttonChange.setBorderPainted(true);
-                        buttonChange.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
-                        Dimension colorDim = new Dimension(16, 16);
-                        buttonChange.setSize(colorDim);
-                        buttonChange.setPreferredSize(colorDim);
-                        buttonChange.setBackground(((RGBA) fieldValue).toColor());
-                        panel.add(buttonChange, BorderLayout.WEST);
-                        component = panel;
+                    if (fieldValue.getClass() == RGBA.class) {                       
+                        component = new ColorEditor(filterValue.filterField.toString(), filterValue.filterField.filter, filterValue.filterField.field, -1, RGBA.class);
+                        component.setToolTipText(AppStrings.translate("button.selectcolor.hint"));
                     }
                 }
             }
@@ -532,10 +772,25 @@ public class FiltersTreeTable extends JTreeTable {
 
         private final FILTER filter;
         private final Field field;
+        private final int special;
+
+        public static final int SPECIAL_BRIGHTNESS = 1;
+        public static final int SPECIAL_CONTRAST = 2;
+        public static final int SPECIAL_SATURATION = 3;
+        public static final int SPECIAL_HUE = 4;
 
         public FilterField(FILTER filter, Field property) {
+            this(filter, property, 0);
+        }
+
+        public FilterField(FILTER filter, Field property, int special) {
             this.filter = filter;
             this.field = property;
+            this.special = special;
+        }
+
+        public int getSpecial() {
+            return special;
         }
 
         public FILTER getFilter() {
@@ -556,6 +811,16 @@ public class FiltersTreeTable extends JTreeTable {
 
         @Override
         public String toString() {
+            switch (special) {
+                case SPECIAL_BRIGHTNESS:
+                    return "brightness";
+                case SPECIAL_CONTRAST:
+                    return "contrast";
+                case SPECIAL_SATURATION:
+                    return "saturation";
+                case SPECIAL_HUE:
+                    return "hue";
+            }
             if ("gradientColors".equals(field.getName())) {
                 return "gradient";
             }
@@ -664,6 +929,10 @@ public class FiltersTreeTable extends JTreeTable {
         }
 
         public void addFilter(FILTER filter) {
+            addFilter(filters.size(), filter);
+        }
+
+        public void addFilter(int index, FILTER filter) {
             if (this.filters == null) { //indeterminate
                 DefaultMutableTreeNode indeterminate = (DefaultMutableTreeNode) root.getChildAt(0);
                 root.remove(0);
@@ -674,7 +943,7 @@ public class FiltersTreeTable extends JTreeTable {
             }
 
             DefaultMutableTreeNode filterNode = new DefaultMutableTreeNode(new FilterName(filter));
-            root.add(filterNode);
+            root.insert(filterNode, index);
             Field[] fields = filter.getClass().getFields();
             for (Field field : fields) {
                 if ("id".equals(field.getName())) {
@@ -682,6 +951,37 @@ public class FiltersTreeTable extends JTreeTable {
                 }
                 if ("gradientRatio".equals(field.getName())) {
                     continue;
+                }
+                if (filter instanceof CONVOLUTIONFILTER) {
+                    if ("matrixX".equals(field.getName())
+                            || "matrixY".equals(field.getName())) {
+                        continue;
+                    }
+                }
+                if (filter instanceof COLORMATRIXFILTER) {
+                    if ("matrix".equals(field.getName())) {
+
+                        DefaultMutableTreeNode fieldNode;
+                        FilterField filterField;
+
+                        filterField = new FilterField(filter, field, FilterField.SPECIAL_BRIGHTNESS);
+                        fieldNode = new DefaultMutableTreeNode(filterField);
+                        filterNode.add(fieldNode);
+
+                        filterField = new FilterField(filter, field, FilterField.SPECIAL_CONTRAST);
+                        fieldNode = new DefaultMutableTreeNode(filterField);
+                        filterNode.add(fieldNode);
+
+                        filterField = new FilterField(filter, field, FilterField.SPECIAL_SATURATION);
+                        fieldNode = new DefaultMutableTreeNode(filterField);
+                        filterNode.add(fieldNode);
+
+                        filterField = new FilterField(filter, field, FilterField.SPECIAL_HUE);
+                        fieldNode = new DefaultMutableTreeNode(filterField);
+                        filterNode.add(fieldNode);
+
+                        continue;
+                    }
                 }
                 Reserved reserved = field.getAnnotation(Reserved.class);
                 if (reserved != null) {
@@ -691,10 +991,10 @@ public class FiltersTreeTable extends JTreeTable {
                 DefaultMutableTreeNode fieldNode = new DefaultMutableTreeNode(filterField);
                 filterNode.add(fieldNode);
             }
-            this.filters.add(filter);
+            this.filters.add(index, filter);
 
             for (TreeModelListener l : listeners) {
-                l.treeNodesInserted(new TreeModelEvent(this, new Object[]{root}, new int[]{this.filters.size() - 1}, new Object[]{filterNode}));
+                l.treeNodesInserted(new TreeModelEvent(this, new Object[]{root}, new int[]{index}, new Object[]{filterNode}));
             }
         }
 
@@ -703,7 +1003,7 @@ public class FiltersTreeTable extends JTreeTable {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) root.getChildAt(index);
             root.remove(node);
             for (TreeModelListener l : listeners) {
-                l.treeNodesRemoved(new TreeModelEvent(this, new Object[]{root}, new int[]{this.filters.size()}, new Object[]{node}));
+                l.treeNodesRemoved(new TreeModelEvent(this, new Object[]{root}, new int[]{index}, new Object[]{node}));
             }
         }
 

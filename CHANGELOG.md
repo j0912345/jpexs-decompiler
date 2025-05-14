@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 - Option to enter custom zoom level by clicking on zoom percentage label
 - Show in Simple editor context menu item for timelined items (sprites, buttons, swfs)
 - Simple editor - change background color
-- Simple editor - filters (without editing convolution, colormatrix)
+- Simple editor - filters
 
 ### Fixed
 - [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
@@ -72,6 +72,10 @@ All notable changes to this project will be documented in this file.
 - Simple editor - white square on top left corner of the timeline
 - Bevel and Glow filters incorrect rendering
 - Incorrect cursor handling when placed object has filters
+- FLA export - Rounding errors on COLORMATRIXFILTER contrast
+- Filters - image bounds
+- Simple editor - Exceptions caused by not setting timelined when modifying PlaceObject
+- [#2455] Commandline export ConcurrentModificationException
 
 ### Removed
 - Option to preview flash items via ActiveX component is no longer available.
@@ -3792,6 +3796,7 @@ Major version of SWF to XML export changed to 2.
 [#2355]: https://www.free-decompiler.com/flash/issues/2355
 [#2419]: https://www.free-decompiler.com/flash/issues/2419
 [#2454]: https://www.free-decompiler.com/flash/issues/2454
+[#2455]: https://www.free-decompiler.com/flash/issues/2455
 [#2375]: https://www.free-decompiler.com/flash/issues/2375
 [#2374]: https://www.free-decompiler.com/flash/issues/2374
 [#2389]: https://www.free-decompiler.com/flash/issues/2389
