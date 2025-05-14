@@ -83,11 +83,16 @@ public class AS3ScriptImporter {
         ArrayList<File> unsearchedFolders = new ArrayList<>();
         int searchIterations = 0;
         // TODO: maxSearchIterations should probably be a setting.
-        int maxSearchIterations = 10000;
+        // TODO: raise this number higher than 200
+        int maxSearchIterations = 200;
         for(searchIterations = 0; searchIterations < maxSearchIterations; searchIterations++)
         {
             for(File file : currentSearchingFolder.listFiles())
             {
+                // The GUI logger display only uses the WARNING level
+                logger.log(Level.WARNING, "\ncurrent file: %filepath%".replace("%filepath%", file.getAbsolutePath()) + 
+                        "\ncurrentSearchingFolder: %i%".replace("%i%", currentSearchingFolder.getAbsolutePath()) +
+                        "\nunsearchedFolders: %i%".replace("%i%", unsearchedFolders.toString()));
                 if(file.isFile() && file.getAbsolutePath().endsWith(".as"))
                 {
                     allFiles.add(file);
@@ -96,21 +101,21 @@ public class AS3ScriptImporter {
                 {
                     unsearchedFolders.add(file);
                 }
-                if(unsearchedFolders.isEmpty())
-                {
-                    break;
-                }
-                else
-                {
-                    currentSearchingFolder = unsearchedFolders.remove(0);
-                }
+            }
+            if(unsearchedFolders.isEmpty())
+            {
+                break;
+            }
+            else
+            {
+                currentSearchingFolder = unsearchedFolders.remove(0);
             }
         }
         if(searchIterations >= maxSearchIterations)
         {
-            logger.log(Level.WARNING,
-                    "Exhausted %i% iterations while trying to recursively search a directory for script import.".replace("%i%", String.valueOf(searchIterations))
-                    + "Any previously non-existent scripts not encountered yet will not be created and imported.");
+            logger.log(Level.SEVERE,
+                    "Exhausted %i% iterations while trying to recursively search a directory for importing scripts.".replace("%i%", String.valueOf(searchIterations))
+                    + "\nAny previously non-existent scripts not encountered yet will not be created and imported.");
         }
         
         
@@ -131,7 +136,7 @@ public class AS3ScriptImporter {
         {
             newFilesLogMessage += "%name%, ".replace("%name%", newFiles.get(i).getName());
         }
-        logger.log(Level.INFO, newFilesLogMessage);
+        logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
         
         int importCount = 0;
         for (ScriptPack pack : packs) {
