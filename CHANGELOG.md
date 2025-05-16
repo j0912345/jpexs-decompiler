@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [23.0.1] - 2025-05-16
+### Fixed
+- Nullpointer exception during SWF opening when Simple editor is active
+
 ## [23.0.0] - 2025-05-15
 ### Added
 - [#2427] Commandline export with use of imported SWFs (importAssets tag)
@@ -3610,7 +3614,8 @@ Major version of SWF to XML export changed to 2.
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.0...dev
+[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.1...dev
+[23.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.0...version23.0.1
 [23.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.2...version23.0.0
 [22.0.2]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.1...version22.0.2
 [22.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.0...version22.0.1
