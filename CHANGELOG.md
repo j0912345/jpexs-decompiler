@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [23.0.0] - 2025-05-15
 ### Added
 - [#2427] Commandline export with use of imported SWFs (importAssets tag)
 - Auto detect scale factor on Hi-dpi displays
@@ -23,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - Show in Simple editor context menu item for timelined items (sprites, buttons, swfs)
 - Simple editor - change background color
 - Simple editor - filters
+- Simple editor - convolution filter presets
+- Simple editor - ratio (shapetweens, video)
 
 ### Fixed
 - [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
@@ -76,6 +80,12 @@ All notable changes to this project will be documented in this file.
 - Filters - image bounds
 - Simple editor - Exceptions caused by not setting timelined when modifying PlaceObject
 - [#2455] Commandline export ConcurrentModificationException
+- [#1962] Close button could close more than one file at once
+- Simple editor - Selecting previous SWF when swf close
+
+### Changed
+- An item selected in the tag tree is needed for actions to be available.
+  Also SWF node is selected by default on first SWF opening.
 
 ### Removed
 - Option to preview flash items via ActiveX component is no longer available.
@@ -3600,7 +3610,8 @@ Major version of SWF to XML export changed to 2.
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.2...dev
+[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.0...dev
+[23.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.2...version23.0.0
 [22.0.2]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.1...version22.0.2
 [22.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.0...version22.0.1
 [22.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version21.1.3...version22.0.0
@@ -3797,6 +3808,7 @@ Major version of SWF to XML export changed to 2.
 [#2419]: https://www.free-decompiler.com/flash/issues/2419
 [#2454]: https://www.free-decompiler.com/flash/issues/2454
 [#2455]: https://www.free-decompiler.com/flash/issues/2455
+[#1962]: https://www.free-decompiler.com/flash/issues/1962
 [#2375]: https://www.free-decompiler.com/flash/issues/2375
 [#2374]: https://www.free-decompiler.com/flash/issues/2374
 [#2389]: https://www.free-decompiler.com/flash/issues/2389

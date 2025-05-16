@@ -16,6 +16,7 @@
  */
 package com.jpexs.decompiler.flash.easygui.properties.panels;
 
+import com.jpexs.decompiler.flash.easygui.ConvolutionPreset;
 import com.jpexs.decompiler.flash.easygui.EasyStrings;
 import com.jpexs.decompiler.flash.easygui.EasySwfPanel;
 import com.jpexs.decompiler.flash.easygui.EasyTagNameResolver;
@@ -72,6 +73,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -82,6 +84,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  *
@@ -103,6 +106,9 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
     private final IntegerPropertyField greenAddPropertyField = new IntegerPropertyField(0, -255, 255);
     private final IntegerPropertyField blueAddPropertyField = new IntegerPropertyField(0, -255, 255);
     private final EasySwfPanel swfPanel;
+    
+    private final IntegerPropertyField ratioPropertyField = new IntegerPropertyField(-1, -1, 65535);
+    
 
     private final JPanel propertiesPanel;
 
@@ -120,7 +126,11 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
     private final FiltersTreeTable filtersTable;
 
     private boolean updating = false;
+    
+    private List<FILTER> filterClipboard = new ArrayList<>();
 
+    
+    
     public InstancePropertiesPanel(EasySwfPanel swfPanel, UndoManager undoManager) {
         super("instance");
         setLayout(new BorderLayout());
@@ -243,8 +253,9 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
         gbc.insets = new Insets(3, 3, 3, 3);
 
         gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridy = 0;                        
         gbc.gridwidth = 1;
+                
         gbc.anchor = GridBagConstraints.EAST;
         displayPanel.add(new JLabel(formatPropertyName("display.visible")), gbc);
 
@@ -253,6 +264,18 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         displayPanel.add(visibleCheckBox, gbc);
+        
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 1;        
+        gbc.anchor = GridBagConstraints.EAST;
+        displayPanel.add(new JLabel(formatPropertyName("display.ratio")), gbc);
+
+        gbc.gridx++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        displayPanel.add(ratioPropertyField, gbc);
 
         gbc.gridy++;
         gbc.gridx = 0;
@@ -382,20 +405,36 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
                     filterName = filterName.substring(0, filterName.length() - "FILTER".length());
                     filterName = EasyStrings.translate("filter." + filterName.toLowerCase());
                     
-                    JMenuItem filterMenuItem = new JMenuItem(filterName);
-                    filterMenuItem.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            FILTER filter;
-                            try {                                
-                                filter = (FILTER) filterClass.getConstructor().newInstance();
-                            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-                                return;
-                            }
-                            filtersTable.addFilter(filter);
-                        }                        
-                    });
-                    menu.add(filterMenuItem);
+                    if (filterClass == CONVOLUTIONFILTER.class) {
+                        JMenu convolutionMenu = new JMenu(filterName);
+                        for (ConvolutionPreset preset : ConvolutionPreset.getAllPresets()) {
+                            JMenuItem filterMenuItem = new JMenuItem(preset.toString());
+                            filterMenuItem.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    FILTER filter = preset.createFilter();
+                                    filtersTable.addFilter(filter);
+                                }                        
+                            });
+                            convolutionMenu.add(filterMenuItem);
+                        }
+                        menu.add(convolutionMenu);
+                    } else {
+                        JMenuItem filterMenuItem = new JMenuItem(filterName);
+                        filterMenuItem.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                FILTER filter;
+                                try {                                
+                                    filter = (FILTER) filterClass.getConstructor().newInstance();
+                                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+                                    return;
+                                }
+                                filtersTable.addFilter(filter);
+                            }                        
+                        });
+                        menu.add(filterMenuItem);
+                    }
                 }
                 return menu;
             }            
@@ -410,19 +449,83 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
                 filtersTable.removeSelectedFilter();
             }
         });
-        removeFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.remove"));
+        removeFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.remove"));                                
+        PopupButton clipboardFilterButton = new PopupButton(View.getIcon("clipboard16")) {
+            @Override
+            protected JPopupMenu getPopupMenu() {
+                JPopupMenu menu = new JPopupMenu();
+                JMenuItem copySelectedMenuItem = new JMenuItem(EasyStrings.translate("property.instance.filters.menu.clipboard.copySelected"));
+                copySelectedMenuItem.addActionListener(this::copySelectedActionPerformed);
+                
+                JMenuItem copyAllMenuItem = new JMenuItem(EasyStrings.translate("property.instance.filters.menu.clipboard.copyAll"));
+                copyAllMenuItem.addActionListener(this::copyAllActionPerformed);
+                
+                JMenuItem pasteMenuItem = new JMenuItem(EasyStrings.translate("property.instance.filters.menu.clipboard.paste"));
+                pasteMenuItem.addActionListener(this::pasteActionPerformed);
+                
+                if (!filtersTable.isFilterSelected()) {
+                    copySelectedMenuItem.setEnabled(false);
+                }
+                
+                menu.add(copySelectedMenuItem);
+                menu.add(copyAllMenuItem);
+                menu.add(pasteMenuItem);
+                
+                return menu;
+            }            
+            
+            private void copySelectedActionPerformed(ActionEvent evt) {
+                FILTER filter = filtersTable.getSelectedFilter();
+                if (filter == null) {
+                    return;
+                }
+                
+                filterClipboard.clear();
+                filterClipboard.add(Helper.deepCopy(filter));
+            }
+            
+            private void copyAllActionPerformed(ActionEvent evt) {
+                filterClipboard.clear();
+                for (FILTER filter : filtersTable.getFilters()) {
+                    filterClipboard.add(Helper.deepCopy(filter));
+                }                
+            }
+            
+            private void pasteActionPerformed(ActionEvent evt) {
+                for (FILTER filter : filterClipboard) {
+                    filtersTable.addFilter(Helper.deepCopy(filter));
+                }
+            }
+        };
+        clipboardFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.clipboard"));
         
+        JButton enableFilterButton = new JButton(View.getIcon("show16"));
+        enableFilterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FILTER filter = filtersTable.getSelectedFilter();
+                filter.enabled = !filter.enabled;
+                filtersTable.fireFilterChanged();
+                filtersTable.repaint();
+            }
+        });
+        enableFilterButton.setToolTipText(EasyStrings.translate("property.instance.filters.menu.enable"));
+        enableFilterButton.setEnabled(false);
         
         filtersTable.getTree().addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent e) {
-                removeFilterButton.setEnabled(filtersTable.isFilterSelected());
+                boolean filterSelected = filtersTable.isFilterSelected();
+                removeFilterButton.setEnabled(filterSelected);
+                enableFilterButton.setEnabled(filterSelected);
             }           
         });
         
         
         filtersToolbar.add(addFilterButton);
         filtersToolbar.add(removeFilterButton);
+        filtersToolbar.add(clipboardFilterButton);
+        filtersToolbar.add(enableFilterButton);
         
         JScrollPane sp = new JScrollPane(filtersTable);
         filtersPanel.add(sp, BorderLayout.CENTER);
@@ -642,6 +745,23 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
             }
         });
         hPropertyField.addValidation(nonZeroFloatValidation);
+        
+        ratioPropertyField.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                undoManager.doOperation(new PlaceChangeDoableOperation("instance.display.ratio", 2) {
+                    Integer ratio = ratioPropertyField.getValue();
+                    @Override
+                    public void doPlaceOperation(PlaceObjectTypeTag placeObject, DepthState depthState) {
+                        if (ratio == null) {
+                            placeObject.setPlaceFlagHasRatio(false);
+                        } else {
+                            placeObject.setRatio(ratio);
+                        }
+                    }                    
+                }, swfPanel.getSwf());
+            }
+        });
 
         visibleCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -802,6 +922,8 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
         Set<Boolean> cacheAsBitmap = new HashSet<>();
         Set<RGBA> backgroundColor = new HashSet<>();
         Set<List<FILTER>> filters = new HashSet<>();
+        Set<Integer> ratio = new HashSet<>();
+        
 
         for (DepthState ds : dss) {
             if (ds == null) {
@@ -836,6 +958,7 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
             cacheAsBitmap.add(ds.cacheAsBitmap);
             backgroundColor.add(ds.backGroundColor);
             filters.add(ds.filters);
+            ratio.add(ds.ratio == -1 ? 0 : ds.ratio);
         }
 
         if (visible.size() == 0) {
@@ -851,6 +974,8 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
         bluePercentPropertyField.setValue(bluePercent, true);
         blueAddPropertyField.setValue(blueAdd, true);
 
+        ratioPropertyField.setValue(ratio, true);
+        
         if (visible.size() > 1) {
             visibleCheckBox.setSelectionState(1);
         } else {
@@ -1020,5 +1145,5 @@ public class InstancePropertiesPanel extends AbstractPropertiesPanel {
 
         public abstract void doColorEffectOperation(CXFORMWITHALPHA colorTransform);
     }
-
+       
 }
