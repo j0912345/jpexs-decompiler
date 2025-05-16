@@ -76,7 +76,7 @@ public class AS3ScriptImporter {
             scriptsFolder += File.separator;
         }
         
-        ArrayList<File> newFiles = new ArrayList<>();
+        //ArrayList<File> newFiles = new ArrayList<>();
         ArrayList<String> newFileDotPaths = new ArrayList<>();
         
         ArrayList<File> allFiles = new ArrayList<>();
@@ -116,7 +116,7 @@ public class AS3ScriptImporter {
         {
             // TODO: set this back to a warning after i remove the debug warnings
             logger.log(Level.SEVERE,
-                    "Exhausted %i% iterations while trying to recursively search a directory for importing scripts.".replace("%i%", String.valueOf(searchIterations))
+                    "Exhausted %i% iterations while trying to recursively search for new scripts.".replace("%i%", String.valueOf(searchIterations))
                     + "\nAny previously non-existent scripts not encountered yet will not be created and imported.");
         }
         
@@ -124,13 +124,20 @@ public class AS3ScriptImporter {
         for(int i = 0; i < allFiles.size(); i++)
         {
             File curFile = allFiles.get(i);
+            // TODO: check how symlinks are handled.
+            if(!curFile.getAbsolutePath().contains(scriptsFolder))
+            {
+                logger.log(Level.WARNING, "Found %file% while recursively searching for new scripts, ".replace("%file%", curFile.getAbsolutePath())
+                        + "which doesn't exist inside %folder%, the folder being imported.".replace("%folder%", scriptsFolder));
+                continue;
+            }
             String fileRelativePath = curFile.getAbsolutePath().substring(scriptsFolder.length());
-            fileRelativePath = fileRelativePath.split("\\.as")[0];
+            fileRelativePath = fileRelativePath.substring(0, fileRelativePath.lastIndexOf("."));
             fileRelativePath = fileRelativePath.replace("/", ".").replace("\\", ".");
             // apparently paths with slashes also are detected correctly for this function?
             if(packs.get(0).abc.findScriptPacksByPath(fileRelativePath, packs.get(0).allABCs).isEmpty())
             {
-                newFiles.add(curFile);
+                // add a blank script for `curFile`
                 newFileDotPaths.add(fileRelativePath);
             }
         }
