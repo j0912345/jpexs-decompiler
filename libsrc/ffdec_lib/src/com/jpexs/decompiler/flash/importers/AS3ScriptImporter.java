@@ -16,6 +16,7 @@
  */
 package com.jpexs.decompiler.flash.importers;
 
+import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.abc.ABC;
 import com.jpexs.decompiler.flash.abc.ScriptPack;
@@ -28,6 +29,7 @@ import com.jpexs.decompiler.flash.tags.ABCContainerTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.treeitems.Openable;
 import com.jpexs.decompiler.graph.CompilationException;
+import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
 import java.io.File;
@@ -82,8 +84,7 @@ public class AS3ScriptImporter {
         if (!scriptsFolder.endsWith(File.separator)) {
             scriptsFolder += File.separator;
         }
-        int importCount = 0;
-        
+
         Openable openable = packs.get(0).getOpenable();
         SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
         
@@ -108,16 +109,17 @@ public class AS3ScriptImporter {
                 {
                     addNewClassBeingImported(fileRelativePath, curFile, NewScriptABCContainer, swf);
                     newFileDotPaths.add(fileRelativePath);
-                    importCount++;
                 }
             }
             
             if (!allFiles.isEmpty()) {
-                // the below functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
+                // the next 3 functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
                 // these are in an if to avoid setting the same values every loop in addNewClassBeingImported().
                 swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
                 swf.setModified(true);
+                // new scripts will have their real contents compiled with the normal import loop
+                 packs = swf.getAS3Packs();
             }
             
             // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
@@ -129,6 +131,7 @@ public class AS3ScriptImporter {
             logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
         }
         
+        int importCount = 0;
         for (ScriptPack pack : packs) {
             if (CancellableWorker.isInterrupted()) {
                 return importCount;
@@ -235,11 +238,13 @@ public class AS3ScriptImporter {
             AbcIndexing abcIndex = swf.getAbcIndex();
             abcIndex.selectAbc(doAbc.getABC());
             ActionScript3Parser parser = new ActionScript3Parser(abcIndex);
-            
-            // IMPLEMENT WHAT THIS COMMENT SAYS
+            DottedChain dc = new DottedChain(pkgParts);
             // Due to classes possibly being imported and compiled before their dependancies,
             // scripts are created blank here and then correctly compiled later during the main import loop.
-            String script = Helper.readTextFile(scriptFile.getAbsolutePath());
+            String script = "package " + dc.toPrintableString(true) + " {"
+                        + "public class " + IdentifiersDeobfuscation.printIdentifier(true, classSimpleName) + " {"
+                        + " }"
+                        + "}";
             parser.addScript(script, fileName, 0, 0, swf.getDocumentClass(), doAbc.getABC());
         } catch (IOException | InterruptedException | AVM2ParseException | CompilationException ex) {
             Logger.getLogger(AS3ScriptImporter.class.getName()).log(Level.SEVERE, "Error during script compilation", ex);
