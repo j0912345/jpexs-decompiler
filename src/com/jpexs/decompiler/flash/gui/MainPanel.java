@@ -4273,6 +4273,12 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             if (!new File(scriptsFolder).exists()) {
                 scriptsFolder = selFile;
             }
+            SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
+            // TODO: this dialog should probably only be created when necessary.
+            // TODO: check what happens to selectDoABCDialog if no doABC tags exist
+            SelectTagOfTypeDialog selectDoABCDialog = new SelectTagOfTypeDialog(Main.getDefaultDialogsOwner(), (SWF) openable, ABCContainerTag.class, "DoABC", 1);
+            ABCContainerTag selectedAbcContainer = (ABCContainerTag) selectDoABCDialog.showDialog();
+            
             final String fScriptsFolder = scriptsFolder;
             final long timeBefore = System.currentTimeMillis();
             new CancellableWorker<Void>("importScript") {
@@ -4281,9 +4287,6 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
                 @Override
                 public Void doInBackground() throws Exception {
-
-                    SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
-
                     new AS2ScriptImporter().importScripts(fScriptsFolder, swf.getASMs(true), new ScriptImporterProgressListener() {
                         @Override
                         public void scriptImported() {
@@ -4316,7 +4319,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                         public void scriptImportError() {
                         }
                     },
-                            Main.getDependencies(swf)
+                            Main.getDependencies(swf), selectedAbcContainer
                     );
 
                     if (countAs3 > 0) {
@@ -4339,6 +4342,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
                     Main.importWorker = null;
                     View.execInEventDispatch(() -> {
+                        // refreshTree(); call because TagTreeContextMenu.addAs3ClassActionPerformed() does it
+                        refreshTree(swf);
                         setStatus(translate("importing_as.finishedin").replace("%time%", Helper.formatTimeSec(timeMs)));
 
                         ViewMessages.showMessageDialog(MainPanel.this, translate("import.script.result").replace("%count%", Integer.toString(countAs2 + countAs3)));
