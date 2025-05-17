@@ -25,7 +25,6 @@ import com.jpexs.decompiler.flash.abc.avm2.parser.script.AbcIndexing;
 import com.jpexs.decompiler.flash.abc.avm2.parser.script.ActionScript3Parser;
 import com.jpexs.decompiler.flash.exporters.modes.ScriptExportMode;
 import com.jpexs.decompiler.flash.exporters.settings.ScriptExportSettings;
-import com.jpexs.decompiler.flash.gui.tagtree.TagTreeContextMenu;
 import com.jpexs.decompiler.flash.tags.ABCContainerTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.treeitems.Openable;
@@ -247,7 +246,7 @@ public class AS3ScriptImporter {
                     + "}";
             parser.addScript(script, fileName, 0, 0, swf.getDocumentClass(), doAbc.getABC());
         } catch (IOException | InterruptedException | AVM2ParseException | CompilationException ex) {
-            Logger.getLogger(TagTreeContextMenu.class.getName()).log(Level.SEVERE, "Error during script compilation", ex);
+            Logger.getLogger(AS3ScriptImporter.class.getName()).log(Level.SEVERE, "Error during script compilation", ex);
         }
     }
 }
