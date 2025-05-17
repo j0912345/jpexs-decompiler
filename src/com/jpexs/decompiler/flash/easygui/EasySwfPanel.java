@@ -49,6 +49,7 @@ import com.jpexs.decompiler.flash.timeline.DepthState;
 import com.jpexs.decompiler.flash.timeline.Frame;
 import com.jpexs.decompiler.flash.timeline.Timelined;
 import com.jpexs.decompiler.flash.treeitems.Openable;
+import com.jpexs.decompiler.flash.types.BUTTONRECORD;
 import com.jpexs.decompiler.flash.types.MATRIX;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -187,13 +188,19 @@ public class EasySwfPanel extends JPanel {
                         for (int i = 0; i < depths.size(); i++) {
                             int depth = depths.get(i);
                             DepthState ds = stagePanel.getTimelined().getTimeline().getFrame(frame).layers.get(depth);
-                            wasModified.add(ds.placeObjectTag.isModified());
+                            wasModified.add(ds.placeObjectTag == null ? false : ds.placeObjectTag.isModified());
 
                             Matrix contMat = newMatrix.concatenate(new Matrix(fpreviousMatrices.get(i)));
 
-                            ds.placeObjectTag.setMatrix(contMat.toMATRIX());
-                            ds.placeObjectTag.setPlaceFlagHasMatrix(newMatrix != null);
-                            ds.placeObjectTag.setModified(true);
+                            if (timelined instanceof ButtonTag) {
+                                ButtonTag button = (ButtonTag) timelined;
+                                BUTTONRECORD rec = button.getButtonRecordAt(frame, depth, true);
+                                rec.placeMatrix = contMat.toMATRIX();                                
+                            } else {
+                                ds.placeObjectTag.setMatrix(contMat.toMATRIX());
+                                ds.placeObjectTag.setPlaceFlagHasMatrix(newMatrix != null);
+                                ds.placeObjectTag.setModified(true);
+                            }
                         }
                         timelined.resetTimeline();
                         stagePanel.repaint();
@@ -216,10 +223,16 @@ public class EasySwfPanel extends JPanel {
                         for (int i = 0; i < depths.size(); i++) {
                             int depth = depths.get(i);
                             DepthState ds = stagePanel.getTimelined().getTimeline().getFrame(frame).layers.get(depth);
-                            ds.placeObjectTag.setMatrix(fpreviousMatrices.get(i));
-                            ds.placeObjectTag.setPlaceFlagHasMatrix(fpreviousMatrices != null);
-                            if (!wasModified.get(i)) {
-                                ds.placeObjectTag.setModified(false);
+                            if (timelined instanceof ButtonTag) {
+                                ButtonTag button = (ButtonTag) timelined;
+                                BUTTONRECORD rec = button.getButtonRecordAt(frame, depth, true);
+                                rec.placeMatrix = fpreviousMatrices.get(i);                                
+                            } else {
+                                ds.placeObjectTag.setMatrix(fpreviousMatrices.get(i));
+                                ds.placeObjectTag.setPlaceFlagHasMatrix(fpreviousMatrices != null);
+                                if (ds.placeObjectTag != null && !wasModified.get(i)) {
+                                    ds.placeObjectTag.setModified(false);
+                                }
                             }
                         }
                         stagePanel.getTimelined().resetTimeline();
@@ -285,15 +298,21 @@ public class EasySwfPanel extends JPanel {
                                 place.matrix = new MATRIX();
                                 place.placeFlagHasMatrix = true;
                                 place.setTimelined(timelined);
-                                if (showFrameTag == null) {
-                                    timelined.addTag(place);
+                                
+                                if (timelined instanceof ButtonTag) {
+                                    ButtonTag button = (ButtonTag) timelined;
+                                    button.getButtonRecordAt(fframe, newDepth, true).fromPlaceObject(place);
                                 } else {
-                                    timelined.addTag(timelined.indexOfTag(showFrameTag), place);
+                                    if (showFrameTag == null) {
+                                        timelined.addTag(place);
+                                    } else {
+                                        timelined.addTag(timelined.indexOfTag(showFrameTag), place);
 
-                                    if (fframe < timelined.getFrameCount() - 1) {
-                                        RemoveObject2Tag remove = new RemoveObject2Tag(timelined.getSwf());
-                                        remove.depth = newDepth;
-                                        timelined.addTag(timelined.indexOfTag(showFrameTag) + 1, remove);
+                                        if (fframe < timelined.getFrameCount() - 1) {
+                                            RemoveObject2Tag remove = new RemoveObject2Tag(timelined.getSwf());
+                                            remove.depth = newDepth;
+                                            timelined.addTag(timelined.indexOfTag(showFrameTag) + 1, remove);
+                                        }
                                     }
                                 }
 
@@ -675,7 +694,11 @@ public class EasySwfPanel extends JPanel {
             if (ds == null) {
                 ret.add(null);
             } else {
-                ret.add(ds.placeObjectTag);
+                if (ds.placeObjectTag == null) {
+                    ret.add(ds.toPlaceObjectTag(ds.depth));
+                } else {
+                    ret.add(ds.placeObjectTag);
+                }
             }
         }
         return ret;

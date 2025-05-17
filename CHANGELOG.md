@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- "Starting Flash content debugger" in status bar when debugging starts
+- Simple editor - edit parameters of items inside buttons
+- Simple editor - add/remove frames in buttons, button timeline header
+
+### Fixed
+- [#2456] FLA export - NullPointer exception while exporting to CS4 or lower via commandline
+- Touch point, snap align and snap to objects incorrect position when editing nested layers
+
+### Fixed
+- Resize export dialogs labels to match localized strings
+- AS1/2 debugger - deletion of SWD file after debugging
 
 ## [23.0.1] - 2025-05-16
 ### Fixed
@@ -3784,6 +3796,7 @@ Major version of SWF to XML export changed to 2.
 [alpha 9]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha8...alpha9
 [alpha 8]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha7...alpha8
 [alpha 7]: https://github.com/jindrapetrik/jpexs-decompiler/releases/tag/alpha7
+[#2456]: https://www.free-decompiler.com/flash/issues/2456
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448
