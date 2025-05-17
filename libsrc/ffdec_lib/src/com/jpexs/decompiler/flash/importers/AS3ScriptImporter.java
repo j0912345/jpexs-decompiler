@@ -236,6 +236,9 @@ public class AS3ScriptImporter {
             abcIndex.selectAbc(doAbc.getABC());
             ActionScript3Parser parser = new ActionScript3Parser(abcIndex);
             
+            // IMPLEMENT WHAT THIS COMMENT SAYS
+            // Due to classes possibly being imported and compiled before their dependancies,
+            // scripts are created blank here and then correctly compiled later during the main import loop.
             String script = Helper.readTextFile(scriptFile.getAbsolutePath());
             parser.addScript(script, fileName, 0, 0, swf.getDocumentClass(), doAbc.getABC());
         } catch (IOException | InterruptedException | AVM2ParseException | CompilationException ex) {

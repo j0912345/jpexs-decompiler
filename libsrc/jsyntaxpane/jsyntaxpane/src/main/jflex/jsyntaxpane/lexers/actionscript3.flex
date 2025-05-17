@@ -85,7 +85,7 @@ WhiteSpace = {LineTerminator} | [ \t\f]+
 /* comments */
 Comment = {TraditionalComment} | {EndOfLineComment}
 
-TraditionalComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+TraditionalComment = "/*" [^*] ~"*/" | "/*" "*"+ "/" | "/**" [^*] ~"*/" | "/**" "*"+ "/"
 EndOfLineComment = "//" {InputCharacter}* {LineTerminator}?
 
 IdentFirst = [\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}_$]
