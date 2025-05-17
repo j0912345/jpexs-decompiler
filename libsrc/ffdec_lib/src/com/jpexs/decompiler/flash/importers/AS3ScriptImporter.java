@@ -82,6 +82,7 @@ public class AS3ScriptImporter {
         if (!scriptsFolder.endsWith(File.separator)) {
             scriptsFolder += File.separator;
         }
+        int importCount = 0;
         
         Openable openable = packs.get(0).getOpenable();
         SWF swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
@@ -128,7 +129,6 @@ public class AS3ScriptImporter {
             logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
         }
         
-        int importCount = 0;
         for (ScriptPack pack : packs) {
             if (CancellableWorker.isInterrupted()) {
                 return importCount;
