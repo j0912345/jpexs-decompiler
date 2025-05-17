@@ -92,15 +92,6 @@ public class AS3ScriptImporter {
         if(NewScriptABCContainer != null){
             ArrayList<File> allFiles = recursivelySearchDirForScripts(scriptsFolder);
             ArrayList<String> newFileDotPaths = new ArrayList<>();
-            
-            if(!allFiles.isEmpty())
-            {
-                // the below functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
-                // these are in an if to avoid setting the same values every loop in addBlankScriptWithName().
-                swf.clearAllCache();
-                ((Tag) NewScriptABCContainer).setModified(true);
-                swf.setModified(true);
-            }
 
             for(int i = 0; i < allFiles.size(); i++)
             {
@@ -122,6 +113,14 @@ public class AS3ScriptImporter {
                     addBlankScriptWithName(fileRelativePath, NewScriptABCContainer, swf);
                     newFileDotPaths.add(fileRelativePath);
                 }
+            }
+            
+            if (!allFiles.isEmpty()) {
+                // the below functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
+                // these are in an if to avoid setting the same values every loop in addBlankScriptWithName().
+                swf.clearAllCache();
+                ((Tag) NewScriptABCContainer).setModified(true);
+                swf.setModified(true);
             }
             
             // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
