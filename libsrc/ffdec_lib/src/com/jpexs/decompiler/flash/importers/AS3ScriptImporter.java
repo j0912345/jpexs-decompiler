@@ -16,7 +16,6 @@
  */
 package com.jpexs.decompiler.flash.importers;
 
-import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.abc.ABC;
 import com.jpexs.decompiler.flash.abc.ScriptPack;
@@ -29,7 +28,6 @@ import com.jpexs.decompiler.flash.tags.ABCContainerTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.treeitems.Openable;
 import com.jpexs.decompiler.graph.CompilationException;
-import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
 import java.io.File;
@@ -105,18 +103,17 @@ public class AS3ScriptImporter {
                 String fileRelativePath = curFile.getAbsolutePath().substring(scriptsFolder.length());
                 fileRelativePath = fileRelativePath.substring(0, fileRelativePath.lastIndexOf("."));
                 fileRelativePath = fileRelativePath.replace("/", ".").replace("\\", ".");
-                // apparently paths with slashes also are detected correctly for this function?
                 if(packs.get(0).abc.findScriptPacksByPath(fileRelativePath, packs.get(0).allABCs).isEmpty())
                 {
-                    // add a blank script for `curFile`
-                    addBlankScriptWithName(fileRelativePath, NewScriptABCContainer, swf);
+                    addNewClassBeingImported(fileRelativePath, curFile, NewScriptABCContainer, swf);
                     newFileDotPaths.add(fileRelativePath);
+                    importCount++;
                 }
             }
             
             if (!allFiles.isEmpty()) {
                 // the below functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
-                // these are in an if to avoid setting the same values every loop in addBlankScriptWithName().
+                // these are in an if to avoid setting the same values every loop in addNewClassBeingImported().
                 swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
                 swf.setModified(true);
@@ -190,9 +187,9 @@ public class AS3ScriptImporter {
             for(File file : currentSearchingFolder.listFiles())
             {
                 // The GUI logger display only uses the WARNING level
-                logger.log(Level.WARNING, "\ncurrent file: %filepath%".replace("%filepath%", file.getAbsolutePath()) + 
-                        "\ncurrentSearchingFolder: %i%".replace("%i%", currentSearchingFolder.getAbsolutePath()) +
-                        "\nunsearchedFolders: %i%".replace("%i%", unsearchedFolders.toString()));
+//                logger.log(Level.WARNING, "\ncurrent file: %filepath%".replace("%filepath%", file.getAbsolutePath()) + 
+//                        "\ncurrentSearchingFolder: %i%".replace("%i%", currentSearchingFolder.getAbsolutePath()) +
+//                        "\nunsearchedFolders: %i%".replace("%i%", unsearchedFolders.toString()));
                 if(file.isFile() && file.getAbsolutePath().endsWith(".as"))
                 {
                     allFiles.add(file);
@@ -221,7 +218,7 @@ public class AS3ScriptImporter {
         return allFiles;
     }
     
-    private void addBlankScriptWithName(String scriptDotPath, ABCContainerTag doAbc, SWF swf)
+    private void addNewClassBeingImported(String scriptDotPath, File scriptFile, ABCContainerTag doAbc, SWF swf)
     {
         String pkg = scriptDotPath.contains(".") ? scriptDotPath.substring(0, scriptDotPath.lastIndexOf(".")) : "";
         String classSimpleName = scriptDotPath.contains(".") ? scriptDotPath.substring(scriptDotPath.lastIndexOf(".") + 1) : scriptDotPath;
@@ -238,12 +235,8 @@ public class AS3ScriptImporter {
             AbcIndexing abcIndex = swf.getAbcIndex();
             abcIndex.selectAbc(doAbc.getABC());
             ActionScript3Parser parser = new ActionScript3Parser(abcIndex);
-
-            DottedChain dc = new DottedChain(pkgParts);
-            String script = "package " + dc.toPrintableString(true) + " {"
-                    + "public class " + IdentifiersDeobfuscation.printIdentifier(true, classSimpleName) + " {"
-                    + " }"
-                    + "}";
+            
+            String script = Helper.readTextFile(scriptFile.getAbsolutePath());
             parser.addScript(script, fileName, 0, 0, swf.getDocumentClass(), doAbc.getABC());
         } catch (IOException | InterruptedException | AVM2ParseException | CompilationException ex) {
             Logger.getLogger(AS3ScriptImporter.class.getName()).log(Level.SEVERE, "Error during script compilation", ex);
