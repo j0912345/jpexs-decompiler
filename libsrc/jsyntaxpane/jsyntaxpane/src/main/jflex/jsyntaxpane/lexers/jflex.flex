@@ -53,7 +53,7 @@ WhiteSpace = {LineTerminator} | [ \t\f]+
 /* comments */
 Comment = {TraditionalComment} | {EndOfLineComment} 
 
-TraditionalComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+TraditionalComment = "/*" [^*] ~"*/" | "/*" "*"+ "/" | "/*" [*]* ~"*/"
 EndOfLineComment = "//" {InputCharacter}* {LineTerminator}?
 
 /* identifiers */
