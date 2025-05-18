@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 - "Starting Flash content debugger" in status bar when debugging starts
 - Simple editor - edit parameters of items inside buttons
 - Simple editor - add/remove frames in buttons, button timeline header
+- Configuration is now stored in easily readable/editable textual format (TOML)
+  (saved also to older binary format, but loading is preffered from
+   the new TOML file, when exists)
+- `-configFile` and `-storeConfigFile` commandline parameters for loading/storing configuration file
+- Option to .bat and .sh file to enable J2D_D3D_NO_HWCHECK
 
 ### Fixed
 - [#2456] FLA export - NullPointer exception while exporting to CS4 or lower via commandline
