@@ -34,6 +34,8 @@ import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -79,6 +81,7 @@ public class AS3ScriptImporter {
      * @param NewScriptABCContainer ABCContainerTag for new scripts to be put into. Ignores new scripts if null.
      * @return Number of imported scripts
      * @throws InterruptedException On interrupt
+     * @throws As3ScriptReplaceException Placeholder
      */
     public int importScripts(As3ScriptReplacerInterface scriptReplacer, String scriptsFolder, List<ScriptPack> packs, ScriptImporterProgressListener listener, List<SWF> dependencies, ABCContainerTag NewScriptABCContainer) throws InterruptedException {
         if (!scriptsFolder.endsWith(File.separator)) {
@@ -118,7 +121,8 @@ public class AS3ScriptImporter {
                 swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
                 swf.setModified(true);
-                // new scripts will have their real contents compiled with the normal import loop
+                // new scripts will have their real contents compiled with the normal import loop.
+                // we create all of the scripts blank first to avoid issues with scripts being compiled before their dependencies exist. 
                  packs = swf.getAS3Packs();
             }
             
@@ -155,6 +159,12 @@ public class AS3ScriptImporter {
                     } catch (As3ScriptReplaceException asre) {
                         for (As3ScriptReplaceExceptionItem item : asre.getExceptionItems()) {
                             logger.log(Level.SEVERE, "%error% on line %line%, column %col%, file: %file%".replace("%error%", item.getMessage()).replace("%line%", Long.toString(item.getLine())).replace("%file%", fileName).replace("%col%", "" + item.getCol()));
+                            // I need to be able to see what in the parser actually goes wrong.
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            asre.printStackTrace(pw);
+                            String arseError = sw.toString();
+                            logger.log(Level.SEVERE, arseError);
                         }
                         if (listener != null) {
                             listener.scriptImportError();
@@ -239,8 +249,8 @@ public class AS3ScriptImporter {
             abcIndex.selectAbc(doAbc.getABC());
             ActionScript3Parser parser = new ActionScript3Parser(abcIndex);
             DottedChain dc = new DottedChain(pkgParts);
-            // Due to classes possibly being imported and compiled before their dependancies,
-            // scripts are created blank here and then correctly compiled later during the main import loop.
+            // due to classes possibly being compiled before their dependencies,
+            // scripts are created blank here and then actually compiled later during the main import loop.
             String script = "package " + dc.toPrintableString(true) + " {"
                         + "public class " + IdentifiersDeobfuscation.printIdentifier(true, classSimpleName) + " {"
                         + " }"

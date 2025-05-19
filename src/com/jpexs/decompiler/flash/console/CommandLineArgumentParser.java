@@ -3994,7 +3994,8 @@ public class CommandLineArgumentParser {
                     }
                 };
                 new AS2ScriptImporter().importScripts(scriptsFolder, swf.getASMs(true), listener);
-                new AS3ScriptImporter().importScripts(As3ScriptReplacerFactory.createByConfig(air), scriptsFolder, swf.getAS3Packs(), listener, Main.getDependencies(swf));
+                // FIXME: NOT IMPLEMENTED!!!!!!!!!!!!!!!!!!!!!!!
+                //new AS3ScriptImporter().importScripts(As3ScriptReplacerFactory.createByConfig(air), scriptsFolder, swf.getAS3Packs(), listener, Main.getDependencies(swf));
 
                 try {
                     try (OutputStream fos = new BufferedOutputStream(new FileOutputStream(outFile))) {
