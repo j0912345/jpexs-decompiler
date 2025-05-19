@@ -2685,8 +2685,20 @@ public class ActionScript3Parser {
                     lexer.pushback(s);
                     GraphTargetItem newvar = name(allOpenedNamespaces, thisType, pkg, needsActivation, false /*?*/, openedNamespaces, registerVars, inFunction, inMethod, variables, importedClasses, abc);
                     newvar = applyType(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, newvar, registerVars, inFunction, inMethod, variables, abc);
-                    expectedType(SymbolType.PARENT_OPEN);
-                    ret = new ConstructSomethingAVM2Item(lexer.yyline(), openedNamespaces, newvar, call(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, variables, abc), abcIndex);
+                    // compatability for importing new libraries/whatever from source code:
+                    // parentheses don't have to be used when creating an object with new.
+                    // `return new MD2;` (as3crypto, line 225) is the same thing as `return new MD2();`.
+                    //expectedType(SymbolType.PARENT_OPEN);
+                    s = lex();
+                    if(s.type == SymbolType.PARENT_OPEN)
+                    {
+                        ret = new ConstructSomethingAVM2Item(lexer.yyline(), openedNamespaces, newvar, call(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, variables, abc), abcIndex);
+                    }
+                    else
+                    {
+                        ret = new ConstructSomethingAVM2Item(lexer.yyline(), openedNamespaces, newvar, new ArrayList<>(), abcIndex);
+                    }
+                    
                 }
                 allowMemberOrCall = true;
                 break;
