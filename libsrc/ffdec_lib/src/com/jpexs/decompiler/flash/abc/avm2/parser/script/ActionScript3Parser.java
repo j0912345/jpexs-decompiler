@@ -154,7 +154,7 @@ public class ActionScript3Parser {
 
     private long uniqLast = 0;
 
-    private final boolean debugMode = false;
+    private final boolean debugMode = true;
 
     private static final String AS3_NAMESPACE = "http://adobe.com/AS3/2006/builtin";
 
@@ -472,7 +472,12 @@ public class ActionScript3Parser {
                 expStr += e;
                 first = false;
             }
-            throw new AVM2ParseException("" + expStr + " expected but " + symb.type + " found", line);
+            ActionScriptLexer lexer2 = lexer;
+            throw new AVM2ParseException("" + expStr + " expected but " + symb.type + " found. Value + next up found: \""+ symb.value.toString()+"\", "
+                    + "\""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", "
+                    + "\""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", "
+                    + "\""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\", \""+ lexer2.lex().toString()+"\""
+                    , line);
         }
     }
 
@@ -1739,6 +1744,7 @@ public class ActionScript3Parser {
                     loops.pop();
                     break;
                 case FOR:
+                    System.out.println("FOR LOOP: PARSE ENTERED");
                     s = lex();
                     boolean forin = false;
                     boolean each = false;
@@ -1773,17 +1779,24 @@ public class ActionScript3Parser {
                     GraphTargetItem forExpr = null;
                     List<GraphTargetItem> forFirstCommands = new ArrayList<>();
                     if (!forin) {
+                        System.out.println("FOR LOOP: lex()");
                         s = lex();
                         if (firstCommand != null) { //can be empty command
                             forFirstCommands.add(firstCommand);
                         }
+                        System.out.println("FOR LOOP: lexer.pushback(s);");
                         lexer.pushback(s);
                         //GraphTargetItem firstCommand = command(thisType,pkg,needsActivation, importedClasses, openedNamespaces, loops, loopLabels, registerVars, inFunction, inMethod, forinlevel, true, variables);
+                        System.out.println("FOR LOOP: forExpr = expression(... massive list of arguments)");
                         forExpr = expression(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, true, variables, false, abc);
                         if (forExpr == null) {
+                            System.out.println("forExpr == null, setting forExpr = new TrueItem(DIALECT, null, null);");
                             forExpr = new TrueItem(DIALECT, null, null);
                         }
+                        System.out.println("FOR LOOP: EXPECTING SEMICOLON");
                         expectedType(SymbolType.SEMICOLON);
+                        System.out.println("FOR LOOP: SEMICOLON SUCCESSFULLY EXPECTED");
+                        System.out.println("FOR LOOP: GraphTargetItem fcom = command(... massive list of arguments)");
                         GraphTargetItem fcom = command(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, loops, loopLabels, registerVars, inFunction, inMethod, forinlevel, true, variables, abc);
                         if (fcom != null) {
                             forFinalCommands.add(fcom);
@@ -1803,6 +1816,7 @@ public class ActionScript3Parser {
                         ret = new ForItem(DIALECT, null, null, floop, forFirstCommands, forExpr, forFinalCommands, forBody);
                     }
                     loops.pop();
+                    System.out.println("FOR LOOP: EXITING");
                     break;
                 case SWITCH:
                     Loop sloop = new Loop(-uniqId(), null, null); //negative id marks switch = no continue
@@ -2687,7 +2701,7 @@ public class ActionScript3Parser {
                     newvar = applyType(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, newvar, registerVars, inFunction, inMethod, variables, abc);
                     // compatability for importing new libraries/whatever from source code:
                     // parentheses don't have to be used when creating an object with new.
-                    // `return new MD2;` (as3crypto, line 225) is the same thing as `return new MD2();`.
+                    // `return new A;` is the same thing as `return new A();`.
                     //expectedType(SymbolType.PARENT_OPEN);
                     s = lex();
                     if(s.type == SymbolType.PARENT_OPEN)

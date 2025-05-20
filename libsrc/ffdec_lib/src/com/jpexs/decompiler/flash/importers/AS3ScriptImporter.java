@@ -127,12 +127,12 @@ public class AS3ScriptImporter {
             }
             
             // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
-            String newFilesLogMessage = "";
-            for(int i = 0; i < newFileDotPaths.size(); i++)
-            {
-                newFilesLogMessage += "%name%, ".replace("%name%", newFileDotPaths.get(i));
-            }
-            logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
+//            String newFilesLogMessage = "";
+//            for(int i = 0; i < newFileDotPaths.size(); i++)
+//            {
+//                newFilesLogMessage += "%name%, ".replace("%name%", newFileDotPaths.get(i));
+//            }
+//            logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
         }
         
         int importCount = 0;
