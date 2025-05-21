@@ -1076,9 +1076,7 @@ public final class ActionScriptLexer {
     {
         int numLines = count(s, "\n");
         int newYyline = yyline - numLines;
-        System.out.println("yypushbackstr editing source...: s: \'" + s + "\', old line: " + yyline + ", sourceCode: "+sourceCode);
         sourceCode = s + sourceCode.substring(yychar + yylength());
-        System.out.println("yypushbackstr edited source successfully: s: \'" + s + "\', old line: " + newYyline + ", sourceCode: "+sourceCode);
         yyreset(new StringReader(sourceCode));
         yybegin(state);
         yyline = newYyline;

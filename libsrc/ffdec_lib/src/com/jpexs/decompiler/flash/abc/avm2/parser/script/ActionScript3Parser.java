@@ -2143,7 +2143,11 @@ public class ActionScript3Parser {
      */
     private void xmlToLowerThanFix(ParsedSymbol symb) {
         if (symb.isType(SymbolType.XML_STARTVARTAG_BEGIN, SymbolType.XML_STARTTAG_BEGIN)) {
-            lexer.yypushbackstr(symb.value.toString().substring(1)); //parse again as LOWER_THAN
+            // BUG: this yypushbackstr() call causes the name of the "xml tag" to become duplicated in the unlexed/unparsed code buffer.
+            // IE: in `for (i=0; i<x.y; i++)`, `<x.y` gets interpreted as the start of an xml tag, which is later corrected here.
+            // calling yypushbackstr(symb.value.toString().substring(1)) just duplicates the "xml tag" name because it hasn't been parsed and removed yet.
+            // this process effectivelyt turns `for (i=0; i<x.y; i++)` into `for (i=0; i<x.yx.y; i++)`
+            //lexer.yypushbackstr(symb.value.toString().substring(1)); //parse again as LOWER_THAN
             String pb = symb.value.toString().substring(1);
             symb.type = SymbolType.LOWER_THAN;
             symb.group = SymbolGroup.OPERATOR;
