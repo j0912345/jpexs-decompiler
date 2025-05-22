@@ -126,6 +126,20 @@ public class AS3ScriptImporter {
                  packs = swf.getAS3Packs();
             }
             
+            
+            
+            
+            
+            
+            // TODO: compile newly imported dependencies in order!
+            // see https://en.wikipedia.org/wiki/Topological_sorting for Kahn's algorithm
+            
+            
+            
+            
+            
+            
+            
             // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
 //            String newFilesLogMessage = "";
 //            for(int i = 0; i < newFileDotPaths.size(); i++)

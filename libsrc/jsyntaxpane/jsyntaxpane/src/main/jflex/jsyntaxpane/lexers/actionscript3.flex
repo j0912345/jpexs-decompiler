@@ -146,7 +146,8 @@ Preprocessor = \u00A7\u00A7 {Identifier}
 
 NamespaceSuffix = "#" {DecIntegerLiteral}
 
-RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
+/* only allow actual actionscript regex flags to be used after a regex, and if any non-flag characters are present, do not match the flag section at all */
+RegExp = \/([^\r\n/]|\\\/)+(\/)(?:([gixms])(?!.*\3)(?!.*[abcdefhjklnopqrtuvwyz]))*
 
 VerbatimStringCharacter = [^\r\n\"]
 VerbatimString = "@\"" {VerbatimStringCharacter}* "\""
