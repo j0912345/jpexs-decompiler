@@ -1744,7 +1744,6 @@ public class ActionScript3Parser {
                     loops.pop();
                     break;
                 case FOR:
-                    System.out.println("FOR LOOP: PARSE ENTERED");
                     s = lex();
                     boolean forin = false;
                     boolean each = false;
@@ -1779,24 +1778,17 @@ public class ActionScript3Parser {
                     GraphTargetItem forExpr = null;
                     List<GraphTargetItem> forFirstCommands = new ArrayList<>();
                     if (!forin) {
-                        System.out.println("FOR LOOP: lex()");
                         s = lex();
                         if (firstCommand != null) { //can be empty command
                             forFirstCommands.add(firstCommand);
                         }
-                        System.out.println("FOR LOOP: lexer.pushback(s);");
                         lexer.pushback(s);
                         //GraphTargetItem firstCommand = command(thisType,pkg,needsActivation, importedClasses, openedNamespaces, loops, loopLabels, registerVars, inFunction, inMethod, forinlevel, true, variables);
-                        System.out.println("FOR LOOP: forExpr = expression(... massive list of arguments)");
                         forExpr = expression(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, true, variables, false, abc);
                         if (forExpr == null) {
-                            System.out.println("forExpr == null, setting forExpr = new TrueItem(DIALECT, null, null);");
                             forExpr = new TrueItem(DIALECT, null, null);
                         }
-                        System.out.println("FOR LOOP: EXPECTING SEMICOLON");
                         expectedType(SymbolType.SEMICOLON);
-                        System.out.println("FOR LOOP: SEMICOLON SUCCESSFULLY EXPECTED");
-                        System.out.println("FOR LOOP: GraphTargetItem fcom = command(... massive list of arguments)");
                         GraphTargetItem fcom = command(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, loops, loopLabels, registerVars, inFunction, inMethod, forinlevel, true, variables, abc);
                         if (fcom != null) {
                             forFinalCommands.add(fcom);
