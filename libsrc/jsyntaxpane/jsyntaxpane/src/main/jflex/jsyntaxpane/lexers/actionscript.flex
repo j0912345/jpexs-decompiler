@@ -133,6 +133,7 @@ Preprocessor = \u00A7\u00A7 {Identifier}
 
 NamespaceSuffix = "#" {DecIntegerLiteral}
 
+// why is regex here if it doesn't exist in actionscript_script.flex? did somebody forget to remove this?
 RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
 
 %state STRING, CHARLITERAL, XMLSTARTTAG, XML, OIDENTIFIER
@@ -190,7 +191,12 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
   "void"                         { return token(TokenType.KEYWORD); }
 
 
-  {RegExp}                       { 
+  {RegExp}                       {
+                                    // check for a /* */ comment
+                                    if(String.valueOf(yytext().charAt(1)).equals("*"))
+                                    {
+                                        return token(TokenType.COMMENT);
+                                    }
                                     if (prevToken == null || (prevToken.type == TokenType.OPERATOR && prevToken.pairValue >= 0)) {
                                         return token(TokenType.REGEX);
                                     } else {    

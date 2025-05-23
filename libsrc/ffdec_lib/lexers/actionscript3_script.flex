@@ -240,8 +240,10 @@ VerbatimString = "@\"" {VerbatimStringCharacter}* "\""
 
 NamespaceSuffix = "#" {DecIntegerLiteral}
 
-/* only allow actual actionscript regex flags to be used after a regex, and if any non-flag characters are present, do not match the flag section at all */
-RegExp = \/([^\r\n/]|\\\/)+(\/)(?:([gixms])(?!.*\3)(?!.*[abcdefhjklnopqrtuvwyz]))*
+// only allow actual actionscript regex flags to be used after a regex.
+// later in code we check if the character after the first slash is a *, and if so treat it as a comment. `/*/` or `/**/` are invalid regex anyway.
+// non flag characters in the flags section are just left as is for now. I would have had to account for them if `/**/` was valid regex.
+RegExp = \/([^\r\n/]|\\\/)+\/([gimxs]{0,5})
 
 %state STRING, CHARLITERAL,XMLOPENTAG,XMLCLOSETAGFINISH,XMLOPENTAGATTRIB,XMLINSTR,XMLCDATA,XMLCOMMENT,XML,OIDENTIFIER,XMLCDATAALONE,XMLCOMMENTALONE
 
@@ -484,7 +486,15 @@ RegExp = \/([^\r\n/]|\\\/)+(\/)(?:([gixms])(?!.*\3)(?!.*[abcdefhjklnopqrtuvwyz])
   /* identifiers */
   {Identifier}                   { return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); }
   /* regexp */
-  {RegExp}                       { return new ParsedSymbol(SymbolGroup.REGEXP, SymbolType.REGEXP, yytext()); }
+  {RegExp}                       {
+                                    // check for a /* */ comment
+                                    if(String.valueOf(yytext().charAt(1)).equals("*"))
+                                    {
+                                        yyline += count(yytext(),"\n");
+                                        return null;
+                                    }
+                                    return new ParsedSymbol(SymbolGroup.REGEXP, SymbolType.REGEXP, yytext());
+                                 }
   {NamespaceSuffix}              { return new ParsedSymbol(SymbolGroup.NAMESPACESUFFIX, SymbolType.NAMESPACESUFFIX, Integer.parseInt(yytext().substring(1))); }   
 }
 

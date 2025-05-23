@@ -146,8 +146,10 @@ Preprocessor = \u00A7\u00A7 {Identifier}
 
 NamespaceSuffix = "#" {DecIntegerLiteral}
 
-/* only allow actual actionscript regex flags to be used after a regex, and if any non-flag characters are present, do not match the flag section at all */
-RegExp = \/([^\r\n/]|\\\/)+(\/)(?:([gixms])(?!.*\3)(?!.*[abcdefhjklnopqrtuvwyz]))*
+// only allow actual actionscript regex flags to be used after a regex.
+// later in code we check if the character after the first slash is a *, and if so treat it as a comment. `/*/` or `/**/` are invalid regex anyway.
+// non flag characters in the flags section are just left as is for now. I would have had to account for them if `/**/` was valid regex.
+RegExp = \/([^\r\n/]|\\\/)+\/([gimxs]{0,5})
 
 VerbatimStringCharacter = [^\r\n\"]
 VerbatimString = "@\"" {VerbatimStringCharacter}* "\""
@@ -216,7 +218,12 @@ VerbatimString = "@\"" {VerbatimStringCharacter}* "\""
   "void"                         { return token(TokenType.KEYWORD); }
 
 
-  {RegExp}                       { 
+  {RegExp}                       {
+                                    // check for a /* */ comment
+                                    if(String.valueOf(yytext().charAt(1)).equals("*"))
+                                    {
+                                        return token(TokenType.COMMENT);
+                                    }
                                     if (prevToken == null || (prevToken.type == TokenType.OPERATOR && prevToken.pairValue >= 0)) {
                                         return token(TokenType.REGEX);
                                     } else {    
