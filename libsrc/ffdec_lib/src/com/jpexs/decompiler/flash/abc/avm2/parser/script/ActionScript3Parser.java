@@ -500,6 +500,7 @@ public class ActionScript3Parser {
 
     private List<GraphTargetItem> call(List<List<NamespaceItem>> allOpenedNamespaces, TypeItem thisType, NamespaceItem pkg, Reference<Boolean> needsActivation, List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, HashMap<String, Integer> registerVars, boolean inFunction, boolean inMethod, List<AssignableAVM2Item> variables, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
         List<GraphTargetItem> ret = new ArrayList<>();
+        System.out.println("call() called.");
         //expected(SymbolType.PARENT_OPEN); //MUST BE HANDLED BY CALLER
         ParsedSymbol s = lex();
         while (s.type != SymbolType.PARENT_CLOSE) {
@@ -508,6 +509,7 @@ public class ActionScript3Parser {
             }
             ret.add(expression(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, true, variables, false, abc));
             s = lex();
+            System.out.println("call(): about to expect SymbolType.COMMA or SymbolType.PARENT_CLOSE");
             expected(s, lexer.yyline(), SymbolType.COMMA, SymbolType.PARENT_CLOSE);
         }
         return ret;
@@ -519,7 +521,7 @@ public class ActionScript3Parser {
     }
 
     private FunctionAVM2Item function(List<List<NamespaceItem>> allOpenedNamespaces, List<Map.Entry<String, Map<String, String>>> metadata, NamespaceItem pkg, boolean isInterface, boolean isNative, Reference<Boolean> needsActivation, List<DottedChain> importedClasses, TypeItem thisType, List<NamespaceItem> openedNamespaces, String functionName, boolean isMethod, List<AssignableAVM2Item> variables, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
-
+        System.out.println("function() called.");
         openedNamespaces = new ArrayList<>(openedNamespaces); //local copy
         allOpenedNamespaces.add(openedNamespaces);
         int line = lexer.yyline();
@@ -559,7 +561,7 @@ public class ActionScript3Parser {
                     throw new AVM2ParseException("Some of parameters do not have default values", lexer.yyline());
                 }
             }
-
+            System.out.println("function(): about to expect SymbolType.COMMA or SymbolType.PARENT_CLOSE");
             if (!s.isType(SymbolType.COMMA, SymbolType.PARENT_CLOSE)) {
                 expected(s, lexer.yyline(), SymbolType.COMMA, SymbolType.PARENT_CLOSE);
             }
@@ -2706,9 +2708,9 @@ public class ActionScript3Parser {
                     }
                     else
                     {
+                        lexer.pushback(s);
                         ret = new ConstructSomethingAVM2Item(lexer.yyline(), openedNamespaces, newvar, new ArrayList<>(), abcIndex);
                     }
-                    
                 }
                 allowMemberOrCall = true;
                 break;
