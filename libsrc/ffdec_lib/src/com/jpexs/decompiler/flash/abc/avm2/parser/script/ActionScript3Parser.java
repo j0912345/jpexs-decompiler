@@ -2742,6 +2742,8 @@ public class ActionScript3Parser {
     private ActionScriptLexer lexer = null;
 
     private List<String> constantPool;
+    
+    // 
 
     private boolean parseImportsUsages(List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, Reference<Integer> numberUsageRef, Reference<Integer> numberPrecisionRef, Reference<Integer> numberRoundingRef, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
 

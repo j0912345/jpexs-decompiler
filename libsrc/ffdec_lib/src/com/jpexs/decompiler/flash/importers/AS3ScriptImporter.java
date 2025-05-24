@@ -131,8 +131,8 @@ public class AS3ScriptImporter {
             
             
             
-            // TODO: compile newly imported dependencies in order!
-            // see https://en.wikipedia.org/wiki/Topological_sorting for Kahn's algorithm
+            // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
+            // see https://en.wikipedia.org/wiki/Topological_sorting
             
             
             
@@ -140,13 +140,7 @@ public class AS3ScriptImporter {
             
             
             
-            // CHECK WHAT FILES WERE MARKED AS NEW ONLY FOR DEBUGGING
-//            String newFilesLogMessage = "";
-//            for(int i = 0; i < newFileDotPaths.size(); i++)
-//            {
-//                newFilesLogMessage += "%name%, ".replace("%name%", newFileDotPaths.get(i));
-//            }
-//            logger.log(Level.WARNING, "\n\n===========================\n\n" + newFilesLogMessage);
+
         }
         
         int importCount = 0;
@@ -160,8 +154,6 @@ public class AS3ScriptImporter {
             try {
                 File file = pack.getExportFile(scriptsFolder, new ScriptExportSettings(ScriptExportMode.AS, false, false, false, false, true));
                 if (file.exists()) {
-                    // do we really need to openable = pack.getOpenable(); and
-                    // swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf(); every loop?
                     openable = pack.getOpenable();
                     swf = (openable instanceof SWF) ? (SWF) openable : ((ABC) openable).getSwf();
                     swf.informListeners("importing_as", file.getAbsolutePath());
@@ -213,10 +205,6 @@ public class AS3ScriptImporter {
         {
             for(File file : currentSearchingFolder.listFiles())
             {
-                // The GUI logger display only uses the WARNING level
-//                logger.log(Level.WARNING, "\ncurrent file: %filepath%".replace("%filepath%", file.getAbsolutePath()) + 
-//                        "\ncurrentSearchingFolder: %i%".replace("%i%", currentSearchingFolder.getAbsolutePath()) +
-//                        "\nunsearchedFolders: %i%".replace("%i%", unsearchedFolders.toString()));
                 if(file.isFile() && file.getAbsolutePath().endsWith(".as"))
                 {
                     allFiles.add(file);
@@ -237,8 +225,7 @@ public class AS3ScriptImporter {
         }
         if(searchIterations >= maxSearchIterations)
         {
-            // TODO: set this back to a warning after i remove the debug warnings
-            logger.log(Level.SEVERE,
+            logger.log(Level.WARNING,
                     "Exhausted %i% iterations while trying to recursively search for new scripts.".replace("%i%", String.valueOf(searchIterations))
                     + "\nAny previously non-existent scripts not encountered yet will not be created and imported.");
         }
