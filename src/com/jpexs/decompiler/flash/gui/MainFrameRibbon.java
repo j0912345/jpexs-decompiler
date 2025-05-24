@@ -18,8 +18,19 @@ package com.jpexs.decompiler.flash.gui;
 
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.configuration.Configuration;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.BaseTSD;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.Dwmapi;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.NtDll;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.User32;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.WinDef;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.WinNT;
+import com.jpexs.decompiler.flash.gui.jna.platform.win32.WinUser;
 import com.jpexs.decompiler.flash.treeitems.OpenableList;
 import com.jpexs.helpers.Helper;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import com.sun.jna.win32.StdCallLibrary;
+import com.sun.jna.win32.W32APIOptions;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -28,6 +39,7 @@ import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
@@ -36,11 +48,23 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
+import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.util.List;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.plaf.RootPaneUI;
 import org.pushingpixels.flamingo.api.ribbon.JRibbon;
 import org.pushingpixels.flamingo.internal.ui.ribbon.appmenu.JRibbonApplicationMenuButton;
+import org.pushingpixels.substance.api.DecorationAreaType;
+import org.pushingpixels.substance.api.SubstanceColorScheme;
+import org.pushingpixels.substance.flamingo.ribbon.ui.SubstanceRibbonRootPaneUI;
+import org.pushingpixels.substance.internal.utils.SubstanceCoreUtilities;
+import org.pushingpixels.substance.internal.utils.SubstanceSizeUtils;
+import org.pushingpixels.substance.internal.utils.icon.SubstanceIconFactory;
+import org.pushingpixels.substance.internal.utils.icon.TransitionAwareIcon;
 
 /**
  * @author JPEXS
@@ -53,7 +77,6 @@ public final class MainFrameRibbon extends AppRibbonFrame {
 
     public MainFrameRibbon() {
         super();
-        
 
         Container cnt = getContentPane();
         cnt.setLayout(new BorderLayout());
@@ -170,6 +193,217 @@ public final class MainFrameRibbon extends AppRibbonFrame {
 
         View.centerScreenMain(this);
 
+        enableAeroSnap();
+    }
+
+    private boolean isAeroSnapAvailable() {
+        if (!Platform.isWindows()) {
+            return false;
+        }
+
+        WinNT.OSVERSIONINFOEX version = new WinNT.OSVERSIONINFOEX();
+        if (NtDll.INSTANCE.RtlGetVersion(version) != 0) {
+            return false;
+        }
+
+        int major = version.dwMajorVersion.intValue();
+        //int minor = version.dwMinorVersion.intValue();
+
+        if (major < 6) {
+            // Windows XP or older
+            return false;
+        }
+
+        try {
+            WinNT.BOOLbyReference enabled = new WinNT.BOOLbyReference();
+            if (Dwmapi.INSTANCE.DwmIsCompositionEnabled(enabled).intValue() == 0) {
+                if (enabled.getValue().intValue() != 1) {
+                    return false;
+                }
+            }
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
+            return false;
+        }
+        return true;
+    }
+
+    private void enableAeroSnap() {
+        if (!isAeroSnapAvailable()) {
+            return;
+        }
+
+        Point posOnScreen = new Point();
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                update();
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                update();
+            }
+
+            private void update() {
+                if (MainFrameRibbon.this.isVisible()) {
+                    posOnScreen.x = MainFrameRibbon.this.getLocationOnScreen().x;
+                    posOnScreen.y = MainFrameRibbon.this.getLocationOnScreen().y;
+                }
+            }
+        });
+        addWindowListener(new WindowAdapter() {
+            private BaseTSD.LONG_PTR oldWndProc;
+            private StdCallLibrary.StdCallCallback newProc;
+            private Rectangle dragRect = new Rectangle();
+            private Rectangle toggleRect = new Rectangle();
+            private AffineTransform trans;
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+                RootPaneUI ui = getRootPane().getUI();
+                if (ui instanceof SubstanceRibbonRootPaneUI) {
+                    SubstanceRibbonRootPaneUI sui = (SubstanceRibbonRootPaneUI) ui;
+                    JComponent titlePane = sui.getTitlePane();
+
+                    Window window = MainFrameRibbon.this;
+                    trans = View.getWindowDevice(window).getDefaultConfiguration().getDefaultTransform();
+                    if (trans == null) {
+                        trans = new AffineTransform();
+                    }
+
+                    ComponentAdapter ad = new ComponentAdapter() {
+                        @Override
+                        public void componentResized(ComponentEvent e) {
+                            updateRect();
+                        }
+
+                        @Override
+                        public void componentShown(ComponentEvent e) {
+                            updateRect();
+                        }
+
+                        private void updateRect() {
+                            int appButtonSize = (int) Math.round(trans.getScaleX() * Integer.getInteger("peacock.appButtonSize", 24));
+                            int titleIconsWidth
+                                    = 3 + SubstanceSizeUtils.getTitlePaneIconSize() //close                                    
+                                    + 10 + SubstanceSizeUtils.getTitlePaneIconSize() //maximize / restore
+                                    + 2 + SubstanceSizeUtils.getTitlePaneIconSize() //minimize
+                                    + 2 + SubstanceSizeUtils.getTitlePaneIconSize() //always on top
+                                    ;
+
+                            dragRect = new Rectangle(
+                                    5 + appButtonSize,
+                                    4,
+                                    titlePane.getWidth() - titleIconsWidth - appButtonSize,
+                                    titlePane.getHeight()
+                            );
+
+                            toggleRect = new Rectangle(
+                                    titlePane.getWidth() - (3 + SubstanceSizeUtils.getTitlePaneIconSize() // close
+                                    + 10 + SubstanceSizeUtils.getTitlePaneIconSize() //maximize / restore
+                                    ),
+                                    4,
+                                    SubstanceSizeUtils.getTitlePaneIconSize(),
+                                    SubstanceSizeUtils.getTitlePaneIconSize()
+                            );
+                        }
+                    };
+                    titlePane.addComponentListener(ad);
+
+                    ad.componentShown(null);
+
+                    WinDef.HWND hwnd = new WinDef.HWND(Native.getComponentPointer(window));
+
+                    oldWndProc = User32.INSTANCE.GetWindowLongPtr(hwnd, WinUser.GWL_WNDPROC);
+
+                    newProc = new StdCallLibrary.StdCallCallback() {
+                        public WinDef.LRESULT callback(WinDef.HWND hWnd, int uMsg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {
+                            if (!User32.INSTANCE.IsWindow(hwnd)) {
+                                return new WinDef.LRESULT(0);
+                            }
+                            if (uMsg == WinUser.WM_NCCALCSIZE) {
+                                return new WinDef.LRESULT(0);
+                            }
+                            if (uMsg == WinUser.WM_NCMOUSEMOVE) {
+                                User32.INSTANCE.PostMessage(hWnd, WinUser.WM_MOUSEMOVE, wParam, lParam);
+                            }
+                            if (uMsg == WinUser.WM_NCHITTEST) {
+                                int y = (short) ((lParam.longValue() >> 16) & 0xFFFF);
+                                int x = (short) (lParam.longValue() & 0xFFFF);
+
+                                int BORDER_WIDTH = 4;
+                                WinDef.RECT winRect = new WinDef.RECT();
+                                User32.INSTANCE.GetWindowRect(hWnd, winRect);
+
+                                boolean left = x >= winRect.left - BORDER_WIDTH && x < winRect.left + BORDER_WIDTH;
+                                boolean right = x < winRect.right + BORDER_WIDTH && x >= winRect.right - BORDER_WIDTH;
+                                boolean top = y >= winRect.top - BORDER_WIDTH && y < winRect.top + BORDER_WIDTH;
+                                boolean bottom = y < winRect.bottom + BORDER_WIDTH && y >= winRect.bottom - BORDER_WIDTH;
+
+                                if (left && top) {
+                                    return new WinDef.LRESULT(WinUser.HTTOPLEFT);
+                                }
+                                if (right && top) {
+                                    return new WinDef.LRESULT(WinUser.HTTOPRIGHT);
+                                }
+                                if (left && bottom) {
+                                    return new WinDef.LRESULT(WinUser.HTBOTTOMLEFT);
+                                }
+                                if (right && bottom) {
+                                    return new WinDef.LRESULT(WinUser.HTBOTTOMRIGHT);
+                                }
+                                if (top) {
+                                    return new WinDef.LRESULT(WinUser.HTTOP);
+                                }
+                                if (bottom) {
+                                    return new WinDef.LRESULT(WinUser.HTBOTTOM);
+                                }
+                                if (left) {
+                                    return new WinDef.LRESULT(WinUser.HTLEFT);
+                                }
+                                if (right) {
+                                    return new WinDef.LRESULT(WinUser.HTRIGHT);
+                                }
+
+                                Point p = new Point(x, y);
+
+                                p.x = (int) Math.round(p.x / trans.getScaleX());
+                                p.y = (int) Math.round(p.y / trans.getScaleY());
+
+                                p.x -= posOnScreen.x;
+                                p.y -= posOnScreen.y;
+                                if (dragRect.contains(p)) {
+                                    return new WinDef.LRESULT(WinUser.HTCAPTION);
+                                }
+
+                                if (toggleRect.contains(p)) {
+                                    return new WinDef.LRESULT(WinUser.HTMAXBUTTON);
+                                }
+
+                                //return new WinDef.LRESULT(WinUser.HTCLIENT);
+                            }
+                            return User32.INSTANCE.CallWindowProc(oldWndProc.toPointer(), hWnd, uMsg, wParam, lParam);
+                        }
+                    };
+
+                    User32.INSTANCE.SetWindowLongPtr(hwnd, WinUser.GWL_WNDPROC, newProc);
+
+                    int style = User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_STYLE);
+                    style |= WinUser.WS_THICKFRAME;
+                    User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_STYLE, style);
+                    User32.INSTANCE.SetWindowPos(hwnd, null, 0, 0, 0, 0,
+                            WinUser.SWP_NOMOVE | WinUser.SWP_NOSIZE | WinUser.SWP_NOZORDER | WinUser.SWP_FRAMECHANGED);
+
+                    Dwmapi.MARGINS margins = new Dwmapi.MARGINS();
+                    margins.cxLeftWidth = 0;
+                    margins.cxRightWidth = 0;
+                    margins.cyTopHeight = 0;
+                    margins.cyBottomHeight = 0;
+
+                    Dwmapi.INSTANCE.DwmExtendFrameIntoClientArea(hwnd, margins);
+                }
+            }
+        });
     }
 
     @Override
