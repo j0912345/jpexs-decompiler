@@ -14,7 +14,10 @@ All notable changes to this project will be documented in this file.
 - [#2404] Quick find in text/script editors - show number of occurences
 - [#1418] Option to make main window Always on top
 - [#289] Support for Aero Snap on Windows
-
+- [#2412] Show coordinates on stage mouse move for up to 2 decimal places
+- "Show detail" context menu item for items in folder preview
+- [#1682] AS2 - Adding class by context menu on packages
+ 
 ### Fixed
 - [#2456] FLA export - NullPointer exception while exporting to CS4 or lower via commandline
 - Touch point, snap align and snap to objects incorrect position when editing nested layers
@@ -22,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - AS1/2 debugger - deletion of SWD file after debugging
 - Proper freeing memory after SWF close
 - AS1/2 improper selection of search result
+- [#2459] AS1/2 StoreRegister improper declaration position
+- AS2 Class names not showing in Folder list view
 
 ## [23.0.1] - 2025-05-16
 ### Fixed
@@ -3807,7 +3812,10 @@ Major version of SWF to XML export changed to 2.
 [#2404]: https://www.free-decompiler.com/flash/issues/2404
 [#1418]: https://www.free-decompiler.com/flash/issues/1418
 [#289]: https://www.free-decompiler.com/flash/issues/289
+[#2412]: https://www.free-decompiler.com/flash/issues/2412
+[#1682]: https://www.free-decompiler.com/flash/issues/1682
 [#2456]: https://www.free-decompiler.com/flash/issues/2456
+[#2459]: https://www.free-decompiler.com/flash/issues/2459
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448
@@ -4068,7 +4076,6 @@ Major version of SWF to XML export changed to 2.
 [#1888]: https://www.free-decompiler.com/flash/issues/1888
 [#1892]: https://www.free-decompiler.com/flash/issues/1892
 [#355]: https://www.free-decompiler.com/flash/issues/355
-[#1682]: https://www.free-decompiler.com/flash/issues/1682
 [#1981]: https://www.free-decompiler.com/flash/issues/1981
 [#1982]: https://www.free-decompiler.com/flash/issues/1982
 [#1986]: https://www.free-decompiler.com/flash/issues/1986

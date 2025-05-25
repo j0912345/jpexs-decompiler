@@ -18,8 +18,8 @@ package com.jpexs.decompiler.flash.gui;
 
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.gui.tagtree.AbstractTagTree;
+import com.jpexs.decompiler.flash.tags.DoInitActionTag;
 import com.jpexs.decompiler.flash.tags.Tag;
-import com.jpexs.decompiler.flash.treeitems.Openable;
 import com.jpexs.decompiler.flash.treeitems.TreeItem;
 import com.jpexs.helpers.SerializableImage;
 import java.awt.Color;
@@ -110,11 +110,7 @@ public class FolderListPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() > 1) {
-                    if (selectedIndex > -1) {
-                        TreeItem selectedItem = FolderListPanel.this.items.get(selectedIndex);
-                        TreePath subPath = parentPath.pathByAddingChild(selectedItem);
-                        mainPanel.getCurrentTree().setSelectionPath(subPath);
-                    }
+                    goToSelection();
                 }
             }
 
@@ -158,13 +154,21 @@ public class FolderListPanel extends JPanel {
                 }
 
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    mainPanel.getContextPopupMenu().update(getSelectedItemsSorted());
+                    mainPanel.getContextPopupMenu().update(getSelectedItemsSorted(), true);
                     mainPanel.getContextPopupMenu().show(FolderListPanel.this, e.getX(), e.getY());
                 }
                 repaint();
             }
         });
         setFocusable(true);
+    }
+
+    public void goToSelection() {
+        if (selectedIndex > -1) {
+            TreeItem selectedItem = FolderListPanel.this.items.get(selectedIndex);
+            TreePath subPath = parentPath.pathByAddingChild(selectedItem);
+            mainPanel.getCurrentTree().setSelectionPath(subPath);
+        }
     }
 
     public synchronized void setItems(TreePath parentPath, List<TreeItem> items) {
@@ -175,8 +179,8 @@ public class FolderListPanel extends JPanel {
         selectedItems.clear();
         selectedIndex = -1;
         ((JScrollPane) getParent().getParent()).getVerticalScrollBar().setValue(0);
-    }   
-    
+    }
+
     public void clear() {
         items = new ArrayList<>();
         selectedItems.clear();
@@ -240,16 +244,26 @@ public class FolderListPanel extends JPanel {
                     TreeNodeType type = AbstractTagTree.getTreeNodeType(treeItem);
                     Icon icon = ICONS.get(type);
                     icon.paintIcon(l, g, x * CELL_WIDTH + BORDER_SIZE + PREVIEW_SIZE / 2 - icon.getIconWidth() / 2, y * CELL_HEIGHT + BORDER_SIZE + PREVIEW_SIZE / 2 - icon.getIconHeight() / 2);
-                    String s;
-                    if (treeItem instanceof Tag) {
-                        Tag t = (Tag) treeItem;
-                        String uniqueId = t.getUniqueId();
-                        s = ((Tag) treeItem).getTagName();
-                        if (uniqueId != null) {
-                            s = s + " (" + uniqueId + ")";
+                    String s = null;
+                    if (treeItem instanceof DoInitActionTag) {
+                        DoInitActionTag tag = (DoInitActionTag) treeItem;
+                        String expName = tag.getSwf().getExportName(tag.getCharacterId());
+                        if (expName != null && !expName.isEmpty()) {
+                            String[] pathParts = expName.contains(".") ? expName.split("\\.") : new String[]{expName};
+                            s = pathParts[pathParts.length - 1];
                         }
-                    } else {
-                        s = treeItem.toString();
+                    }
+                    if (s == null) {
+                        if (treeItem instanceof Tag) {
+                            Tag t = (Tag) treeItem;
+                            String uniqueId = t.getUniqueId();
+                            s = ((Tag) treeItem).getTagName();
+                            if (uniqueId != null) {
+                                s = s + " (" + uniqueId + ")";
+                            }
+                        } else {
+                            s = treeItem.toString();
+                        }
                     }
 
                     int itemIndex = mainPanel.getCurrentTree().getFullModel().getItemIndex(treeItem);
