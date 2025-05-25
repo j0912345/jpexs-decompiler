@@ -1124,9 +1124,12 @@ public class AVM2SourceGenerator implements SourceGenerator {
         }
 
         for (int i = 0; i < paramValues.size(); i++) {
-            // const variables, despite literally being constants, are still set as not being resolved by the time this code is reached.
-            // at least according to the value passed into val in the below getValueKind() call.
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
+            // references to a const variable are still UnresolvedAVM2Items and will always return null at this point in the above `getValueKind()` call.
+            if (optional[i] == null) {
+                GraphTargetItem resolveAttempt = ((UnresolvedAVM2Item) paramValues.get(i)).resolve(localData, localData.getFullClass(), null, new ArrayList<>(), new ArrayList<>(), abcIndex, new ArrayList<>(), new ArrayList<>());
+                optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), resolveAttempt, false);
+            }
             if (optional[i] == null) {
                 System.out.println("methodHeader(): throwing compiletime constant exception...");
                 throw new CompilationException("Default value must be compiletime constant", line);
@@ -1686,14 +1689,24 @@ public class AVM2SourceGenerator implements SourceGenerator {
         if(val instanceof UnresolvedAVM2Item)
         {
             System.out.println("getValueKind(): UnresolvedAVM2Item.resovled == null: " + String.valueOf(((UnresolvedAVM2Item)val).resolved == null));
+            System.out.println("getValueKind(): UnresolvedAVM2Item.getVariableName(): " + String.valueOf(((UnresolvedAVM2Item)val).getVariableName()));
             if(((UnresolvedAVM2Item)val).resolved != null){
                 System.out.println("getValueKind(): UnresolvedAVM2Item.resolved.getClass().getName(): " + ((UnresolvedAVM2Item)val).resolved.getClass().getName());
             }
-//            System.out.println("getValueKind(): " + ((NameAVM2Item) val).getVariableName() + " | isConst: " + String.valueOf(((NameAVM2Item) val).isConst())
-//                    + " value: "+String.valueOf(((NameAVM2Item) val).assignedValue) + " | type class: " + String.valueOf(((NameAVM2Item) val).getClass().getName()));
+
         }
-        else if(val instanceof Object){
-            System.out.println("getValueKind(): " + String.valueOf(val.getClass().getCanonicalName()));
+        if(val instanceof PropertyAVM2Item)
+        {
+            System.out.println("getValueKind(): PropertyAVM2Item: " + ((PropertyAVM2Item) val).propertyName + " value: " + String.valueOf(((PropertyAVM2Item) val).assignedValue)
+                    + " | object: " + String.valueOf(((PropertyAVM2Item) val).object));
+            if(((PropertyAVM2Item) val).object instanceof NameAVM2Item)
+            {
+                System.out.println("getValueKind(): PropertyAVM2Item object instanceof NameAVM2Item: " + ((NameAVM2Item) ((PropertyAVM2Item) val).object).getVariableName() +
+                        " value: " + String.valueOf(((NameAVM2Item) ((PropertyAVM2Item) val).object).assignedValue) + " | isConst: " + String.valueOf(((NameAVM2Item) ((PropertyAVM2Item) val).object).isConst()));
+            }
+        }
+        if(val instanceof Object){
+            System.out.println("- getValueKind(): " + String.valueOf(val.getClass().getCanonicalName()));
         }
         
 
