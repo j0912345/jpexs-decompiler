@@ -1124,8 +1124,11 @@ public class AVM2SourceGenerator implements SourceGenerator {
         }
 
         for (int i = 0; i < paramValues.size(); i++) {
+            // const variables, despite literally being constants, are still set as not being resolved by the time this code is reached.
+            // at least according to the value passed into val in the below getValueKind() call.
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
             if (optional[i] == null) {
+                System.out.println("methodHeader(): throwing compiletime constant exception...");
                 throw new CompilationException("Default value must be compiletime constant", line);
             }
         }
@@ -1454,10 +1457,12 @@ public class AVM2SourceGenerator implements SourceGenerator {
             param_types[i] = typeName(localData, paramTypes.get(i));
             //param_names[i] = str(paramNames.get(i));
         }
-
+        
+        
         for (int i = 0; i < paramValues.size(); i++) {
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
             if (optional[i] == null) {
+                System.out.println("method(): throwing compiletime constant exception...");
                 throw new CompilationException("Default value must be compiletime constant", line);
             }
         }
@@ -1678,8 +1683,21 @@ public class AVM2SourceGenerator implements SourceGenerator {
                 isNs = true;
             }
         }
+        if(val instanceof UnresolvedAVM2Item)
+        {
+            System.out.println("getValueKind(): UnresolvedAVM2Item.resovled == null: " + String.valueOf(((UnresolvedAVM2Item)val).resolved == null));
+            if(((UnresolvedAVM2Item)val).resolved != null){
+                System.out.println("getValueKind(): UnresolvedAVM2Item.resolved.getClass().getName(): " + ((UnresolvedAVM2Item)val).resolved.getClass().getName());
+            }
+//            System.out.println("getValueKind(): " + ((NameAVM2Item) val).getVariableName() + " | isConst: " + String.valueOf(((NameAVM2Item) val).isConst())
+//                    + " value: "+String.valueOf(((NameAVM2Item) val).assignedValue) + " | type class: " + String.valueOf(((NameAVM2Item) val).getClass().getName()));
+        }
+        else if(val instanceof Object){
+            System.out.println("getValueKind(): " + String.valueOf(val.getClass().getCanonicalName()));
+        }
+        
 
-        if ((type instanceof TypeItem) && (((TypeItem) type).fullTypeName.equals(DottedChain.NAMESPACE))) {
+        if ((val instanceof TypeItem) && (((TypeItem) val).fullTypeName.equals(DottedChain.NAMESPACE))) {
             isNs = true;
         }
 
@@ -1969,6 +1987,7 @@ public class AVM2SourceGenerator implements SourceGenerator {
                 }
                 boolean generatedNs = false;
                 if (item instanceof ConstAVM2Item) {
+                    System.out.println("recieved ConstAVM2Item in generateTraitsPhase4()!");
                     ConstAVM2Item cai = (ConstAVM2Item) item;
                     generatedNs = cai.generatedNs;
                     if (!isScriptTraits && cai.isStatic() != generateStatic) {
