@@ -17,7 +17,24 @@ All notable changes to this project will be documented in this file.
 - [#2412] Show coordinates on stage mouse move for up to 2 decimal places
 - "Show detail" context menu item for items in folder preview
 - [#1682] AS2 - Adding class by context menu on packages
- 
+- Simple editor - detection of english color name (based on CSS names)
+- AS1/2/3 - highlight variable definition and all its instances on cursor place
+  (also in edit mode)
+- AS1/2/3 - underline errors in the code (also in edit mode) 
+- AS1/2/3 - highlight variables and errors on panel next to vertical scrollbar
+- AS1/2 direct editation - hide P-code panel when editing
+- Disable AS1/2/3 direct editation when editing P-code
+
+### Changed
+- AS1/2 - Single DoAction tag inside frame is now displayed directly as frame node
+  so there is no longer need to expand frame nodes (useful for fast switching scripts)
+- AS1/2 - Scripts from default package (not these inside `__Packages`) are now
+  exported/imported to/from main scripts folder instead of localized `<default package>` before.
+  (Only happened when package flattening was on)
+  This may break backwards compatibility. For importing scripts from older
+  versions of FFDec, you should move the scripts from `<default package>`
+  to main scripts folder.
+
 ### Fixed
 - [#2456] FLA export - NullPointer exception while exporting to CS4 or lower via commandline
 - Touch point, snap align and snap to objects incorrect position when editing nested layers
@@ -27,6 +44,18 @@ All notable changes to this project will be documented in this file.
 - AS1/2 improper selection of search result
 - [#2459] AS1/2 StoreRegister improper declaration position
 - AS2 Class names not showing in Folder list view
+- AS1/2 - Incorrect DefineFunction2 parameter names when parameter name is empty
+- [#2460] SVG export - incorrect caching colorTransform and ratio for the same tag
+- [#2461] SVG export - incorrect clipping / missing shapes
+- AS1/2 direct editation - Position in the code should stay same after clicking Edit button
+- AS3 direct editation - Allow internal keyword on script traits (e.g. classes)
+- AS3 direct editation - NaN can be used as identifier
+- Pin header for AS2 script in the Resources view should show Class name in 
+  the title instead of tag full description
+- AS1/2/3 for decompilation with multiple variables
+- AS3 native functions outside class allowed
+- AS3 difference between namespace keyword and const of type Namespace
+- [#2462] AS3 debugger - incorrect line info injected
 
 ## [23.0.1] - 2025-05-16
 ### Fixed
@@ -3816,6 +3845,9 @@ Major version of SWF to XML export changed to 2.
 [#1682]: https://www.free-decompiler.com/flash/issues/1682
 [#2456]: https://www.free-decompiler.com/flash/issues/2456
 [#2459]: https://www.free-decompiler.com/flash/issues/2459
+[#2460]: https://www.free-decompiler.com/flash/issues/2460
+[#2461]: https://www.free-decompiler.com/flash/issues/2461
+[#2462]: https://www.free-decompiler.com/flash/issues/2462
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448

@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS, All rights reserved.
- *
+ *  Copyright (C) 2010-2025 JPEXS, All rights reserved.
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3.0 of the License, or (at your option) any later version.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
@@ -18,7 +18,6 @@ package com.jpexs.decompiler.flash.action.parser.script;
 
 import com.jpexs.decompiler.flash.SourceGeneratorLocalData;
 import com.jpexs.decompiler.flash.action.model.ActionItem;
-import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -42,6 +41,11 @@ public class VariableActionItem extends ActionItem {
     private GraphTargetItem storeValue;
 
     private boolean definition;
+    
+    /**
+     * Position in code
+     */
+    private int position = -1;
 
     public void setDefinition(boolean definition) {
         this.definition = definition;
@@ -60,6 +64,14 @@ public class VariableActionItem extends ActionItem {
         this.storeValue = storeValue;
         this.definition = definition;
     }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }    
+
+    public int getPosition() {
+        return position;
+    }        
 
     public boolean isDefinition() {
         return definition;

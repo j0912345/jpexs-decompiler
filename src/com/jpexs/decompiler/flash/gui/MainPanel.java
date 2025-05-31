@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS
- *
+ *  Copyright (C) 2010-2025 JPEXS
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- *
+ * 
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ * 
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -182,6 +182,7 @@ import com.jpexs.decompiler.flash.tags.gfx.DefineExternalStreamSound;
 import com.jpexs.decompiler.flash.tags.text.TextParseException;
 import com.jpexs.decompiler.flash.timeline.AS3Package;
 import com.jpexs.decompiler.flash.timeline.Frame;
+import com.jpexs.decompiler.flash.timeline.FrameScript;
 import com.jpexs.decompiler.flash.timeline.Scene;
 import com.jpexs.decompiler.flash.timeline.SceneFrame;
 import com.jpexs.decompiler.flash.timeline.SoundStreamFrameRange;
@@ -434,7 +435,13 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
     private Map<Openable, ABCExplorerDialog> abcExplorerDialogs = new WeakHashMap<>();
 
     private Map<SWF, BreakpointListDialog> breakpointsListDialogs = new WeakHashMap<>();
+    
+    private boolean loadingScrollPosEnabled = true;
 
+    public synchronized void setLoadingScrollPosEnabled(boolean loadingScrollPosEnabled) {
+        this.loadingScrollPosEnabled = loadingScrollPosEnabled;
+    }   
+    
     public void savePins() {
         pinsPanel.save();
     }
@@ -2957,6 +2964,11 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 TagScript ts = (TagScript) t;
                 if (ts.getTag() instanceof ASMSource) {
                     as = (ASMSource) ts.getTag();
+                }
+            } else if (t instanceof FrameScript) {
+                FrameScript fs = (FrameScript) t;
+                if (fs.getSingleDoActionTag() != null) {
+                    as = fs.getSingleDoActionTag();
                 }
             }
             if (as != null) {
@@ -6157,6 +6169,14 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             treeItem = ((TagScript) treeItem).getTag();
             preferScript = true;
         }
+        
+        if (treeItem instanceof FrameScript) {
+            FrameScript fs = (FrameScript) treeItem;
+            DoActionTag doAction = fs.getSingleDoActionTag();
+            if (doAction != null) {
+                treeItem = doAction;
+            }
+        }
 
         folderPreviewPanel.clear();
         folderListPanel.clear();
@@ -6352,16 +6372,19 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             folderPreviewPanel.setSelectedItems(folderItems);
             folderPreviewScrollBar.setValue(scrollValue);
         }
-
-        View.execInEventDispatchLater(new Runnable() {
-            @Override
-            public void run() {
-                scrollPosStorage.loadScrollPos(oldItem);
-            }
-        });
-
+        
+        if (loadingScrollPosEnabled) {
+            View.execInEventDispatchLater(new Runnable() {
+                @Override
+                public void run() {
+                    scrollPosStorage.loadScrollPos(oldItem);
+                }
+            });
+        }
     }
 
+    
+    
     public void repaintTree() {
         tagTree.repaint();
         tagListTree.repaint();
@@ -6652,7 +6675,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     public String itemToString(TreeItem item) {
         int index = getCurrentTree().getFullModel().getItemIndex(item);
-        String itemToStr = item.toString();
+        String itemToStr = getCurrentTree().convertValueToText(item, false, false, true, 0, false);
         if (index > 1) {
             return itemToStr + " [" + index + "]";
         }

@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS, All rights reserved.
- *
+ *  Copyright (C) 2010-2025 JPEXS, All rights reserved.
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3.0 of the License, or (at your option) any later version.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
@@ -145,7 +145,7 @@ public class Timeline {
      * Map of depth to maximum frame.
      */
     private final Map<Integer, Integer> depthMaxFrame = new HashMap<>();
-    
+
     /**
      * Map of depth to maximum frame including buttons
      */
@@ -289,7 +289,7 @@ public class Timeline {
         ensureInitialized();
         return depthMaxFrame;
     }
-    
+
     /**
      * Gets map of depth to max frame including buttons
      *
@@ -746,23 +746,23 @@ public class Timeline {
         for (int d = 0; d <= maxDepth; d++) {
             for (int f = frames.size() - 1; f >= 0; f--) {
                 if (frames.get(f).layers.get(d) != null) {
-                    depthMaxFrame.put(d, f);                    
+                    depthMaxFrame.put(d, f);
                     break;
                 }
             }
         }
-        
+
         if (timelined instanceof ButtonTag) {
             ButtonTag button = (ButtonTag) timelined;
             Set<Integer> emptyFrames = button.getEmptyFrames();
-            
+
             for (int d = 0; d <= maxDepth; d++) {
                 for (int f = frames.size() - 1; f >= 0; f--) {
                     if (frames.get(f).layers.get(d) != null) {
                         if (!emptyFrames.contains(f)) {
                             depthMaxFrameButtons.put(d, f);
                             break;
-                        }                     
+                        }
                     }
                 }
             }
@@ -1623,7 +1623,7 @@ public class Timeline {
                     clipGroup = null;
                 }
 
-                if (clips.size() > 0) {
+                if (!clips.isEmpty()) {
                     String clip = clips.get(clips.size() - 1).shape; // todo: merge clip areas
                     clipGroup = exporter.createSubGroup(null, null);
                     clipGroup.setAttribute("clip-path", "url(#" + clip + ")");
@@ -1656,14 +1656,7 @@ public class Timeline {
                 String assetName;
                 Tag drawableTag = (Tag) drawable;
                 RECT boundRect = drawable.getRect();
-                boolean createNew = false;
-                if (exporter.exportedTags.containsKey(drawableTag)) {
-                    assetName = exporter.exportedTags.get(drawableTag);
-                } else {
-                    assetName = getTagIdPrefix(drawableTag, exporter);
-                    exporter.exportedTags.put(drawableTag, assetName);
-                    createNew = true;
-                }
+
                 ExportRectangle rect = new ExportRectangle(boundRect);
 
                 DefineScalingGridTag scalingGrid = character.getScalingGridTag();
@@ -1679,6 +1672,16 @@ public class Timeline {
                     drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1);
                     exporter.endGroup();
                 } else {
+                    boolean createNew = false;
+
+                    SVGExporter.ExportKey exportKey = new SVGExporter.ExportKey(drawableTag, clrTrans, layer.ratio, layer.clipDepth > -1);
+                    if (exporter.exportedTags.containsKey(exportKey)) {
+                        assetName = exporter.exportedTags.get(exportKey);
+                    } else {
+                        assetName = getTagIdPrefix(drawableTag, exporter);
+                        exporter.exportedTags.put(exportKey, assetName);
+                        createNew = true;
+                    }
                     if (createNew) {
                         exporter.createDefGroup(new ExportRectangle(boundRect), assetName);
                         drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1);

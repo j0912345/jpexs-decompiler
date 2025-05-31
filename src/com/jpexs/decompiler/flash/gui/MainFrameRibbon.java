@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS
- *
+ *  Copyright (C) 2010-2025 JPEXS
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- *
+ * 
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ * 
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -30,7 +30,6 @@ import com.jpexs.helpers.Helper;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 import com.sun.jna.win32.StdCallLibrary;
-import com.sun.jna.win32.W32APIOptions;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -51,20 +50,13 @@ import java.awt.event.WindowStateListener;
 import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.util.List;
-import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.plaf.RootPaneUI;
 import org.pushingpixels.flamingo.api.ribbon.JRibbon;
 import org.pushingpixels.flamingo.internal.ui.ribbon.appmenu.JRibbonApplicationMenuButton;
-import org.pushingpixels.substance.api.DecorationAreaType;
-import org.pushingpixels.substance.api.SubstanceColorScheme;
 import org.pushingpixels.substance.flamingo.ribbon.ui.SubstanceRibbonRootPaneUI;
-import org.pushingpixels.substance.internal.utils.SubstanceCoreUtilities;
 import org.pushingpixels.substance.internal.utils.SubstanceSizeUtils;
-import org.pushingpixels.substance.internal.utils.icon.SubstanceIconFactory;
-import org.pushingpixels.substance.internal.utils.icon.TransitionAwareIcon;
 
 /**
  * @author JPEXS

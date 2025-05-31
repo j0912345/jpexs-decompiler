@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS
- *
+ *  Copyright (C) 2010-2025 JPEXS
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- *
+ * 
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ * 
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -27,6 +27,7 @@ import com.jpexs.decompiler.flash.abc.ScriptPack;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2Code;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instructions;
+import com.jpexs.decompiler.flash.abc.avm2.parser.script.ActionScript3SimpleParser;
 import com.jpexs.decompiler.flash.abc.types.ABCException;
 import com.jpexs.decompiler.flash.abc.types.MethodBody;
 import com.jpexs.decompiler.flash.abc.types.MethodInfo;
@@ -65,6 +66,7 @@ import com.jpexs.decompiler.flash.gui.View;
 import com.jpexs.decompiler.flash.gui.ViewMessages;
 import com.jpexs.decompiler.flash.gui.controls.JPersistentSplitPane;
 import com.jpexs.decompiler.flash.gui.editor.LinkHandler;
+import com.jpexs.decompiler.flash.gui.editor.VariableMarker;
 import com.jpexs.decompiler.flash.gui.tagtree.AbstractTagTree;
 import com.jpexs.decompiler.flash.gui.tagtree.AbstractTagTreeModel;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
@@ -140,6 +142,7 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.text.Highlighter;
 import javax.swing.tree.TreePath;
+import jsyntaxpane.DefaultSyntaxKit;
 import jsyntaxpane.Token;
 import jsyntaxpane.TokenType;
 
@@ -203,6 +206,8 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
     private String lastDecompiled = null;
 
     private JLabel linksLabel = new JLabel("");
+    
+    private boolean compound = false;
 
     public MainPanel getMainPanel() {
         View.checkAccess();
@@ -212,6 +217,12 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
 
     public ScriptPack getPack() {
         return decompiledTextArea.getScriptLeaf();
+    }
+    
+    public void setDecompiledEditEnabled(boolean value) {
+        decompiledTextArea.setEnabled(value);
+        editDecompiledButton.setEnabled(value && !compound);
+        toolbarPanel.setEnabled(value);
     }
 
     public List<ABCSearchResult> search(final Openable openable, final String txt, boolean ignoreCase, boolean regexp, boolean pcode, CancellableWorker<Void> worker, List<ScriptPack> scope) {
@@ -249,6 +260,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
             libraryComboBox.setSelectedIndex(SWF.LIBRARY_FLASH);
         }
         this.abc = abc;
+        decompiledTextArea.setParser(new ActionScript3SimpleParser(abc));
         setDecompiledEditMode(false);
         navigator.setAbc(abc);
         updateLinksLabel();
@@ -993,8 +1005,8 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
                 popupMenu.add(simplifyExpressionsMenuItem);
                 //popupMenu.add(removeObfuscatedDeclarationsMenuItem);
 
-                return popupMenu;            
-            }          
+                return popupMenu;
+            }
         };
         deobfuscateOptionsButton.setToolTipText(AppStrings.translate("button.deobfuscate_options"));
         deobfuscateOptionsButton.setMargin(new Insets(0, 0, 0, 0));
@@ -1021,7 +1033,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
         JPanel libraryAndLinkPanel = new JPanel(new FlowLayout());
 
         JToggleButton linkButton = new JToggleButton(View.getIcon("link16"));
-        
+
         LinkDialog linkDialog = new LinkDialog(mainPanel, linkButton);
 
         libraryComboBox = new JComboBox<>();
@@ -1047,8 +1059,8 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
 
         libraryAndLinkPanel.add(linksLabel);
 
-        linkButton.setToolTipText(AppStrings.translate("button.abc.linkedSwfs.hint"));       
-        
+        linkButton.setToolTipText(AppStrings.translate("button.abc.linkedSwfs.hint"));
+
         linkDialog.addSaveListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -1153,6 +1165,8 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
         //decLabel.setBorder(new BevelBorder(BevelBorder.RAISED));
 
         decompiledTextArea.changeContentType("text/actionscript3");
+        DefaultSyntaxKit kit = (DefaultSyntaxKit) decompiledTextArea.getEditorKit();
+        kit.installComponent(decompiledTextArea, VariableMarker.class.getName());
         decompiledTextArea.setFont(Configuration.getSourceFont());
 
         View.addEditorAction(decompiledTextArea, new AbstractAction() {
@@ -1165,14 +1179,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
                     usageFrame.setVisible(true);
                 }
             }
-        }, "find-usages", AppStrings.translate("abc.action.find-usages"), "control U");
-
-        View.addEditorAction(decompiledTextArea, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                gotoDeclaration(decompiledTextArea.getCaretPosition());
-            }
-        }, "find-declaration", AppStrings.translate("abc.action.find-declaration"), "control B");
+        }, "find-usages", AppStrings.translate("abc.action.find-usages"), "control U");        
 
         CtrlClickHandler cch = new CtrlClickHandler();
         decompiledTextArea.addKeyListener(cch);
@@ -1241,6 +1248,9 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
         Reference<Integer> multinameIndexRef = new Reference<>(0);
         Reference<Boolean> classTrait = new Reference<>(false);
         Reference<ABC> usedAbcRef = new Reference<>(null);
+        if (getSwf() == null) {
+            return false;
+        }
         if (decompiledTextArea.getPropertyTypeAtPos(getSwf().getAbcIndex(), pos, abcIndex, classIndex, traitIndex, classTrait, multinameIndexRef, usedAbcRef)) {
             return true;
         }
@@ -1757,7 +1767,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
                 TreeItem sel = mainPanel.getCurrentTree().getCurrentTreeItem();
                 if ((sel instanceof ScriptPack) && (sel != pack)) {
                     mainPanel.replaceItemPin(pack, sel);
-                }               
+                }
             }
             reload();
             mainPanel.clearEditingStatus();
@@ -1819,7 +1829,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
         } else {
             toggleButton.setSelected(Configuration.autoDeobfuscate.get());
         }
-    }   
+    }
 
     private void simplifyExpressionsMenuItemActionPerformed(ActionEvent evt) {
         JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem) evt.getSource();
@@ -2109,14 +2119,15 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
         experimentalLabel.setVisible(!useFlex && !value);
         flexLabel.setVisible(useFlex && !value);
         editDecompiledButton.setEnabled(!value);
+        this.compound = value;
     }
-    
+
     public void setScript(ScriptPack scriptPack) {
         setDecompiledEditMode(false);
-        detailPanel.setEditMode(false);        
+        detailPanel.setEditMode(false);
         detailPanel.methodTraitPanel.methodCodePanel.clear();
-        decompiledTextArea.setNoTrait();        
+        decompiledTextArea.setNoTrait();
         setAbc(scriptPack.abc);
-        decompiledTextArea.setScript(scriptPack, true);                
+        decompiledTextArea.setScript(scriptPack, true);
     }
 }

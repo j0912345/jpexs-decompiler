@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2022-2024 JPEXS
- *
+ *  Copyright (C) 2022-2025 JPEXS
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- *
+ * 
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ * 
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -189,8 +189,17 @@ public abstract class AbstractTagTree extends JTree {
             return View.getIcon("folderscripts16");
         }
         
+        
+        
         TreeNodeType type = getTreeNodeType(val);
 
+        if (val instanceof FrameScript) {
+            FrameScript fs = (FrameScript) val;
+            if (fs.getSingleDoActionTag() != null) {
+                type = TreeNodeType.AS_FRAME;
+            }
+        }
+        
         if (type == TreeNodeType.FOLDER && folderExpanded) {
             type = TreeNodeType.FOLDER_OPEN;
         }
@@ -650,6 +659,12 @@ public abstract class AbstractTagTree extends JTree {
             if (d instanceof TagScript) {
                 Tag tag = ((TagScript) d).getTag();
                 if (tag instanceof DoActionTag || tag instanceof DoInitActionTag) {
+                    d = tag;
+                }
+            }
+            if (d instanceof FrameScript) {
+                DoActionTag tag = ((FrameScript) d).getSingleDoActionTag();
+                if (tag != null) {
                     d = tag;
                 }
             }

@@ -1,16 +1,16 @@
 /*
- *  Copyright (C) 2010-2024 JPEXS
- *
+ *  Copyright (C) 2010-2025 JPEXS
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- *
+ * 
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ * 
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -60,8 +60,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import jsyntaxpane.SyntaxDocument;
 import jsyntaxpane.Token;
 import jsyntaxpane.TokenType;
@@ -101,8 +99,8 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
 
     public synchronized boolean isScriptLoaded() {
         return scriptLoaded;
-    }   
-    
+    }
+
     public void addScriptListener(Runnable l) {
         scriptListeners.add(l);
     }
@@ -622,6 +620,9 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
 
     @Override
     public void caretUpdate(final CaretEvent e) {
+        if (!isEnabled()) {
+            return;
+        }
         ABC abc = getABC();
         if (abc == null) {
             return;
@@ -882,18 +883,17 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
 
     public void setScript(ScriptPack scriptLeaf, boolean force) {
         View.checkAccess();
-        
+
         if (setSourceWorker != null) {
             setSourceWorker.cancel(true);
             setSourceWorker = null;
         }
-        
+
         synchronized (this) {
             scriptLoaded = false;
         }
-        
 
-        if (!force && this.script == scriptLeaf) {                            
+        if (!force && this.script == scriptLeaf) {
             synchronized (this) {
                 scriptLoaded = true;
             }
@@ -1004,8 +1004,6 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
                 abcPanel.brokenHintPanel.setVisible(false);
             }
             setText(hilightedCode);
-            
-            
 
             if (highlightedText.getClassHighlights().size() > 0) {
                 try {
@@ -1018,7 +1016,7 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
             }
         }
 
-        scriptLoaded = true;                
+        scriptLoaded = true;
 
         fireScript();
     }
@@ -1039,13 +1037,21 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
     public int getClassIndex() {
         return classIndex;
     }
+    
+    public int getScriptIndex() {
+        ScriptPack pack = getScriptLeaf();
+        if (pack == null) {
+            return -1;
+        }
+        return pack.scriptIndex;
+    }
 
     private ABC getABC() {
         return script == null ? null : script.abc;
     }
 
     @Override
-    public synchronized void setText(String t) {
+    public void setText(String t) {
         super.setText(t);
         setCaretPosition(0);
     }
@@ -1079,9 +1085,9 @@ public class DecompiledEditorPane extends DebuggableEditorPane implements CaretL
         }
         setCaretPosition(position);
     }
-    
+
     @Override
-    public synchronized void setCaretPosition(int position) {
+    public void setCaretPosition(int position) {
         super.setCaretPosition(position);
-    }        
+    }
 }

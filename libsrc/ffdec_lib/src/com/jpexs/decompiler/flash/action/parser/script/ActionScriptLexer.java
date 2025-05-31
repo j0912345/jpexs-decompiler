@@ -1230,6 +1230,8 @@ public final class ActionScriptLexer {
 
     private int repeatNum = 1;
 
+    private int itemStart = -1;
+
     private boolean caseSensitiveIdentifiers = false;
 
     public static final int SWF_VERSION_CASE_SENSITIVE = 7;
@@ -1617,131 +1619,134 @@ public final class ActionScriptLexer {
           }
         case 183: break;
         case 4: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.DIVIDE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.DIVIDE, yytext());
           }
         case 184: break;
         case 5: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.MULTIPLY, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.MULTIPLY, yytext());
           }
         case 185: break;
         case 6: 
-          { return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext());
           }
         case 186: break;
         case 7: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.DOT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.DOT, yytext());
           }
         case 187: break;
         case 8: 
           { try{
-                                        return new ParsedSymbol(SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext())); 
+                                        return new ParsedSymbol(yychar(), SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext())); 
                                     } catch(NumberFormatException nfe){
                                         //its too long for a Long var
-                                        return new ParsedSymbol(SymbolGroup.DOUBLE, SymbolType.DOUBLE, Double.parseDouble(yytext())); 
+                                        return new ParsedSymbol(yychar(), SymbolGroup.DOUBLE, SymbolType.DOUBLE, Double.parseDouble(yytext())); 
                                     }
           }
         case 188: break;
         case 9: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.MINUS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.MINUS, yytext());
           }
         case 189: break;
         case 10: 
-          { string.setLength(0);
+          { itemStart = yychar();
+                                    string.setLength(0);
                                     yybegin(STRING);
           }
         case 190: break;
         case 11: 
-          { string.setLength(0);
+          { itemStart = yychar();
+                                    string.setLength(0);
                                     yybegin(CHARLITERAL);
           }
         case 191: break;
         case 12: 
-          { string.setLength(0);
+          { itemStart = yychar();
+                                    string.setLength(0);
                                     yybegin(OIDENTIFIER);
           }
         case 192: break;
         case 13: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.PARENT_OPEN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.PARENT_OPEN, yytext());
           }
         case 193: break;
         case 14: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.PARENT_CLOSE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.PARENT_CLOSE, yytext());
           }
         case 194: break;
         case 15: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.CURLY_OPEN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.CURLY_OPEN, yytext());
           }
         case 195: break;
         case 16: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.CURLY_CLOSE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.CURLY_CLOSE, yytext());
           }
         case 196: break;
         case 17: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.BRACKET_OPEN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.BRACKET_OPEN, yytext());
           }
         case 197: break;
         case 18: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.BRACKET_CLOSE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.BRACKET_CLOSE, yytext());
           }
         case 198: break;
         case 19: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.SEMICOLON, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.SEMICOLON, yytext());
           }
         case 199: break;
         case 20: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.COMMA, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.COMMA, yytext());
           }
         case 200: break;
         case 21: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN, yytext());
           }
         case 201: break;
         case 22: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.GREATER_THAN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.GREATER_THAN, yytext());
           }
         case 202: break;
         case 23: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.LOWER_THAN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.LOWER_THAN, yytext());
           }
         case 203: break;
         case 24: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NOT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.NOT, yytext());
           }
         case 204: break;
         case 25: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NEGATE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.NEGATE, yytext());
           }
         case 205: break;
         case 26: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.TERNAR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.TERNAR, yytext());
           }
         case 206: break;
         case 27: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.COLON, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.COLON, yytext());
           }
         case 207: break;
         case 28: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.BITAND, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.BITAND, yytext());
           }
         case 208: break;
         case 29: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.BITOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.BITOR, yytext());
           }
         case 209: break;
         case 30: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.PLUS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.PLUS, yytext());
           }
         case 210: break;
         case 31: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.XOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.XOR, yytext());
           }
         case 211: break;
         case 32: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.MODULO, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.MODULO, yytext());
           }
         case 212: break;
         case 33: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ATTRIBUTE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ATTRIBUTE, yytext());
           }
         case 213: break;
         case 34: 
@@ -1755,7 +1760,7 @@ public final class ActionScriptLexer {
         case 36: 
           { yybegin(YYINITIAL);
                                      // length also includes the trailing quote
-                                     return new ParsedSymbol(SymbolGroup.STRING, SymbolType.STRING, string.toString());
+                                     return new ParsedSymbol(itemStart, SymbolGroup.STRING, SymbolType.STRING, string.toString());
           }
         case 216: break;
         case 37: 
@@ -1766,7 +1771,7 @@ public final class ActionScriptLexer {
           { yybegin(YYINITIAL);
                                      repeatNum = 1;
                                      // length also includes the trailing quote
-                                     return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, string.toString());
+                                     return new ParsedSymbol(itemStart, SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, string.toString());
           }
         case 218: break;
         case 39: 
@@ -1774,103 +1779,103 @@ public final class ActionScriptLexer {
           }
         case 219: break;
         case 40: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_DIVIDE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_DIVIDE, yytext());
           }
         case 220: break;
         case 41: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_MULTIPLY, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_MULTIPLY, yytext());
           }
         case 221: break;
         case 42: 
-          { return new ParsedSymbol(SymbolGroup.DOUBLE, SymbolType.DOUBLE, Double.parseDouble(yytext()));
+          { return new ParsedSymbol(yychar(), SymbolGroup.DOUBLE, SymbolType.DOUBLE, Double.parseDouble(yytext()));
           }
         case 222: break;
         case 43: 
-          { return new ParsedSymbol(SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext(), 8));
+          { return new ParsedSymbol(yychar(), SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext(), 8));
           }
         case 223: break;
         case 44: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.DECREMENT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.DECREMENT, yytext());
           }
         case 224: break;
         case 45: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_MINUS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_MINUS, yytext());
           }
         case 225: break;
         case 46: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.FULLOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.FULLOR, yytext());
           }
         case 226: break;
         case 47: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.IN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.IN, yytext());
           }
         case 227: break;
         case 48: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.IF, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.IF, yytext());
           }
         case 228: break;
         case 49: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.DO, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.DO, yytext());
           }
         case 229: break;
         case 50: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.EQUALS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.EQUALS, yytext());
           }
         case 230: break;
         case 51: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.GREATER_EQUAL, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.GREATER_EQUAL, yytext());
           }
         case 231: break;
         case 52: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.SHIFT_RIGHT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.SHIFT_RIGHT, yytext());
           }
         case 232: break;
         case 53: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.LOWER_EQUAL, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.LOWER_EQUAL, yytext());
           }
         case 233: break;
         case 54: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NOT_EQUAL, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.NOT_EQUAL, yytext());
           }
         case 234: break;
         case 55: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.SHIFT_LEFT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.SHIFT_LEFT, yytext());
           }
         case 235: break;
         case 56: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_BITAND, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_BITAND, yytext());
           }
         case 236: break;
         case 57: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.AND, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.AND, yytext());
           }
         case 237: break;
         case 58: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_BITOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_BITOR, yytext());
           }
         case 238: break;
         case 59: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.OR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.OR, yytext());
           }
         case 239: break;
         case 60: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_PLUS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_PLUS, yytext());
           }
         case 240: break;
         case 61: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.INCREMENT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.INCREMENT, yytext());
           }
         case 241: break;
         case 62: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_XOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_XOR, yytext());
           }
         case 242: break;
         case 63: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_MODULO, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_MODULO, yytext());
           }
         case 243: break;
         case 64: 
-          { return new ParsedSymbol(SymbolGroup.DIRECTIVE, SymbolType.DIRECTIVE, yytext().substring(1));
+          { return new ParsedSymbol(yychar(), SymbolGroup.DIRECTIVE, SymbolType.DIRECTIVE, yytext().substring(1));
           }
         case 244: break;
         case 65: 
@@ -1910,7 +1915,7 @@ public final class ActionScriptLexer {
           }
         case 253: break;
         case 74: 
-          { throw new ActionParseException("Illegal escape sequence \"" + yytext() + "\"", yyline + 1);
+          { throw new ActionParseException("Illegal escape sequence \"" + yytext() + "\"", yyline + 1, yychar());
           }
         case 254: break;
         case 75: 
@@ -1942,134 +1947,134 @@ public final class ActionScriptLexer {
           }
         case 261: break;
         case 82: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.REST, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.REST, yytext());
           }
         case 262: break;
         case 83: 
-          { return new ParsedSymbol(SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext().substring(2), 16));
+          { return new ParsedSymbol(yychar(), SymbolGroup.INTEGER, SymbolType.INTEGER, Long.parseLong(yytext().substring(2), 16));
           }
         case 263: break;
         case 84: 
-          { return new ParsedSymbol(SymbolGroup.PREPROCESSOR, SymbolType.PREPROCESSOR, yytext().substring(2));
+          { return new ParsedSymbol(yychar(), SymbolGroup.PREPROCESSOR, SymbolType.PREPROCESSOR, yytext().substring(2));
           }
         case 264: break;
         case 85: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.FULLAND, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.FULLAND, yytext());
           }
         case 265: break;
         case 86: 
-          { if (caseSensitiveIdentifiers && !"chr".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.CHR, yytext());
+          { if (caseSensitiveIdentifiers && !"chr".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.CHR, yytext());
           }
         case 266: break;
         case 87: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.SET, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.SET, yytext());
           }
         case 267: break;
         case 88: 
-          { if (caseSensitiveIdentifiers && !"ord".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.ORD, yytext());
+          { if (caseSensitiveIdentifiers && !"ord".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.ORD, yytext());
           }
         case 268: break;
         case 89: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.NEW, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.NEW, yytext());
           }
         case 269: break;
         case 90: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.TRY, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.TRY, yytext());
           }
         case 270: break;
         case 91: 
-          { if (caseSensitiveIdentifiers && !"int".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.INT, yytext());
+          { if (caseSensitiveIdentifiers && !"int".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.INT, yytext());
           }
         case 271: break;
         case 92: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.FOR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.FOR, yytext());
           }
         case 272: break;
         case 93: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.VAR, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.VAR, yytext());
           }
         case 273: break;
         case 94: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.GET, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.GET, yytext());
           }
         case 274: break;
         case 95: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.STRICT_EQUALS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.STRICT_EQUALS, yytext());
           }
         case 275: break;
         case 96: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_SHIFT_RIGHT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_SHIFT_RIGHT, yytext());
           }
         case 276: break;
         case 97: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.USHIFT_RIGHT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.USHIFT_RIGHT, yytext());
           }
         case 277: break;
         case 98: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_SHIFT_LEFT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_SHIFT_LEFT, yytext());
           }
         case 278: break;
         case 99: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.STRICT_NOT_EQUAL, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.STRICT_NOT_EQUAL, yytext());
           }
         case 279: break;
         case 100: 
-          { if (caseSensitiveIdentifiers && !"eval".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.EVAL, yytext());
+          { if (caseSensitiveIdentifiers && !"eval".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.EVAL, yytext());
           }
         case 280: break;
         case 101: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.EACH, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.EACH, yytext());
           }
         case 281: break;
         case 102: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.ELSE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.ELSE, yytext());
           }
         case 282: break;
         case 103: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.CASE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.CASE, yytext());
           }
         case 283: break;
         case 104: 
-          { if (caseSensitiveIdentifiers && !"call".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.CALL, yytext());
+          { if (caseSensitiveIdentifiers && !"call".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.CALL, yytext());
           }
         case 284: break;
         case 105: 
-          { if (caseSensitiveIdentifiers && !"stop".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.STOP, yytext());
+          { if (caseSensitiveIdentifiers && !"stop".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.STOP, yytext());
           }
         case 285: break;
         case 106: 
-          { return new ParsedSymbol(SymbolGroup.GLOBALCONST, SymbolType.NULL, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.GLOBALCONST, SymbolType.NULL, yytext());
           }
         case 286: break;
         case 107: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.TRUE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.TRUE, yytext());
           }
         case 287: break;
         case 108: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.THIS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.THIS, yytext());
           }
         case 288: break;
         case 109: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.WITH, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.WITH, yytext());
           }
         case 289: break;
         case 110: 
-          { if (caseSensitiveIdentifiers && !"play".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PLAY, yytext());
+          { if (caseSensitiveIdentifiers && !"play".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PLAY, yytext());
           }
         case 290: break;
         case 111: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.VOID, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.VOID, yytext());
           }
         case 291: break;
         case 112: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.ASSIGN_USHIFT_RIGHT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.ASSIGN_USHIFT_RIGHT, yytext());
           }
         case 292: break;
         case 113: 
@@ -2092,306 +2097,306 @@ public final class ActionScriptLexer {
           }
         case 296: break;
         case 117: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.BREAK, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.BREAK, yytext());
           }
         case 297: break;
         case 118: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.CATCH, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.CATCH, yytext());
           }
         case 298: break;
         case 119: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.CLASS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.CLASS, yytext());
           }
         case 299: break;
         case 120: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.SUPER, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.SUPER, yytext());
           }
         case 300: break;
         case 121: 
-          { if (caseSensitiveIdentifiers && !"trace".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.TRACE, yytext());
+          { if (caseSensitiveIdentifiers && !"trace".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.TRACE, yytext());
           }
         case 301: break;
         case 122: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.THROW, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.THROW, yytext());
           }
         case 302: break;
         case 123: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.FALSE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.FALSE, yytext());
           }
         case 303: break;
         case 124: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.WHILE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.WHILE, yytext());
           }
         case 304: break;
         case 125: 
-          { if (caseSensitiveIdentifiers && !"print".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PRINT, yytext());
+          { if (caseSensitiveIdentifiers && !"print".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PRINT, yytext());
           }
         case 305: break;
         case 126: 
-          { if (caseSensitiveIdentifiers && !"mbchr".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.MBCHR, yytext());
+          { if (caseSensitiveIdentifiers && !"mbchr".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.MBCHR, yytext());
           }
         case 306: break;
         case 127: 
-          { if (caseSensitiveIdentifiers && !"mbord".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.MBORD, yytext());
+          { if (caseSensitiveIdentifiers && !"mbord".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.MBORD, yytext());
           }
         case 307: break;
         case 128: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.RETURN, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.RETURN, yytext());
           }
         case 308: break;
         case 129: 
-          { if (caseSensitiveIdentifiers && !"random".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.RANDOM, yytext());
+          { if (caseSensitiveIdentifiers && !"random".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.RANDOM, yytext());
           }
         case 309: break;
         case 130: 
-          { if (caseSensitiveIdentifiers && !"String".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.STRING_OP, yytext());
+          { if (caseSensitiveIdentifiers && !"String".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.STRING_OP, yytext());
           }
         case 310: break;
         case 131: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.STATIC, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.STATIC, yytext());
           }
         case 311: break;
         case 132: 
-          { if (caseSensitiveIdentifiers && !"substr".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.SUBSTR, yytext());
+          { if (caseSensitiveIdentifiers && !"substr".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.SUBSTR, yytext());
           }
         case 312: break;
         case 133: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.SWITCH, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.SWITCH, yytext());
           }
         case 313: break;
         case 134: 
-          { if (caseSensitiveIdentifiers && !"Number".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.NUMBER_OP, yytext());
+          { if (caseSensitiveIdentifiers && !"Number".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.NUMBER_OP, yytext());
           }
         case 314: break;
         case 135: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.TYPEOF, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.TYPEOF, yytext());
           }
         case 315: break;
         case 136: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.IMPORT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.IMPORT, yytext());
           }
         case 316: break;
         case 137: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.DELETE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.DELETE, yytext());
           }
         case 317: break;
         case 138: 
-          { if (caseSensitiveIdentifiers && !"length".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.LENGTH, yytext());
+          { if (caseSensitiveIdentifiers && !"length".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.LENGTH, yytext());
           }
         case 318: break;
         case 139: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.PUBLIC, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.PUBLIC, yytext());
           }
         case 319: break;
         case 140: 
-          { if (caseSensitiveIdentifiers && !"getURL".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.GETURL, yytext());
+          { if (caseSensitiveIdentifiers && !"getURL".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.GETURL, yytext());
           }
         case 320: break;
         case 141: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.EXTENDS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.EXTENDS, yytext());
           }
         case 321: break;
         case 142: 
-          { if (caseSensitiveIdentifiers && !"newline".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALCONST, SymbolType.NEWLINE, yytext());
+          { if (caseSensitiveIdentifiers && !"newline".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALCONST, SymbolType.NEWLINE, yytext());
           }
         case 322: break;
         case 143: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.DEFAULT, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.DEFAULT, yytext());
           }
         case 323: break;
         case 144: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.DYNAMIC, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.DYNAMIC, yytext());
           }
         case 324: break;
         case 145: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.FINALLY, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.FINALLY, yytext());
           }
         case 325: break;
         case 146: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.PRIVATE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.PRIVATE, yytext());
           }
         case 326: break;
         case 147: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.CONTINUE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.CONTINUE, yytext());
           }
         case 327: break;
         case 148: 
-          { if (caseSensitiveIdentifiers && !"stopDrag".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.STOPDRAG, yytext());
+          { if (caseSensitiveIdentifiers && !"stopDrag".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.STOPDRAG, yytext());
           }
         case 328: break;
         case 149: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.FUNCTION, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.FUNCTION, yytext());
           }
         case 329: break;
         case 150: 
-          { if (caseSensitiveIdentifiers && !"printNum".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PRINTNUM, yytext());
+          { if (caseSensitiveIdentifiers && !"printNum".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PRINTNUM, yytext());
           }
         case 330: break;
         case 151: 
-          { if (caseSensitiveIdentifiers && !"mblength".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.MBLENGTH, yytext());
+          { if (caseSensitiveIdentifiers && !"mblength".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.MBLENGTH, yytext());
           }
         case 331: break;
         case 152: 
-          { if (caseSensitiveIdentifiers && !"getTimer".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.GETTIMER, yytext());
+          { if (caseSensitiveIdentifiers && !"getTimer".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.GETTIMER, yytext());
           }
         case 332: break;
         case 153: 
-          { if (caseSensitiveIdentifiers && !"startDrag".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.STARTDRAG, yytext());
+          { if (caseSensitiveIdentifiers && !"startDrag".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.STARTDRAG, yytext());
           }
         case 333: break;
         case 154: 
-          { if (caseSensitiveIdentifiers && !"nextFrame".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.NEXTFRAME, yytext());
+          { if (caseSensitiveIdentifiers && !"nextFrame".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.NEXTFRAME, yytext());
           }
         case 334: break;
         case 155: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.INTERFACE, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.INTERFACE, yytext());
           }
         case 335: break;
         case 156: 
-          { if (caseSensitiveIdentifiers && !"undefined".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALCONST, SymbolType.UNDEFINED, yytext());
+          { if (caseSensitiveIdentifiers && !"undefined".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALCONST, SymbolType.UNDEFINED, yytext());
           }
         case 336: break;
         case 157: 
-          { if (caseSensitiveIdentifiers && !"fscommand".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.FSCOMMAND, yytext());
+          { if (caseSensitiveIdentifiers && !"fscommand".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.FSCOMMAND, yytext());
           }
         case 337: break;
         case 158: 
-          { if (caseSensitiveIdentifiers && !"loadMovie".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.LOADMOVIE, yytext());
+          { if (caseSensitiveIdentifiers && !"loadMovie".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.LOADMOVIE, yytext());
           }
         case 338: break;
         case 159: 
-          { if (caseSensitiveIdentifiers && !"prevFrame".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PREVFRAME, yytext());
+          { if (caseSensitiveIdentifiers && !"prevFrame".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PREVFRAME, yytext());
           }
         case 339: break;
         case 160: 
-          { if (caseSensitiveIdentifiers && !"tellTarget".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.TELLTARGET, yytext());
+          { if (caseSensitiveIdentifiers && !"tellTarget".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.TELLTARGET, yytext());
           }
         case 340: break;
         case 161: 
-          { if (caseSensitiveIdentifiers && !"targetPath".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.TARGETPATH, yytext());
+          { if (caseSensitiveIdentifiers && !"targetPath".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.TARGETPATH, yytext());
           }
         case 341: break;
         case 162: 
-          { return new ParsedSymbol(SymbolGroup.OPERATOR, SymbolType.INSTANCEOF, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.OPERATOR, SymbolType.INSTANCEOF, yytext());
           }
         case 342: break;
         case 163: 
-          { return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.IMPLEMENTS, yytext());
+          { return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.IMPLEMENTS, yytext());
           }
         case 343: break;
         case 164: 
-          { if (caseSensitiveIdentifiers && !"fscommand2".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.FSCOMMAND2, yytext());
+          { if (caseSensitiveIdentifiers && !"fscommand2".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.FSCOMMAND2, yytext());
           }
         case 344: break;
         case 165: 
-          { if (caseSensitiveIdentifiers && !"getVersion".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.GETVERSION, yytext());
+          { if (caseSensitiveIdentifiers && !"getVersion".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.GETVERSION, yytext());
           }
         case 345: break;
         case 166: 
-          { if (caseSensitiveIdentifiers && !"unloadMovie".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.UNLOADMOVIE, yytext());
+          { if (caseSensitiveIdentifiers && !"unloadMovie".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.UNLOADMOVIE, yytext());
           }
         case 346: break;
         case 167: 
-          { if (caseSensitiveIdentifiers && !"mbsubstring".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.MBSUBSTRING, yytext());
+          { if (caseSensitiveIdentifiers && !"mbsubstring".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.MBSUBSTRING, yytext());
           }
         case 347: break;
         case 168: 
-          { if (caseSensitiveIdentifiers && !"gotoAndStop".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.GOTOANDSTOP, yytext());
+          { if (caseSensitiveIdentifiers && !"gotoAndStop".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.GOTOANDSTOP, yytext());
           }
         case 348: break;
         case 169: 
-          { if (caseSensitiveIdentifiers && !"gotoAndPlay".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.GOTOANDPLAY, yytext());
+          { if (caseSensitiveIdentifiers && !"gotoAndPlay".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.GOTOANDPLAY, yytext());
           }
         case 349: break;
         case 170: 
-          { if (caseSensitiveIdentifiers && !"loadMovieNum".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.LOADMOVIENUM, yytext());
+          { if (caseSensitiveIdentifiers && !"loadMovieNum".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.LOADMOVIENUM, yytext());
           }
         case 350: break;
         case 171: 
-          { if (caseSensitiveIdentifiers && !"stopAllSounds".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.STOPALLSOUNDS, yytext());
+          { if (caseSensitiveIdentifiers && !"stopAllSounds".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.STOPALLSOUNDS, yytext());
           }
         case 351: break;
         case 172: 
-          { if (caseSensitiveIdentifiers && !"ifFrameLoaded".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.KEYWORD, SymbolType.IFFRAMELOADED, yytext());
+          { if (caseSensitiveIdentifiers && !"ifFrameLoaded".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.KEYWORD, SymbolType.IFFRAMELOADED, yytext());
           }
         case 352: break;
         case 173: 
-          { if (caseSensitiveIdentifiers && !"loadVariables".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.LOADVARIABLES, yytext());
+          { if (caseSensitiveIdentifiers && !"loadVariables".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.LOADVARIABLES, yytext());
           }
         case 353: break;
         case 174: 
-          { if (caseSensitiveIdentifiers && !"printAsBitmap".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PRINTASBITMAP, yytext());
+          { if (caseSensitiveIdentifiers && !"printAsBitmap".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PRINTASBITMAP, yytext());
           }
         case 354: break;
         case 175: 
-          { if (caseSensitiveIdentifiers && !"unloadMovieNum".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.UNLOADMOVIENUM, yytext());
+          { if (caseSensitiveIdentifiers && !"unloadMovieNum".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.UNLOADMOVIENUM, yytext());
           }
         case 355: break;
         case 176: 
-          { if (caseSensitiveIdentifiers && !"removeMovieClip".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.REMOVEMOVIECLIP, yytext());
+          { if (caseSensitiveIdentifiers && !"removeMovieClip".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.REMOVEMOVIECLIP, yytext());
           }
         case 356: break;
         case 177: 
-          { if (caseSensitiveIdentifiers && !"loadVariablesNum".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.LOADVARIABLESNUM, yytext());
+          { if (caseSensitiveIdentifiers && !"loadVariablesNum".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.LOADVARIABLESNUM, yytext());
           }
         case 357: break;
         case 178: 
-          { if (caseSensitiveIdentifiers && !"printAsBitmapNum".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.PRINTASBITMAPNUM, yytext());
+          { if (caseSensitiveIdentifiers && !"printAsBitmapNum".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.PRINTASBITMAPNUM, yytext());
           }
         case 358: break;
         case 179: 
-          { if (caseSensitiveIdentifiers && !"toggleHighQuality".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.TOGGLEHIGHQUALITY, yytext());
+          { if (caseSensitiveIdentifiers && !"toggleHighQuality".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.TOGGLEHIGHQUALITY, yytext());
           }
         case 359: break;
         case 180: 
-          { if (caseSensitiveIdentifiers && !"duplicateMovieClip".equals(yytext())) return new ParsedSymbol(SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
-                                                                                    return new ParsedSymbol(SymbolGroup.GLOBALFUNC, SymbolType.DUPLICATEMOVIECLIP, yytext());
+          { if (caseSensitiveIdentifiers && !"duplicateMovieClip".equals(yytext())) return new ParsedSymbol(yychar(), SymbolGroup.IDENTIFIER, SymbolType.IDENTIFIER, yytext()); 
+                                                                                    return new ParsedSymbol(yychar(), SymbolGroup.GLOBALFUNC, SymbolType.DUPLICATEMOVIECLIP, yytext());
           }
         case 360: break;
         default: 
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;
               {
-                return new ParsedSymbol(SymbolGroup.EOF, SymbolType.EOF, null);
+                return new ParsedSymbol(yychar(), SymbolGroup.EOF, SymbolType.EOF, null);
               }
           } 
           else {
