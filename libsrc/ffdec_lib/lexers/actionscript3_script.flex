@@ -492,9 +492,9 @@ RegExp = \/([^\r\n/]|\\\/)+\/([gimxs]{0,5})
   /* regexp */
   {RegExp}                       {
                                     // check for a /* */ comment
-                                    if(String.valueOf(yytext().charAt(1)).equals("*") && yytext().indexOf("*/") != -1)
+                                    if(String.valueOf(yytext().charAt(1)).equals("*"))
                                     {
-                                        yychar += yytext().indexOf("*/");
+                                        yyline += count(yytext(),"\n");
                                         return null;
                                     }
                                     return new ParsedSymbol(yychar(), SymbolGroup.REGEXP, SymbolType.REGEXP, yytext());
