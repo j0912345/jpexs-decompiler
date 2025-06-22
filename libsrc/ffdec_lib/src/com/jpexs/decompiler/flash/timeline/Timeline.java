@@ -59,18 +59,22 @@ import com.jpexs.decompiler.flash.types.BlendMode;
 import com.jpexs.decompiler.flash.types.CLIPACTIONS;
 import com.jpexs.decompiler.flash.types.CXFORMWITHALPHA;
 import com.jpexs.decompiler.flash.types.ColorTransform;
+import com.jpexs.decompiler.flash.types.LINESTYLE;
+import com.jpexs.decompiler.flash.types.LINESTYLE2;
+import com.jpexs.decompiler.flash.types.LINESTYLEARRAY;
 import com.jpexs.decompiler.flash.types.MATRIX;
 import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.decompiler.flash.types.RGBA;
 import com.jpexs.decompiler.flash.types.SOUNDINFO;
 import com.jpexs.decompiler.flash.types.filters.BlendComposite;
 import com.jpexs.decompiler.flash.types.filters.FILTER;
+import com.jpexs.decompiler.flash.types.shaperecords.SHAPERECORD;
+import com.jpexs.decompiler.flash.types.shaperecords.StyleChangeRecord;
 import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.SerializableImage;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -84,7 +88,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1586,6 +1589,65 @@ public class Timeline {
     }
 
     /**
+     * Check whether (inner) shape tags have strokes smaller than 1px
+     *
+     * @param exporter SVG exporter
+     * @param drawableTag Drawable tag
+     * @param matrix Matrix
+     * @return True if has small strokes
+     */
+    private boolean tagHasSmallStrokes(SVGExporter exporter, DrawableTag drawableTag, Matrix matrix) {
+        if (drawableTag instanceof Timelined) {
+            Timelined tim = (Timelined) drawableTag;
+            for (Frame fr : tim.getTimeline().frames) {
+                for (DepthState ds : fr.layers.values()) {
+                    Matrix subMat = matrix.concatenate(new Matrix(ds.matrix));
+                    CharacterTag cht = ds.getCharacter();
+                    if ((cht instanceof DrawableTag) && tagHasSmallStrokes(exporter, (DrawableTag) cht, subMat)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        if (drawableTag instanceof ShapeTag) {
+            com.jpexs.decompiler.flash.exporters.commonshape.Point p00 = matrix.transform(0, 0);
+            com.jpexs.decompiler.flash.exporters.commonshape.Point p11 = matrix.transform(1, 1);
+            double thicknessScale = p00.distanceTo(p11) / Math.sqrt(2);
+
+            ShapeTag st = (ShapeTag) drawableTag;
+            List<LINESTYLEARRAY> lineStyles = new ArrayList<>();
+            lineStyles.add(st.getShapes().lineStyles);
+
+            for (SHAPERECORD rec : st.getShapes().shapeRecords) {
+                if (rec instanceof StyleChangeRecord) {
+                    StyleChangeRecord scr = (StyleChangeRecord) rec;
+                    if (scr.stateNewStyles) {
+                        lineStyles.add(scr.lineStyles);
+                    }
+                }
+            }
+
+            for (LINESTYLEARRAY lsArr : lineStyles) {
+                if (lsArr.lineStyles != null) {
+                    for (LINESTYLE ls : lsArr.lineStyles) {
+                        if (ls.width * exporter.getZoom() * thicknessScale < 1 * SWF.unitDivisor) {
+                            return true;
+                        }
+                    }
+                }
+                if (lsArr.lineStyles2 != null) {
+                    for (LINESTYLE2 ls : lsArr.lineStyles2) {
+                        if (ls.width * exporter.getZoom() * thicknessScale < 1 * SWF.unitDivisor) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Converts specified frame to SVG.
      *
      * @param frame Frame
@@ -1597,7 +1659,7 @@ public class Timeline {
      * @param level Level
      * @throws IOException On I/O error
      */
-    public void toSVG(int frame, int time, DepthState stateUnderCursor, int mouseButton, SVGExporter exporter, ColorTransform colorTransform, int level) throws IOException {
+    public void toSVG(int frame, int time, DepthState stateUnderCursor, int mouseButton, SVGExporter exporter, ColorTransform colorTransform, int level, Matrix transformation, Matrix strokeTransformation) throws IOException {
         if (getFrameCount() <= frame) {
             return;
         }
@@ -1650,6 +1712,9 @@ public class Timeline {
                 clrTrans = clrTrans == null ? layer.colorTransForm : colorTransform.merge(layer.colorTransForm);
             }
 
+            Matrix layerMatrix = new Matrix(layer.getDrawingMatrix());
+            Matrix absMat = strokeTransformation.concatenate(layerMatrix);
+
             if (character instanceof DrawableTag) {
                 DrawableTag drawable = (DrawableTag) character;
 
@@ -1669,22 +1734,26 @@ public class Timeline {
                     exporter.createClipPath(mat, clipName);
                     SvgClip clip = new SvgClip(clipName, layer.clipDepth);
                     clips.add(clip);
-                    drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1);
+                    drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1, transformation, strokeTransformation);
                     exporter.endGroup();
                 } else {
                     boolean createNew = false;
 
                     SVGExporter.ExportKey exportKey = new SVGExporter.ExportKey(drawableTag, clrTrans, layer.ratio, layer.clipDepth > -1);
-                    if (exporter.exportedTags.containsKey(exportKey)) {
+                    boolean hasSmallStroke = tagHasSmallStrokes(exporter, drawable, absMat);
+
+                    if (!hasSmallStroke && exporter.exportedTags.containsKey(exportKey)) {
                         assetName = exporter.exportedTags.get(exportKey);
                     } else {
                         assetName = getTagIdPrefix(drawableTag, exporter);
-                        exporter.exportedTags.put(exportKey, assetName);
+                        if (!hasSmallStroke) {
+                            exporter.exportedTags.put(exportKey, assetName);
+                        }
                         createNew = true;
                     }
                     if (createNew) {
                         exporter.createDefGroup(new ExportRectangle(boundRect), assetName);
-                        drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1);
+                        drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1, transformation, absMat);
                         exporter.endGroup();
                     }
                     Matrix mat = Matrix.getTranslateInstance(rect.xMin, rect.yMin).preConcatenate(new Matrix(layer.matrix));

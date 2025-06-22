@@ -20,30 +20,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Function scope.
  * @author JPEXS
  */
 public class FunctionScope implements Scope {
 
-    private final List<VariableOrScope> privateItems;
+    private final List<VariableOrScopeWithAccess> items = new ArrayList<>();
     private final boolean isStatic;
+    private final int position;
+    private final int endPosition;
 
-    public FunctionScope(List<VariableOrScope> functionBody, boolean isStatic) {
-        this.privateItems = functionBody;
+    public FunctionScope(int position, int endPosition, List<VariableOrScope> functionBody, boolean isStatic) {
+        for (VariableOrScope s : functionBody) {
+            items.add(new VariableOrScopeWithAccess(s, false));
+        }
         this.isStatic = isStatic;
+        this.position = position;
+        this.endPosition = endPosition;
     }
 
     public boolean isStatic() {
         return isStatic;
     }
 
+
     @Override
-    public List<VariableOrScope> getSharedItems() {
-        return new ArrayList<>();
+    public int getPosition() {
+        return position;
     }
 
     @Override
-    public List<VariableOrScope> getPrivateItems() {
-        return privateItems;
+    public int getEndPosition() {
+        return endPosition;
+    }        
+
+    @Override
+    public List<VariableOrScopeWithAccess> getScopeItems() {
+        return items;
     }
+    
 }

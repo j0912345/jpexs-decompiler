@@ -19,12 +19,12 @@ package com.jpexs.decompiler.flash.simpleparser;
 import java.util.List;
 
 /**
- *
+ * Scope.
  * @author JPEXS
  */
 public interface Scope extends VariableOrScope {
 
-    public List<VariableOrScope> getSharedItems();
-
-    public List<VariableOrScope> getPrivateItems();
+    public List<VariableOrScopeWithAccess> getScopeItems();
+    
+    public int getEndPosition();
 }

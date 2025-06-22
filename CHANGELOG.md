@@ -18,12 +18,24 @@ All notable changes to this project will be documented in this file.
 - "Show detail" context menu item for items in folder preview
 - [#1682] AS2 - Adding class by context menu on packages
 - Simple editor - detection of english color name (based on CSS names)
-- AS1/2/3 - highlight variable definition and all its instances on cursor place
+- [#2050] AS1/2/3 - highlight variable definition and all its instances on cursor place
   (also in edit mode)
 - AS1/2/3 - underline errors in the code (also in edit mode) 
 - AS1/2/3 - highlight variables and errors on panel next to vertical scrollbar
 - AS1/2 direct editation - hide P-code panel when editing
 - Disable AS1/2/3 direct editation when editing P-code
+- AS3 - navigation to definition in other SWF file and also player/airglobal
+- [#2463] Export subsprites animation context menu on frames
+- Open in the Flash Player context menu on graphic/sound tags and frames
+- [#2236], [#2451] Replacing sound stream block ranges
+- Importing sound stream block ranges
+- Commandline replacing sound stream block ranges
+- [#1625] Error log frame - Save all to file button
+- [#2467] Show ImportAssets name/characterId in the title when there is only single one item
+- [#2468] Option for `-dumpas2` CLI command to use export names (`-exportNames` option)
+- AS3 - code completion (properties and methods)
+- [#2470] Transformation - Copy individual transforms to clipboard,
+  load/apply from clipboard buttons
 
 ### Changed
 - AS1/2 - Single DoAction tag inside frame is now displayed directly as frame node
@@ -34,6 +46,8 @@ All notable changes to this project will be documented in this file.
   This may break backwards compatibility. For importing scripts from older
   versions of FFDec, you should move the scripts from `<default package>`
   to main scripts folder.
+- SWF to XML export in GUI dialog selects a XML file instead of directory
+  (and directory when multiple SWFs are selected)
 
 ### Fixed
 - [#2456] FLA export - NullPointer exception while exporting to CS4 or lower via commandline
@@ -56,6 +70,13 @@ All notable changes to this project will be documented in this file.
 - AS3 native functions outside class allowed
 - AS3 difference between namespace keyword and const of type Namespace
 - [#2462] AS3 debugger - incorrect line info injected
+- [#2464] SVG export - minimum stroke width of 1 px
+- [#2405] Incorrect saving tags after Cloning / Copy-pasting
+- [#1646] Scrolling in Error log frame inside log texts
+- JLayer stripping last byte of MP3 data
+- [#2469] Converting shape type did not convert gradient colors transparency
+- [#2470] Transform - paste matrix, edit current matrix not working
+- Do not allow to switch PlaceObjects in transform mode
 
 ## [23.0.1] - 2025-05-16
 ### Fixed
@@ -3843,11 +3864,23 @@ Major version of SWF to XML export changed to 2.
 [#289]: https://www.free-decompiler.com/flash/issues/289
 [#2412]: https://www.free-decompiler.com/flash/issues/2412
 [#1682]: https://www.free-decompiler.com/flash/issues/1682
+[#2050]: https://www.free-decompiler.com/flash/issues/2050
+[#2463]: https://www.free-decompiler.com/flash/issues/2463
+[#2236]: https://www.free-decompiler.com/flash/issues/2236
+[#2451]: https://www.free-decompiler.com/flash/issues/2451
+[#1625]: https://www.free-decompiler.com/flash/issues/1625
+[#2467]: https://www.free-decompiler.com/flash/issues/2467
+[#2468]: https://www.free-decompiler.com/flash/issues/2468
+[#2470]: https://www.free-decompiler.com/flash/issues/2470
 [#2456]: https://www.free-decompiler.com/flash/issues/2456
 [#2459]: https://www.free-decompiler.com/flash/issues/2459
 [#2460]: https://www.free-decompiler.com/flash/issues/2460
 [#2461]: https://www.free-decompiler.com/flash/issues/2461
 [#2462]: https://www.free-decompiler.com/flash/issues/2462
+[#2464]: https://www.free-decompiler.com/flash/issues/2464
+[#2405]: https://www.free-decompiler.com/flash/issues/2405
+[#1646]: https://www.free-decompiler.com/flash/issues/1646
+[#2469]: https://www.free-decompiler.com/flash/issues/2469
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448

@@ -20,30 +20,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Scope of value of var or const trait.
  * @author JPEXS
  */
 public class TraitVarConstValueScope implements Scope {
 
-    private List<VariableOrScope> sharedItems;
+    private final int position;
+    private final int endPosition;
+
+    private final List<VariableOrScopeWithAccess> items = new ArrayList<>();
     private final boolean isStatic;
 
-    public TraitVarConstValueScope(List<VariableOrScope> sharedItems, boolean isStatic) {
-        this.sharedItems = sharedItems;
+    public TraitVarConstValueScope(int position, int endPosition, List<VariableOrScope> sharedItems, boolean isStatic) {
+        this.position = position;
+        this.endPosition = endPosition;
+        for (VariableOrScope s : sharedItems) {
+            items.add(new VariableOrScopeWithAccess(s, true));
+        }
         this.isStatic = isStatic;
     }
 
     public boolean isStatic() {
         return isStatic;
     }
+    
+    @Override
+    public int getPosition() {
+        return position;
+    }        
 
     @Override
-    public List<VariableOrScope> getSharedItems() {
-        return sharedItems;
+    public int getEndPosition() {
+        return endPosition;
     }
 
     @Override
-    public List<VariableOrScope> getPrivateItems() {
-        return new ArrayList<>();
+    public List<VariableOrScopeWithAccess> getScopeItems() {
+        return items;
     }
+    
+    
 }

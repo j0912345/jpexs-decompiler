@@ -555,9 +555,9 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         JPanel pan = new JPanel(new BorderLayout());
         JLabel prevLabel = new HeaderLabel(mainPanel.translate("swfpreview"));
         prevLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
+
         pan.add(prevLabel, BorderLayout.NORTH);
-        JPanel swtPanel = new JPanel(new GridBagLayout());        
+        JPanel swtPanel = new JPanel(new GridBagLayout());
         JPanel buttonsPanel = new JPanel(new FlowLayout());
         JButton flashProjectorButton = new JButton(mainPanel.translate("button.showin.flashprojector"));
         flashProjectorButton.addActionListener(this::flashProjectorActionPerformed);
@@ -1064,7 +1064,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                                 wasMoveTo = true;
                             }
                         }
-                        
+
                         if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
                             if (lastStyleChangeRecord != null) {
                                 otherPosition++;
@@ -1259,8 +1259,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 int importantRecordPos = 0;
                 int x = 0;
                 int y = 0;
-                
-                
+
                 StyleChangeRecord lastStyleChangeRecord = null;
                 boolean wasMoveTo = false;
                 for (int i = 0; i < selectedRecords.size(); i++) {
@@ -1784,7 +1783,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     }
 
     public void showTextPanel(TextTag textTag) {
-        showImagePanel(TimelinedMaker.makeTimelined(textTag), textTag.getSwf(), 0, true, true, true, true, true, false, false, true, true, true);        
+        showImagePanel(TimelinedMaker.makeTimelined(textTag), textTag.getSwf(), 0, true, true, true, true, true, false, false, true, true, true);
 
         showCardRight(CARDTEXTPANEL);
         if (!readOnly) {
@@ -2184,7 +2183,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         } catch (IOException | ActionParseException ex) {
             Logger.getLogger(PreviewPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }   
+    }
 
     private void editMetadataButtonActionPerformed(ActionEvent evt) {
         TreeItem item = mainPanel.getCurrentTree().getCurrentTreeItem();
@@ -2375,7 +2374,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 lastStyleChangeRecord = scr;
                 if (scr.stateNewStyles) {
                     transformStyles(matrix, scr.fillStyles, scr.lineStyles, shapeNum);
-                }                
+                }
                 if (scr.stateMoveTo) {
                     Point nextPoint = new Point(scr.moveDeltaX, scr.moveDeltaY);
                     x = scr.changeX(x);
@@ -2387,8 +2386,8 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                     wasMoveTo = true;
                 }
             }
-            
-            if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {                
+
+            if (((rec instanceof StraightEdgeRecord) || (rec instanceof CurvedEdgeRecord)) && !wasMoveTo) {
                 if (lastStyleChangeRecord != null) {
                     Point nextPoint2 = matrix.transform(new Point(x, y));
                     if (nextPoint2.x != 0 || nextPoint2.y != 0) {
@@ -2821,7 +2820,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                     wasMoveTo = true;
                 }
             }
-            
+
             if (rec instanceof StraightEdgeRecord) {
                 StraightEdgeRecord ser = (StraightEdgeRecord) rec;
                 DisplayPoint point = new DisplayPoint(x + ser.deltaX, y + ser.deltaY);
@@ -2834,7 +2833,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 points.add(controlPoint);
                 points.add(anchorPoint);
             }
-            
+
             if (rec instanceof StyleChangeRecord) {
                 StyleChangeRecord scr = (StyleChangeRecord) rec;
                 lastStyleChangeRecord = scr;
@@ -3209,14 +3208,14 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         FontTag fontTag = fontPanel.getFontTag();
         int pageCount = getFontPageCount(fontTag);
         fontPageNum = (fontPageNum + pageCount - 1) % pageCount;
-        imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);        
+        imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);
     }
 
     private void nextFontsButtonActionPerformed(ActionEvent evt) {
         FontTag fontTag = fontPanel.getFontTag();
         int pageCount = getFontPageCount(fontTag);
         fontPageNum = (fontPageNum + 1) % pageCount;
-        imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);        
+        imagePanel.setTimelined(TimelinedMaker.makeTimelined(fontTag, fontPageNum), fontTag.getSwf(), 0, true, true, true, true, true, false, false, true, false);
     }
 
     @Override

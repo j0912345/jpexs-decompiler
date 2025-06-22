@@ -52,6 +52,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * SVG exporter.
@@ -89,6 +90,8 @@ public class SVGExporter {
     private final HashSet<String> fontFaces = new HashSet<>();
 
     public boolean useTextTag = Configuration.textExportExportFontFace.get();
+
+    private double zoom;
 
     public static class ExportKey {
 
@@ -136,7 +139,7 @@ public class SVGExporter {
                 return false;
             }
             return Objects.equals(this.colorTransform, other.colorTransform);
-        }       
+        }
     }
 
     public SVGExporter(ExportRectangle bounds, double zoom, String objectType) {
@@ -144,6 +147,7 @@ public class SVGExporter {
     }
 
     public SVGExporter(ExportRectangle bounds, double zoom, String objectType, Color backgroundColor) {
+        this.zoom = zoom;
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -185,6 +189,10 @@ public class SVGExporter {
         gradients = new ArrayList<>();
     }
 
+    public double getZoom() {
+        return zoom;
+    }
+
     private Element getDefs() {
         if (_svgDefs == null) {
             _svgDefs = _svg.createElement("defs");
@@ -202,10 +210,28 @@ public class SVGExporter {
         }
         return _svgStyle;
     }
+    
+    public final boolean hasSmallStrokes() {
+        NodeList nodes = _svgGs.peek().getElementsByTagName("path");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element e = (Element) nodes.item(i);
+            if ("true".equals(e.getAttribute("ffdec:has-small-stroke"))) {
+                return true;
+            }
+        }
+        nodes = _svgGs.peek().getElementsByTagName("use");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element e = (Element) nodes.item(i);
+            if ("true".equals(e.getAttribute("ffdec:has-small-stroke"))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public final void createDefGroup(ExportRectangle bounds, String id) {
         createDefGroup(bounds, id, 1);
-    }
+    }   
 
     public final void createDefGroup(ExportRectangle bounds, String id, double zoom) {
         Element g = _svg.createElement("g");
@@ -545,7 +571,7 @@ public class SVGExporter {
         if (characterName != null && !characterName.isEmpty()) {
             image.setAttribute("ffdec:characterName", characterName);
         }
-
+        
         setBlendMode(image, blendMode);
 
         handleFilters(image, filters);

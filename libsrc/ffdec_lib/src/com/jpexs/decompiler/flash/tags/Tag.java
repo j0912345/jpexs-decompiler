@@ -561,6 +561,18 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
             sos.write(originalRange.getArray(), originalRange.getPos(), originalRange.getLength());
         }
     }
+    
+    /**
+     * Writes Tag value to the stream, ignoring all scripts
+     * @param sos Output stream
+     * @throws IOException On I/O error
+     */
+    public void writeTagNoScripts(SWFOutputStream sos) throws IOException {
+        byte[] newData = getDataNoScript();
+        byte[] newHeaderData = getHeader(newData.length);
+        sos.write(newHeaderData);
+        sos.write(newData);
+    }        
 
     /**
      * Clones the tag.
@@ -569,9 +581,15 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
      * @throws IOException On I/O error
      */
     public Tag cloneTag() throws InterruptedException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] data = getData();
+        byte[] headerData = getHeader(data.length);
+        baos.write(headerData);
+        baos.write(data);
+        
+        byte[] dataWithHeader = baos.toByteArray();
         SWFInputStream tagDataStream = new SWFInputStream(swf, data, 0, data.length);
-        TagStub copy = new TagStub(swf, getId(), "Unresolved", new ByteArrayRange(data), tagDataStream);
+        TagStub copy = new TagStub(swf, getId(), "Unresolved", new ByteArrayRange(dataWithHeader), tagDataStream);
         copy.forceWriteAsLong = forceWriteAsLong;
         return SWFInputStream.resolveTag(copy, 0, false, true, false, false);
     }
@@ -625,7 +643,7 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
      * @throws IOException On I/O error
      */
     public abstract void getData(SWFOutputStream sos) throws IOException;
-
+      
     /**
      * Gets data bytes
      *
@@ -643,6 +661,30 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
 
         try (SWFOutputStream sos = new SWFOutputStream(os, getVersion(), getCharset())) {
             getData(sos);
+            if (remainingData != null) {
+                sos.write(remainingData);
+            }
+        } catch (IOException e) {
+            throw new Error("This should never happen.", e);
+        }
+
+        return baos.toByteArray();
+    }
+    
+    /**
+     * Gets data bytes ignoring all scripts
+     * @param sos SWF output stream
+     * @throws IOException On I/O error
+     */
+    public void getDataNoScript(SWFOutputStream sos) throws IOException {
+        getData(sos);
+    }
+    
+    public byte[] getDataNoScript() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStream os = baos;
+        try (SWFOutputStream sos = new SWFOutputStream(os, getVersion(), getCharset())) {
+            getDataNoScript(sos);
             if (remainingData != null) {
                 sos.write(remainingData);
             }

@@ -2258,7 +2258,7 @@ public class CommandLineArgumentParser {
                         }
                     }
                     FrameExportSettings fes = new FrameExportSettings(enumFromStr(formats.get("frame"), FrameExportMode.class), zoom, transparentBackground);
-                    frameExporter.exportFrames(handler, outDir + (multipleExportTypes ? File.separator + FrameExportSettings.EXPORT_FOLDER_NAME : ""), swf, 0, frames, fes, evl);
+                    frameExporter.exportFrames(handler, outDir + (multipleExportTypes ? File.separator + FrameExportSettings.EXPORT_FOLDER_NAME : ""), swf, 0, frames, 1, fes, evl);
                 }
 
                 if (exportAll || exportFormats.contains("sprite")) {
@@ -2266,7 +2266,7 @@ public class CommandLineArgumentParser {
                     SpriteExportSettings ses = new SpriteExportSettings(enumFromStr(formats.get("sprite"), SpriteExportMode.class), zoom);
                     for (Tag t : extags) {
                         if (t instanceof DefineSpriteTag) {
-                            frameExporter.exportSpriteFrames(handler, outDir + (multipleExportTypes ? File.separator + SpriteExportSettings.EXPORT_FOLDER_NAME : ""), swf, ((DefineSpriteTag) t).getCharacterId(), null, ses, evl);
+                            frameExporter.exportSpriteFrames(handler, outDir + (multipleExportTypes ? File.separator + SpriteExportSettings.EXPORT_FOLDER_NAME : ""), swf, ((DefineSpriteTag) t).getCharacterId(), null, 1, ses, evl);
                         }
                     }
                 }
@@ -3000,7 +3000,7 @@ public class CommandLineArgumentParser {
             try (StdInAwareFileInputStream is = new StdInAwareFileInputStream(inFile)) {
                 SWF swf = new SWF(is, Configuration.parallelSpeedUp.get(), charset);
                 while (true) {
-                    String objectToReplace = args.pop();
+                    String objectToReplace = args.pop();                    
 
                     if (objectToReplace.matches("\\d+")) {
                         // replace character tag
@@ -3101,10 +3101,26 @@ public class CommandLineArgumentParser {
                             }).importText(textTag, new String(data, Utf8Helper.charset));
                         } else if (characterTag instanceof SoundTag) {
                             SoundTag st = (SoundTag) characterTag;
+                            Integer startFrame = null;
+                            if (!args.isEmpty()) {
+                                if (args.peek().toLowerCase(Locale.ENGLISH).equals("-startframe")) {
+                                    args.pop();
+                                    if (args.isEmpty()) {
+                                        System.err.println("Frame number must be specified");
+                                        badArguments("replace");
+                                    }
+                                    try {
+                                        startFrame = Integer.parseInt(args.pop());
+                                    } catch (NumberFormatException nfe) {
+                                        System.err.println("Frame number should be integer");
+                                        badArguments("replace");
+                                    }
+                                }
+                            }
                             boolean ok = false;
                             SoundImporter soundImporter = new SoundImporter();
                             try {
-                                ok = soundImporter.importSound(st, new ByteArrayInputStream(data), soundFormat);
+                                ok = soundImporter.importSound(st, new ByteArrayInputStream(data), soundFormat, startFrame);
                             } catch (UnsupportedSamplingRateException usre) {
                                 List<String> supportedRatesStr = new ArrayList<>();
                                 for (int i : usre.getSupportedRates()) {
@@ -4370,11 +4386,21 @@ public class CommandLineArgumentParser {
         if (args.isEmpty()) {
             badArguments("dumpas2");
         }
+        boolean useExportNames = false;
+        String exportNamesParam = args.pop();
+        if (exportNamesParam.toLowerCase(Locale.ENGLISH).equals("-exportnames")) {
+            useExportNames = true;
+        } else {
+            args.push(exportNamesParam);
+        }
+        if (args.isEmpty()) {
+            badArguments("dumpas2");
+        }
         File file = new File(args.pop());
         try {
             try (StdInAwareFileInputStream is = new StdInAwareFileInputStream(file)) {
                 SWF swf = new SWF(is, Configuration.parallelSpeedUp.get(), charset);
-                Map<String, ASMSource> asms = swf.getASMs(false);
+                Map<String, ASMSource> asms = swf.getASMs(useExportNames);
                 for (String as2 : asms.keySet()) {
                     System.out.println(as2);
                 }

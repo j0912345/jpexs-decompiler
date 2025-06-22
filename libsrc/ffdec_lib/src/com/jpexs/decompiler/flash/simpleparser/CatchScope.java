@@ -20,28 +20,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Catch (of try..catch) clause scope.
  * @author JPEXS
  */
 public class CatchScope implements Scope {
 
-    private final List<VariableOrScope> privateItems;
-    private final List<VariableOrScope> sharedItems;
+    private final List<VariableOrScopeWithAccess> items = new ArrayList<>();
+    private final int position;
+    private final int endPosition;
 
-    public CatchScope(Variable catchVariable, List<VariableOrScope> catchBody) {
-        this.privateItems = new ArrayList<>();
-        this.privateItems.add(catchVariable);
-        this.sharedItems = catchBody;
+    public CatchScope(int position, int endPosition, Variable catchVariable, List<VariableOrScope> catchBody) {
+        items.add(new VariableOrScopeWithAccess(catchVariable, false));
+        for (VariableOrScope s : catchBody) {
+            items.add(new VariableOrScopeWithAccess(s, true));
+        }
+        this.position = position;
+        this.endPosition = endPosition;
     }
 
     @Override
-    public List<VariableOrScope> getSharedItems() {
-        return sharedItems;
+    public List<VariableOrScopeWithAccess> getScopeItems() {
+        return items;
+    } 
+
+    @Override
+    public int getPosition() {
+        return position;
     }
 
     @Override
-    public List<VariableOrScope> getPrivateItems() {
-        return privateItems;
+    public int getEndPosition() {
+        return endPosition;
     }
-
+        
 }

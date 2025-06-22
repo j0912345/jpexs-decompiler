@@ -20,24 +20,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Class scope.
  * @author JPEXS
  */
 public class ClassScope implements Scope {
 
-    private final List<VariableOrScope> privateItems;
+    private final List<VariableOrScopeWithAccess> items = new ArrayList<>();
+    private final int position;
+    private final int endPosition;
 
-    public ClassScope(List<VariableOrScope> traits) {
-        this.privateItems = traits;
+    public ClassScope(int position, int endPosition, List<VariableOrScope> traits) {
+        for (VariableOrScope s : traits) {
+            items.add(new VariableOrScopeWithAccess(s, false));
+        }
+        this.position = position;
+        this.endPosition = endPosition;
     }
 
     @Override
-    public List<VariableOrScope> getSharedItems() {
-        return new ArrayList<>();
-    }
+    public List<VariableOrScopeWithAccess> getScopeItems() {
+        return items;
+    }    
 
     @Override
-    public List<VariableOrScope> getPrivateItems() {
-        return privateItems;
-    }
+    public int getPosition() {
+        return position;
+    }       
+
+    @Override
+    public int getEndPosition() {
+        return endPosition;
+    }        
 }

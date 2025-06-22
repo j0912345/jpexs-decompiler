@@ -18,7 +18,11 @@ package com.jpexs.decompiler.flash.gui.editor;
 
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.gui.AppStrings;
+import com.jpexs.decompiler.flash.simpleparser.LinkHandler;
+import com.jpexs.decompiler.flash.simpleparser.LinkType;
+import com.jpexs.decompiler.flash.simpleparser.Path;
 import com.jpexs.decompiler.flash.simpleparser.SimpleParser;
+import com.jpexs.decompiler.flash.simpleparser.Variable;
 import com.jpexs.helpers.Reference;
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -27,8 +31,10 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
@@ -41,7 +47,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
-import javax.swing.text.Highlighter.HighlightPainter;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import javax.swing.text.Segment;
@@ -66,13 +71,53 @@ public class LineMarkedEditorPane extends UndoFixedEditorPane implements LinkHan
 
     private boolean error = false;
 
-    private Token lastUnderlined = null;
-
     private LinkHandler linkHandler = this;
     
-    private Point lastCursorPos = new Point(0, 0);
     
-    private SimpleParser parser;
+    private SimpleParser parser;   
+
+    @Override
+    public LinkType getClassLinkType(Path className) {
+        return LinkType.NO_LINK;
+    }
+
+    @Override
+    public boolean traitExists(Path className, String traitName) {
+        return false;
+    }
+
+    @Override
+    public void handleClassLink(Path className) {
+    }
+
+    @Override
+    public void handleTraitLink(Path className, String traitName) {
+    }
+
+    @Override
+    public Path getTraitType(Path className, String traitName) {
+        return new Path("*");
+    }
+
+    @Override
+    public Path getTraitSubType(Path className, String traitName, int level) {
+        return null;
+    }
+
+    @Override
+    public Path getTraitCallType(Path className, String traitName) {
+        return null;
+    }
+
+    @Override
+    public Path getTraitCallSubType(Path className, String traitName, int level) {
+        return null;
+    }
+
+    @Override
+    public List<Variable> getClassTraits(Path className, boolean getStatic, boolean getInstance, boolean getInheritance) {
+        return new ArrayList<>();
+    }
     
     public static class LineMarker implements Comparable<LineMarker> {
 
@@ -374,21 +419,6 @@ public class LineMarkedEditorPane extends UndoFixedEditorPane implements LinkHan
 
     public LinkHandler getLinkHandler() {
         return linkHandler;
-    }
-
-    @Override
-    public HighlightPainter linkPainter() {
-        return null;
-    }
-
-    @Override
-    public boolean isLink(Token token) {
-        return false;
-    }
-
-    @Override
-    public void handleLink(Token token) {
-
     }
 
     @Override

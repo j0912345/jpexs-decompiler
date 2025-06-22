@@ -162,7 +162,6 @@ public class EasySwfPanel extends JPanel {
 
                 final List<MATRIX> fpreviousMatrices = new ArrayList<>();
 
-                
                 List<DepthState> dss = getSelectedDepthStates();
                 for (DepthState ds : dss) {
                     if (ds == null) {
@@ -171,7 +170,6 @@ public class EasySwfPanel extends JPanel {
                         fpreviousMatrices.add(ds.matrix);
                     }
                 }
-                
 
                 final boolean transformEnabled = transformEnabled();
                 undoManager.doOperation(new DoableOperation() {
@@ -195,7 +193,7 @@ public class EasySwfPanel extends JPanel {
                             if (timelined instanceof ButtonTag) {
                                 ButtonTag button = (ButtonTag) timelined;
                                 BUTTONRECORD rec = button.getButtonRecordAt(frame, depth, true);
-                                rec.placeMatrix = contMat.toMATRIX();                                
+                                rec.placeMatrix = contMat.toMATRIX();
                             } else {
                                 ds.placeObjectTag.setMatrix(contMat.toMATRIX());
                                 ds.placeObjectTag.setPlaceFlagHasMatrix(newMatrix != null);
@@ -226,7 +224,7 @@ public class EasySwfPanel extends JPanel {
                             if (timelined instanceof ButtonTag) {
                                 ButtonTag button = (ButtonTag) timelined;
                                 BUTTONRECORD rec = button.getButtonRecordAt(frame, depth, true);
-                                rec.placeMatrix = fpreviousMatrices.get(i);                                
+                                rec.placeMatrix = fpreviousMatrices.get(i);
                             } else {
                                 ds.placeObjectTag.setMatrix(fpreviousMatrices.get(i));
                                 ds.placeObjectTag.setPlaceFlagHasMatrix(fpreviousMatrices != null);
@@ -298,7 +296,7 @@ public class EasySwfPanel extends JPanel {
                                 place.matrix = new MATRIX();
                                 place.placeFlagHasMatrix = true;
                                 place.setTimelined(timelined);
-                                
+
                                 if (timelined instanceof ButtonTag) {
                                     ButtonTag button = (ButtonTag) timelined;
                                     button.getButtonRecordAt(fframe, newDepth, true).fromPlaceObject(place);

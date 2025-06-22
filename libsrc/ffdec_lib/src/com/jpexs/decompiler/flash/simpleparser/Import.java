@@ -17,19 +17,19 @@
 package com.jpexs.decompiler.flash.simpleparser;
 
 /**
- *
+ * Import statement.
  * @author JPEXS
  */
 public class Import extends Variable {
 
-    private final String fullName;
+    private final Path fullName;
     
-    public Import(String fullName, String name, int position) {
+    public Import(Path fullName, Path name, int position) {
         super(false, name, position);
         this.fullName = fullName;
     }    
 
-    public String getFullName() {
+    public Path getFullName() {
         return fullName;
     }       
 }

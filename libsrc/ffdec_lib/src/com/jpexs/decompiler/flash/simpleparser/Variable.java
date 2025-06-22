@@ -16,44 +16,73 @@
  */
 package com.jpexs.decompiler.flash.simpleparser;
 
+import java.util.List;
+
 /**
- *
+ * Variable.
  * @author JPEXS
  */
 public class Variable implements VariableOrScope {
 
     public boolean definition;
-    public String name;
+    public Path name;
     public int position;
     public Boolean isStatic;
+    public Path type;
+    public Path callType;
+    public Variable subType;
+    public Variable callSubType;
 
-    public Variable(boolean definition, String name, int position) {
+    public Variable(boolean definition, Path name, int position) {
         this(definition, name, position, null);
     }
     
-    public Variable(boolean definition, String name, int position, Boolean isStatic) {
+    public Variable(boolean definition, Path name, int position, Boolean isStatic) {
+        this(definition, name, position, isStatic, null, null);
+    }
+    
+    public Variable(boolean definition, Path name, int position, Boolean isStatic, Path type, Path callType) {
+        this(definition, name, position, isStatic, type, callType, null, null);
+    }
+    
+    public Variable(boolean definition, Path name, int position, Boolean isStatic, Path type, Path callType, Variable subType, Variable callSubType) {
         this.definition = definition;
         this.name = name;
         this.position = position;
         this.isStatic = isStatic;
+        this.type = type;
+        this.callType = callType;
+        this.subType = subType;
+        this.callSubType = callSubType;
     }
     
     @Override
     public String toString() {
-        return (definition ? "definition of " : "") + (isStatic ? "static " : "") + name + " at " + position;
+        return (definition ? "definition of " : "") + (isStatic == Boolean.TRUE ? "static " : "") + name + " at " + position;
     }        
     
-    public String getLastName() {
-        if (name.contains(".")) {
-            return name.substring(name.lastIndexOf(".") + 1);
-        }
-        return name;
+    public Path getLastName() {
+        return name.getLast();
     }
     
-    public String getFirstName() {
-        if (name.contains(".")) {
-            return name.substring(0, name.indexOf("."));
-        }
-        return name;
+    public Path getFirstName() {
+        return name.getFirst();
     }
+   
+    public Path getParentName() {
+        return name.getParent();
+    }
+    
+    public List<String> getParts() {
+        return name.getParts();
+    }
+    
+    public boolean hasParent() {
+        return name.hasParent();
+    }    
+
+    @Override
+    public int getPosition() {
+        return position;
+    }        
 }
