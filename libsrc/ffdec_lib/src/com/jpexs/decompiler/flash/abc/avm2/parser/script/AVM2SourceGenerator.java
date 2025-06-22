@@ -1125,10 +1125,17 @@ public class AVM2SourceGenerator implements SourceGenerator {
 
         for (int i = 0; i < paramValues.size(); i++) {
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
-            // references to a const variable are still UnresolvedAVM2Items and will always return null at this point in the above `getValueKind()` call.
-            if (optional[i] == null) {
-                GraphTargetItem resolveAttempt = ((UnresolvedAVM2Item) paramValues.get(i)).resolve(localData, localData.getFullClass(), null, new ArrayList<>(), new ArrayList<>(), abcIndex, new ArrayList<>(), new ArrayList<>());
-                optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), resolveAttempt, false);
+            // references to a const variable are still UnresolvedAVM2Items in getValueKind
+            if (optional[i] == null && paramValues.get(i) instanceof UnresolvedAVM2Item) {
+                System.out.println("optional[i] == null && paramValues.get(i) instanceof UnresolvedAVM2Item");
+                String fullClass = localData.getFullClass();
+                GraphTargetItem resolved = ((UnresolvedAVM2Item) paramValues.get(i)).resolve(localData, fullClass, new TypeItem(fullClass), paramTypes, paramNames, abcIndex, callStack, subvariables);
+                System.out.println("methodHeader(): resolved's type: "+resolved.getClass().getName());
+                if(resolved instanceof PropertyAVM2Item && ((NameAVM2Item) ((PropertyAVM2Item) resolved).object).isConst())
+                {
+                    System.out.println("resolved instanceof NameAVM2Item && ((NameAVM2Item) resolved).isConst()");
+                    optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), ((NameAVM2Item) ((PropertyAVM2Item) resolved).object).assignedValue, false);
+                }
             }
             if (optional[i] == null) {
                 System.out.println("methodHeader(): throwing compiletime constant exception...");

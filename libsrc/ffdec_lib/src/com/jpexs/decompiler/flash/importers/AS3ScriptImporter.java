@@ -132,6 +132,7 @@ public class AS3ScriptImporter {
             
             
             // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
+            // At time of writing static const variables aren't treated as compile time constants anyway, but hopefully that'll be fixed/added in future.
             // see https://en.wikipedia.org/wiki/Topological_sorting
             
             
