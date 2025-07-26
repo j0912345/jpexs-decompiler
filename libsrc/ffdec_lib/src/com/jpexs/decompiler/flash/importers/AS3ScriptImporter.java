@@ -81,7 +81,6 @@ public class AS3ScriptImporter {
      * @param NewScriptABCContainer ABCContainerTag for new scripts to be put into. Ignores new scripts if null.
      * @return Number of imported scripts
      * @throws InterruptedException On interrupt
-     * @throws As3ScriptReplaceException Placeholder
      */
     public int importScripts(As3ScriptReplacerInterface scriptReplacer, String scriptsFolder, List<ScriptPack> packs, ScriptImporterProgressListener listener, List<SWF> dependencies, ABCContainerTag NewScriptABCContainer) throws InterruptedException {
         if (!scriptsFolder.endsWith(File.separator)) {
@@ -121,27 +120,23 @@ public class AS3ScriptImporter {
                 swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
                 swf.setModified(true);
+                
+                // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
+                // At time of writing static const variables aren't treated as compile time constants anyway, but hopefully that'll be fixed/added in future.
+                // This is also needed for multi-script namespaces.
+                // see https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
+                
+                
+                
+                ArrayList<File> orderedScripts = new ArrayList<>(); 
+                ArrayList<File> unresolvedVisitedScripts = new ArrayList<>();
+                
+                
+                        
                 // new scripts will have their real contents compiled with the normal import loop.
                 // we create all of the scripts blank first to avoid issues with scripts being compiled before their dependencies exist. 
-                 packs = swf.getAS3Packs();
+                packs = swf.getAS3Packs();
             }
-            
-            
-            
-            
-            
-            
-            // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
-            // At time of writing static const variables aren't treated as compile time constants anyway, but hopefully that'll be fixed/added in future.
-            // see https://en.wikipedia.org/wiki/Topological_sorting
-            
-            
-            
-            
-            
-            
-            
-
         }
         
         int importCount = 0;
