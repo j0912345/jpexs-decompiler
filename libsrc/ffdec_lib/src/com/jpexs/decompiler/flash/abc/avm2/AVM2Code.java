@@ -1826,6 +1826,7 @@ public class AVM2Code implements Cloneable {
     /**
      * Converts to source output.
      *
+     * @param output Output
      * @param swfVersion SWF version
      * @param switchParts Switch parts
      * @param callStack Call stack
@@ -1853,11 +1854,10 @@ public class AVM2Code implements Cloneable {
      * @param visited Visited
      * @param localRegAssignmentIps Local register assignment IPs
      * @param bottomStackSetLocals Set locals on bottom of the stack
-     * @return Convert output
      * @throws ConvertException On convert error
      * @throws InterruptedException On interrupt
      */
-    public ConvertOutput toSourceOutput(int swfVersion, Set<GraphPart> switchParts, List<MethodBody> callStack, AbcIndexing abcIndex, Map<Integer, Set<Integer>> setLocalPosToGetLocalPos, boolean thisHasDefaultToPrimitive, Reference<GraphSourceItem> lineStartItem, String path, GraphPart part, boolean processJumps, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, TranslateStack stack, ScopeStack scopeStack, ScopeStack localScopeStack, ABC abc, MethodBody body, int start, int end, HashMap<Integer, String> localRegNames, HashMap<Integer, GraphTargetItem> localRegTypes, List<DottedChain> fullyQualifiedNames, boolean[] visited, HashMap<Integer, Integer> localRegAssignmentIps, LinkedIdentityHashSet<SetLocalAVM2Item> bottomStackSetLocals) throws ConvertException, InterruptedException {
+    public void toSourceOutput(List<GraphTargetItem> output, int swfVersion, Set<GraphPart> switchParts, List<MethodBody> callStack, AbcIndexing abcIndex, Map<Integer, Set<Integer>> setLocalPosToGetLocalPos, boolean thisHasDefaultToPrimitive, Reference<GraphSourceItem> lineStartItem, String path, GraphPart part, boolean processJumps, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, TranslateStack stack, ScopeStack scopeStack, ScopeStack localScopeStack, ABC abc, MethodBody body, int start, int end, HashMap<Integer, String> localRegNames, HashMap<Integer, GraphTargetItem> localRegTypes, List<DottedChain> fullyQualifiedNames, boolean[] visited, HashMap<Integer, Integer> localRegAssignmentIps, LinkedIdentityHashSet<SetLocalAVM2Item> bottomStackSetLocals) throws ConvertException, InterruptedException {
         boolean debugMode = DEBUG_MODE;
         if (debugMode) {
             System.err.println("OPEN SubSource:" + start + "-" + end + " " + code.get(start).toString() + " to " + code.get(end).toString());
@@ -1870,7 +1870,6 @@ public class AVM2Code implements Cloneable {
         if (toSourceLimit > 0 && toSourceCount >= toSourceLimit) {
             throw new ConvertException("Limit of subs(" + toSourceLimit + ") was reached", start);
         }
-        List<GraphTargetItem> output = new ArrayList<>();
         int ip = start;
         //try {
         //int addr;
@@ -2043,14 +2042,7 @@ public class AVM2Code implements Cloneable {
         }
         if (debugMode) {
             System.err.println("CLOSE SubSource:" + start + "-" + end + " " + code.get(start).toString() + " to " + code.get(end).toString());
-        }
-        /*if (hideTemporaryRegisters) {
-         clearTemporaryRegisters(output);
-         }*/
-        return new ConvertOutput(stack, output);
-        /*} catch (ConvertException cex) {
-         throw cex;
-         }*/
+        }       
     }
 
     /**
@@ -3652,12 +3644,38 @@ public class AVM2Code implements Cloneable {
                     cnt++;
                 }
             }
+            if ((ins.definition instanceof LabelIns) || (ins.definition instanceof DebugLineIns)) {                
+                ins.setIgnored(true, 0);
+                if (minChangedIp == -1 || minChangedIp > i) {
+                    minChangedIp = i;
+                }
+                cnt++;
+            }
         }
 
         removeIgnored(body);
 
         minChangedIpRef.setVal(minChangedIp);
 
+        return cnt;
+    }
+    
+    /**
+     * Removes label and debugline instructions
+     * @param body Method body
+     * @return Number of removed instructions
+     * @throws InterruptedException 
+     */
+    public int removeLabelsAndDebugLine(MethodBody body) throws InterruptedException {        
+        int cnt = 0;
+        for (int i = code.size() - 1; i >= 0; i--) {
+            AVM2Instruction ins = code.get(i);            
+            if ((ins.definition instanceof LabelIns) || (ins.definition instanceof DebugLineIns)) {                
+                ins.setIgnored(true, 0);
+                cnt++;
+            }
+        }
+        removeIgnored(body);       
         return cnt;
     }
 

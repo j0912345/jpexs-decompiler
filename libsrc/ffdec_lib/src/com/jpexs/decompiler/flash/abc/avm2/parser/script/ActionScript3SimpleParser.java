@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -170,7 +169,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
                     ret = true;
                     break;
                 case PARENT_OPEN:
-                    lastVarName = call(lastVarName, errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, variables, abc);                    
+                    lastVarName = call(lastVarName, errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, variables, abc);
                     ret = true;
                     break;
                 case DESCENDANTS:
@@ -459,7 +458,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
             lastVarName = lastVarName.add(Path.PATH_PARENTHESIS);
             variables.add(new Separator(lastVarName, s.position));
         }
-        
+
         return lastVarName;
     }
 
@@ -544,7 +543,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
             subvariables.add(new Variable(true, paramNames.get(paramNames.size() - 1), paramPositions.get(paramNames.size() - 1), null, new Path("Array"), null));
         }
         Reference<Boolean> needsActivation2 = new Reference<>(false);
-        
+
         if (!isInterface && !isNative) {
             s = lex();
             expected(errors, s, lexer.yyline(), SymbolType.CURLY_OPEN);
@@ -559,7 +558,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
         int scopeEndPos = s.position;
 
         if (isMethod) {
-            
+
             MethodScope ms = new MethodScope(scopePos, scopeEndPos, subvariables, isStatic);
             variables.add(ms);
         } else {
@@ -627,7 +626,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
             parseMetadata(errors);
 
             ParsedSymbol s = lex();
-            while (s.isType(SymbolType.NATIVE, SymbolType.STATIC, SymbolType.PUBLIC, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.OVERRIDE, SymbolType.FINAL, SymbolType.DYNAMIC, SymbolGroup.IDENTIFIER, SymbolType.INTERNAL, SymbolType.PREPROCESSOR)) {
+            loops: while (s.isType(SymbolType.NATIVE, SymbolType.STATIC, SymbolType.PUBLIC, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.OVERRIDE, SymbolType.FINAL, SymbolType.DYNAMIC, SymbolGroup.IDENTIFIER, SymbolType.INTERNAL, SymbolType.PREPROCESSOR)) {
                 if (s.type == SymbolType.FINAL) {
                     if (isFinal) {
                         errors.add(new SimpleParseException("Only one final keyword allowed", lexer.yyline(), s.position));
@@ -713,6 +712,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
 
                         } else {
                             lexer.pushback(s);
+                            break loops;
                         }
                         break;
                 }
@@ -752,7 +752,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
                     } else {
                         fname = new Path(s.value.toString());
                     }
-                    if (fname.equals(classNameStr)) { //constructor
+                    if (fname.toString().equals(classNameStr)) { //constructor
                         if (isStatic) {
                             errors.add(new SimpleParseException("Constructor cannot be static", lexer.yyline(), s.position));
                         }
@@ -1455,6 +1455,12 @@ public class ActionScript3SimpleParser implements SimpleParser {
                     if (loopLabel != null) {
                         loopLabels.put(floop, loopLabel);
                     }
+                    s = lex();
+                    if (s.type == SymbolType.IN) {
+                        expression(errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, false, variables, false, abc);
+                    } else {
+                        lexer.pushback(s);
+                    }
                     if (!forin) {
                         s = lex();
                         if (!s.isType(SymbolType.PARENT_CLOSE)) {
@@ -1644,8 +1650,8 @@ public class ActionScript3SimpleParser implements SimpleParser {
                 arrCnt++;
                 expression(errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, true, variables, false, abc);
                 s = lex();
-                if (!s.isType(SymbolType.COMMA, SymbolType.BRACKET_CLOSE)) {
-                    expected(errors, s, lexer.yyline(), SymbolType.COMMA, SymbolType.BRACKET_CLOSE);
+                if (!expected(errors, s, lexer.yyline(), SymbolType.COMMA, SymbolType.BRACKET_CLOSE)) {
+                    break;
                 }
             }
         } else {
@@ -1870,6 +1876,7 @@ public class ActionScript3SimpleParser implements SimpleParser {
                     case "dup":
                         expression(errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, true, variables, false, abc);
                         ret = true;
+                        allowMemberOrCall = true;                        
                         break;
                     case "push":
                         expression(errors, thisType, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, isStatic, true, variables, false, abc);
@@ -1877,13 +1884,17 @@ public class ActionScript3SimpleParser implements SimpleParser {
                         break;
                     case "pop":
                         ret = true;
+                        allowMemberOrCall = true;
                         break;
                     case "goto":
                         expectedType(errors, SymbolGroup.IDENTIFIER);
-                        errors.add(new SimpleParseException("Compiling §§" + s.value + " is not available, sorry", lexer.yyline(), s.position));
+                        //errors.add(new SimpleParseException("Compiling §§" + s.value + " is not available, sorry", lexer.yyline(), s.position));
+                        ret = true;
                         break;
                     case "multiname":
-                        errors.add(new SimpleParseException("Compiling §§" + s.value + " is not available, sorry", lexer.yyline(), s.position));
+                        expectedType(errors, SymbolType.INTEGER);
+                        //errors.add(new SimpleParseException("Compiling §§" + s.value + " is not available, sorry", lexer.yyline(), s.position));
+                        ret = true;
                         break;
                     default:
                         errors.add(new SimpleParseException("Unknown preprocessor instruction: §§" + s.value, lexer.yyline(), s.position));
@@ -2114,6 +2125,11 @@ public class ActionScript3SimpleParser implements SimpleParser {
                 break;
             default:
                 lexer.pushback(s);
+                if (s.isType(SymbolGroup.IDENTIFIER)) {
+                    lastVarName = name(errors, thisType, needsActivation, openedNamespaces, registerVars, inFunction, inMethod, isStatic, variables, importedClasses, abc);
+                    ret = true;
+                    allowMemberOrCall = true;                
+                }                                
         }
         if (allowMemberOrCall && ret) {
             memberOrCall(lastVarName, errors, thisType, needsActivation, importedClasses, openedNamespaces, ret, registerVars, inFunction, inMethod, isStatic, variables, abc);

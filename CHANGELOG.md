@@ -3,6 +3,67 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- [#2477] Option to disable AS2 detection of uninitialized class fields
+- AS2 detection of uninitialized class fields is cancellable, faster (parallel)
+  and shows its progress
+- AS2 - show deobfuscated class/package names in the class tree
+- Allow obfuscated DefineEditText variable identifiers
+- Selectable text (DefineEditTexts with noselect=0), copy to clipboard, select all
+- AS1/2 P-code curly braces pair highlighting
+- [#2478] Simple editor - editing texts (not WYSIWYG, textual as in classic editor)
+- [#2478] Simple editor - remembering last frame / timeline
+- Optional heap memory status widget in the titlebar
+- [#2485] Show variable name in the text tree node label
+
+### Fixed
+- [#2474] Gotos incorrectly decompiled
+- AS1/2/3 highligter - brackets parsing error causing memory leak / crash
+- Comments color highlighting
+- AS1/2 Obfuscated registers names not resolving because of trimming
+- Escaping HTML in raw tag editor
+- Flash player preview not stripping scripts from DefineSprites
+- Not clearing selected depth after timelined change
+- [#2480] AS1/2 P-code decompilation of try..catch with empty catch body at the end of function
+- [#2477] AS1/2 deobfuscation - and/or operators, jumps before function start, 
+  jumps to function end, jumps in for..in return/break
+- [#2477] AS1/2 Switch in last statement of switch break labels
+- [#2338] AS2 Reading large classes with incorrect if jumps on the beginning
+- [#2338] AS1/2/3 Obfuscated code - jump to jump handling
+- [#1277] AS1/2 Propagate break/continue to avoid loop/switch labels
+- [#2483] Editing shape gradient records - RGB vs RGBA
+- [#2486] AS Loop in loop producing gotos in some cases
+- [#2486] AS1/2 Switch after function, problem with labels
+- [#2486] AS ifs with direct breaks (in obfuscated code)
+- [#2486] AS3 skipping label instruction
+- Highlighter nullpointer
+- AS3 search slot name Index out of bounds
+- AS text search - not being able to cancel search over multiple swf files
+- [#2486] AS3 switches detection in some cases
+- AS1/2 Hide icons panel when editing
+- AS1/2 both pcode and AS editable at the same time
+- AS3 direct editation - Allow some special words (like `override`) as identifiers
+- [#2486] AS1/2 if jump to function end as return
+- [#2493] Incorrect placement of §§push instructions
+- AS3 direct editation/highlighter §§pop in class traits
+- AS direct editation/highlighter §§pop and §§dup can have getmember or call
+- [#1295], [#116] AS3 dynamic construction via MultinameL
+- ABC cleaner not properly fixing namespace sets
+
+ ### Changed
+- Icon of "Deobfuscation options" menu from pile of pills to medkit
+- Error log window shows last 100 log entries (instead of first 100)
+- AS1/2 P-code double Push values have suffix ".0" to properly distinguish them
+- AS1/2 P-code float Push values have suffix "f" to properly distinguish them
+- AS1/2: Export names are deobfuscated only when start with `__Packages.`,
+  if not, then classical escaping is performed
+- Quotes in tree node parameter values that need them
+
+## [24.0.1] - 2025-06-27
+### Fixed
+- [#2476] Dark interface skins identifiers highlighter visibility
+
+## [24.0.0] - 2025-06-24
+### Added
 - "Starting Flash content debugger" in status bar when debugging starts
 - Simple editor - edit parameters of items inside buttons
 - Simple editor - add/remove frames in buttons, button timeline header
@@ -36,6 +97,7 @@ All notable changes to this project will be documented in this file.
 - AS3 - code completion (properties and methods)
 - [#2470] Transformation - Copy individual transforms to clipboard,
   load/apply from clipboard buttons
+- Option to turn off code completion on dot(.) key
 
 ### Changed
 - AS1/2 - Single DoAction tag inside frame is now displayed directly as frame node
@@ -77,6 +139,12 @@ All notable changes to this project will be documented in this file.
 - [#2469] Converting shape type did not convert gradient colors transparency
 - [#2470] Transform - paste matrix, edit current matrix not working
 - Do not allow to switch PlaceObjects in transform mode
+- [#2471] Clipping - multiple clips handling, in display and also SVG export
+- [#2471] SVG Export - exporting with font-face - text tags with multiple texts,
+  fix invalid family names, incorrect text size
+- Replacing existing characters in a font which has character codes unsorted
+- [#2475] SVG Import - ignoring gradients caused by missing offset attribute of stop element
+- Not saving library type (airglobal/playerglobal) when switching SWFs
 
 ## [23.0.1] - 2025-05-16
 ### Fixed
@@ -3689,7 +3757,9 @@ Major version of SWF to XML export changed to 2.
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.1...dev
+[Unreleased]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version24.0.1...dev
+[24.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version24.0.0...version24.0.1
+[24.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.1...version24.0.0
 [23.0.1]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version23.0.0...version23.0.1
 [23.0.0]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.2...version23.0.0
 [22.0.2]: https://github.com/jindrapetrik/jpexs-decompiler/compare/version22.0.1...version22.0.2
@@ -3859,6 +3929,19 @@ Major version of SWF to XML export changed to 2.
 [alpha 9]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha8...alpha9
 [alpha 8]: https://github.com/jindrapetrik/jpexs-decompiler/compare/alpha7...alpha8
 [alpha 7]: https://github.com/jindrapetrik/jpexs-decompiler/releases/tag/alpha7
+[#2477]: https://www.free-decompiler.com/flash/issues/2477
+[#2478]: https://www.free-decompiler.com/flash/issues/2478
+[#2485]: https://www.free-decompiler.com/flash/issues/2485
+[#2474]: https://www.free-decompiler.com/flash/issues/2474
+[#2480]: https://www.free-decompiler.com/flash/issues/2480
+[#2338]: https://www.free-decompiler.com/flash/issues/2338
+[#1277]: https://www.free-decompiler.com/flash/issues/1277
+[#2483]: https://www.free-decompiler.com/flash/issues/2483
+[#2486]: https://www.free-decompiler.com/flash/issues/2486
+[#2493]: https://www.free-decompiler.com/flash/issues/2493
+[#1295]: https://www.free-decompiler.com/flash/issues/1295
+[#116]: https://www.free-decompiler.com/flash/issues/116
+[#2476]: https://www.free-decompiler.com/flash/issues/2476
 [#2404]: https://www.free-decompiler.com/flash/issues/2404
 [#1418]: https://www.free-decompiler.com/flash/issues/1418
 [#289]: https://www.free-decompiler.com/flash/issues/289
@@ -3881,6 +3964,8 @@ Major version of SWF to XML export changed to 2.
 [#2405]: https://www.free-decompiler.com/flash/issues/2405
 [#1646]: https://www.free-decompiler.com/flash/issues/1646
 [#2469]: https://www.free-decompiler.com/flash/issues/2469
+[#2471]: https://www.free-decompiler.com/flash/issues/2471
+[#2475]: https://www.free-decompiler.com/flash/issues/2475
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
 [#2448]: https://www.free-decompiler.com/flash/issues/2448
@@ -3950,7 +4035,6 @@ Major version of SWF to XML export changed to 2.
 [#2330]: https://www.free-decompiler.com/flash/issues/2330
 [#2335]: https://www.free-decompiler.com/flash/issues/2335
 [#2334]: https://www.free-decompiler.com/flash/issues/2334
-[#2338]: https://www.free-decompiler.com/flash/issues/2338
 [#2337]: https://www.free-decompiler.com/flash/issues/2337
 [#2339]: https://www.free-decompiler.com/flash/issues/2339
 [#943]: https://www.free-decompiler.com/flash/issues/943
@@ -4098,7 +4182,6 @@ Major version of SWF to XML export changed to 2.
 [#2099]: https://www.free-decompiler.com/flash/issues/2099
 [#2090]: https://www.free-decompiler.com/flash/issues/2090
 [#2079]: https://www.free-decompiler.com/flash/issues/2079
-[#116]: https://www.free-decompiler.com/flash/issues/116
 [#2097]: https://www.free-decompiler.com/flash/issues/2097
 [#2098]: https://www.free-decompiler.com/flash/issues/2098
 [#2093]: https://www.free-decompiler.com/flash/issues/2093

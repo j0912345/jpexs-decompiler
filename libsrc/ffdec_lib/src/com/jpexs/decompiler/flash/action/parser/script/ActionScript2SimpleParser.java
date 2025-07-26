@@ -1249,8 +1249,8 @@ public class ActionScript2SimpleParser implements SimpleParser {
                 arrCnt++;
                 expression(errors, inFunction, inMethod, inTellTarget, true, variables, false, hasEval);
                 s = lex();
-                if (!s.isType(SymbolType.COMMA, SymbolType.BRACKET_CLOSE)) {
-                    expected(errors, s, lexer.yyline(), SymbolType.COMMA, SymbolType.BRACKET_CLOSE);
+                if (!expected(errors, s, lexer.yyline(), SymbolType.COMMA, SymbolType.BRACKET_CLOSE)) {
+                    break;
                 }
             }
         } else {
@@ -1333,6 +1333,7 @@ public class ActionScript2SimpleParser implements SimpleParser {
                     case "dup":
                         expression(errors, inFunction, inMethod, inTellTarget, allowRemainder, variables, false, hasEval);
                         ret = true;
+                        allowMemberOrCall = true;                        
                         break;
                     case "push":
                         expression(errors, inFunction, inMethod, inTellTarget, allowRemainder, variables, false, hasEval);
@@ -1340,6 +1341,7 @@ public class ActionScript2SimpleParser implements SimpleParser {
                         break;
                     case "pop":
                         ret = true;
+                        allowMemberOrCall = true;
                         break;
                     case "strict":
                         s = lexer.lex();

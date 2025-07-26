@@ -576,6 +576,18 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * Uninitialized AS2 class traits. Class name to trait name to trait.
      */
     private volatile Map<String, Map<String, com.jpexs.decompiler.flash.action.as2.Trait>> uninitializedAs2ClassTraits = null;
+    
+    /**
+     * Detecting uninitilized class fields
+     */
+    @Internal
+    private boolean detectingUninitializedClassFields = false;       
+    
+    @Internal
+    private UninitializedClassFieldsDetector uninitializedClassFieldsDetector = new UninitializedClassFieldsDetector();
+    
+    @Internal
+    private final Object uninitializedClassFieldsLock = new Object();
 
     /**
      * ExporterInfo tag.
@@ -664,6 +676,10 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      */
     private final Object charactersLock = new Object();
 
+    public UninitializedClassFieldsDetector getUninitializedClassFieldsDetector() {
+        return uninitializedClassFieldsDetector;
+    }   
+    
     /**
      * Sets main GFX exporterinfo tag
      *
@@ -741,8 +757,10 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
         }
         try {
             SWF.initPlayer();
-        } catch (IOException | InterruptedException ex) {
-            Logger.getLogger(SWF.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(SWF.class.getName()).log(Level.SEVERE, "IOException during SWF.initplayer", ex);
+        } catch (InterruptedException ex) {
+            return new AbcIndexing();
         }
         abcIndex = new AbcIndexing(air ? SWF.getAirGlobalAbcIndex() : SWF.getPlayerGlobalAbcIndex());
         for (Tag tag : tags) {
@@ -771,6 +789,9 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
     public void setAbcIndexDependencies(List<SWF> swfs) {
         abcIndex = null;
         getAbcIndex();
+        if (abcIndex == null) {
+            return;
+        }
         for (SWF swf : swfs) {
             for (Tag tag : swf.tags) {
                 if (tag instanceof ABCContainerTag) {
@@ -3336,15 +3357,28 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
         if (treeItem instanceof AS2Package) {
             AS2Package pkg = (AS2Package) treeItem;
             if (pkg.isFlat()) {
-                String[] parts = pkg.toString().split("\\.");
-                for (int i = 0; i < parts.length; i++) {
-                    parts[i] = Helper.makeFileName(parts[i]);
+                if (exportFileName) {
+                    String[] parts = pkg.getName().split("\\.");
+                    for (int i = 0; i < parts.length; i++) {
+                        parts[i] = Helper.makeFileName(parts[i]);
+                    }
+                    return String.join(File.separator, parts);
                 }
-                return String.join(File.separator, parts);
+                return DottedChain.parseNoSuffix(pkg.getName()).toPrintableString(false);
             }
         }
 
         if (!exportFileName) {
+            
+            if (treeItem instanceof DoInitActionTag) {
+                DoInitActionTag tag = (DoInitActionTag) treeItem;
+                String expName = tag.getSwf().getExportName(tag.getCharacterId());
+                if (expName != null && !expName.isEmpty()) {
+                    String[] pathParts = expName.contains(".") ? expName.split("\\.") : new String[]{expName};
+                    return IdentifiersDeobfuscation.printIdentifier(false, pathParts[pathParts.length - 1]);
+                }
+            }
+            
             return treeItem.toString();
         }
 
@@ -3738,7 +3772,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                     ip = code.adr2pos(addr);
                     addr += size;
                     int nextip = code.adr2pos(addr);
-                    getVariables(aLocalData.insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, aLocalData.insideDoInitAction, code.getActions().subList(ip, nextip), code.version, new HashMap<>(), new HashMap<>(), new HashMap<>(), code.getCharset()), 0, path + (cntName == null ? "" : "/" + cntName));
+                    getVariables(aLocalData.insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, aLocalData.insideDoInitAction, code.getActions().subList(0, nextip), code.version, new HashMap<>(), new HashMap<>(), new HashMap<>(), code.getCharset(), ip), 0, path + (cntName == null ? "" : "/" + cntName));
                     ip = nextip;
                 }
                 List<List<GraphTargetItem>> r = new ArrayList<>();
@@ -3866,7 +3900,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
         ActionList actions = src.getActions();
         actionsMap.put(src, actions);
         boolean insideDoInitAction = src instanceof DoInitActionTag;
-        getVariables(insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, insideDoInitAction, actions, version, new HashMap<>(), new HashMap<>(), new HashMap<>(), src.getSwf().getCharset()), 0, path);
+        getVariables(insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, insideDoInitAction, actions, version, new HashMap<>(), new HashMap<>(), new HashMap<>(), src.getSwf().getCharset(), 0), 0, path);
         return ret;
     }
 
@@ -3969,7 +4003,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * @param renameType Rename type
      * @return Number of changes
      */
-    public int deobfuscateAS3Identifiers(RenameType renameType) {
+    public int deobfuscateAS3Identifiers(RenameType renameType) throws InterruptedException {
         AbcIndexing ai = getAbcIndex();
         Map<Tag, Map<Integer, String>> stringUsageTypesMap = new HashMap<>();
         Map<Tag, Set<Integer>> stringUsagesMap = new HashMap<>();
@@ -4120,7 +4154,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 int staticOperation = 0;
                 List<GraphTargetItem> dec;
                 try {
-                    dec = Action.actionsToTree(new HashMap<>() /*??*/, true /*Yes, inside doInitAction*/, false, dia.getActions(), version, staticOperation, ""/*FIXME*/, getCharset());
+                    dec = Action.actionsToTree(false, new HashMap<>() /*??*/, true /*Yes, inside doInitAction*/, false, dia.getActions(), version, staticOperation, ""/*FIXME*/, getCharset());
                 } catch (EmptyStackException ex) {
                     continue;
                 }
@@ -4722,7 +4756,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 }
 
                 int version = swf == null ? SWF.DEFAULT_VERSION : swf.version;
-                ActionList list = ActionListReader.readActionListTimeout(listeners, rri, version, prevLength, prevLength + actionBytes.getLength(), src.toString()/*FIXME?*/, deobfuscationMode);
+                ActionList list = ActionListReader.readActionListTimeout(src, listeners, rri, version, prevLength, prevLength + actionBytes.getLength(), src.toString()/*FIXME?*/, deobfuscationMode);
                 list.fileData = actionBytes.getArray();
                 list.deobfuscationMode = deobfuscationMode;
                 if (swf != null) {
@@ -4735,7 +4769,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
             } catch (CancellationException ex) {
                 throw ex;
             } catch (Exception ex) {
-                logger.log(Level.SEVERE, null, ex);
+                logger.log(Level.SEVERE, "Reading action list error in " + src.getSwf().getShortPathTitle() + ":" + src.getScriptName(), ex);
                 return new ActionList(src.getSwf().getCharset());
             }
         }
@@ -6208,24 +6242,45 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * @throws java.lang.InterruptedException On interruption
      */
     public void calculateAs2UninitializedClassTraits() throws InterruptedException {
+        waitForUninitializedClassDetector();
+        setDetectingUninitialized(true);
         uninitializedAs2ClassTraits = new HashMap<>();
-        UninitializedClassFieldsDetector detector = new UninitializedClassFieldsDetector();
         try {
-            uninitializedAs2ClassTraits = detector.calculateAs2UninitializedClassTraits(this);
-        } catch (Throwable t) {
+            uninitializedAs2ClassTraits = getUninitializedClassFieldsDetector().calculateAs2UninitializedClassTraits(this);
+        } catch (Throwable t) {           
+            //System.err.println("Calculating AS2 uninitialized fields cancelled");
             uninitializedAs2ClassTraits = null;
             throw t;
+        } finally {
+            setDetectingUninitialized(false);
+            synchronized (uninitializedClassFieldsLock) {
+                uninitializedClassFieldsLock.notifyAll();
+            }            
         }
     }
-
+    
+    private synchronized void setDetectingUninitialized(boolean val) {
+        this.detectingUninitializedClassFields = val;
+    }
+    
+    public synchronized boolean isDetectingUninitialized() {
+        return detectingUninitializedClassFields;
+    }
+    
     /**
      * Gets uninitialized class traits in AS2.
      *
      * @return Map of class name to map of trait name to trait
      */
-    public synchronized Map<String, Map<String, com.jpexs.decompiler.flash.action.as2.Trait>> getUninitializedAs2ClassTraits() throws InterruptedException {
+    public Map<String, Map<String, com.jpexs.decompiler.flash.action.as2.Trait>> getUninitializedAs2ClassTraits() throws InterruptedException {
+        if (Configuration.skipDetectionOfUnitializedClassFields.get()) {
+            return new LinkedHashMap<>();
+        }
         if (CancellableWorker.isInterrupted()) {
             throw new InterruptedException();
+        }        
+        if (isDetectingUninitialized()) {
+            return new LinkedHashMap<>();
         }
         if (uninitializedAs2ClassTraits == null) {
             calculateAs2UninitializedClassTraits();
@@ -6236,9 +6291,11 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
     public boolean needsCalculatingAS2UninitializeClassTraits(ASMSource src) {
         if (!isAS3()) {
             if (src instanceof DoInitActionTag) {
-                if (uninitializedAs2ClassTraits == null) {
-                    return true;
-                }
+                DoInitActionTag doi = (DoInitActionTag) src;
+                String exportName = doi.getSwf().getCharacter(doi.getCharacterId()).getExportName();
+                if (exportName != null && exportName.startsWith("__Packages.")) {
+                    return true;                    
+                }                
             }
         }
         return false;
@@ -6261,5 +6318,18 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      */
     public boolean isDestroyed() {
         return destroyed;
+    }
+    
+    public void waitForUninitializedClassDetector() {
+        if (!isDetectingUninitialized()) {
+            return;
+        }
+        try {
+            synchronized (uninitializedClassFieldsLock) {
+                uninitializedClassFieldsLock.wait();
+            }            
+        } catch (InterruptedException ex) {
+            //ignore
+        }
     }
 }

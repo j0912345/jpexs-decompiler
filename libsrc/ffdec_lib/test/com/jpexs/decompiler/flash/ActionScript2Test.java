@@ -86,6 +86,7 @@ public class ActionScript2Test extends ActionScript2TestBase {
         return null;
     }
 
+    //--FRAMES-START--
     @Test
     public void frame23_Test() {
         compareSrc(23, "stop();\r\n"
@@ -2515,4 +2516,51 @@ public class ActionScript2Test extends ActionScript2TestBase {
                 + "f(tst);\r\n"
         );
     }
+
+    @Test
+    public void frame93_Test() {
+        compareSrc(93, "trace(\"testInnerSwitchNoLabel\");\r\n"
+                + "var a;\r\n"
+                + "var b;\r\n"
+                + "switch(a)\r\n"
+                + "{\r\n"
+                + "case 4:\r\n"
+                + "trace(\"4\");\r\n"
+                + "break;\r\n"
+                + "case 7:\r\n"
+                + "trace(\"7\");\r\n"
+                + "break;\r\n"
+                + "default:\r\n"
+                + "switch(b)\r\n"
+                + "{\r\n"
+                + "case 1:\r\n"
+                + "trace(\"1\");\r\n"
+                + "break;\r\n"
+                + "case 2:\r\n"
+                + "trace(\"2\");\r\n"
+                + "}\r\n"
+                + "}\r\n"
+                + "trace(\"end\");\r\n"
+        );
+    }
+
+    @Test
+    public void frame94_functionSwitchTest() {
+        compareSrc(94, "function reset()\r\n"
+                + "{\r\n"
+                + "}\r\n"
+                + "trace(\"functionSwitchTest\");\r\n"
+                + "stop();\r\n"
+                + "switch(test)\r\n"
+                + "{\r\n"
+                + "case 1:\r\n"
+                + "trace(\"A\");\r\n"
+                + "break;\r\n"
+                + "case 2:\r\n"
+                + "case 3:\r\n"
+                + "trace(\"B\");\r\n"
+                + "}\r\n"
+        );
+    }
+    //--FRAMES-END--
 }

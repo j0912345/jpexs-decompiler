@@ -64,9 +64,13 @@ import java.util.List;
             this.offset = ofst;
             prevToken = null;
             Token t = yylex();
-            prevToken = t;
+            if (t.type != TokenType.COMMENT) {
+                prevToken = t;            
+            }
             for (; t != null; t = yylex()) {
-                prevToken = t;
+                if (t.type != TokenType.COMMENT) {            
+                    prevToken = t;
+                }
                 tokens.add(t);
             }
         } catch (IOException ex) {
@@ -188,6 +192,8 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
   "typeof"                       |
   "void"                         { return token(TokenType.KEYWORD); }
 
+  /* comments */
+  {Comment}                      { return token(TokenType.COMMENT); }
 
   {RegExp}                       {
                                     // check for a /* */ comment
@@ -195,7 +201,9 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
                                     {
                                         return token(TokenType.COMMENT);
                                     }
-                                    if (prevToken == null || (prevToken.type == TokenType.OPERATOR && prevToken.pairValue >= 0)) {
+                                    if (prevToken == null 
+                                        || (prevToken.type == TokenType.OPERATOR && prevToken.pairValue >= 0)                                        
+                                        ) {
                                         return token(TokenType.REGEX);
                                     } else {    
                                         int ch = yychar;
@@ -207,7 +215,7 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
 
   /* operators */
 
-  "("                            { return  token(TokenType.OPERATOR,  PAREN); }
+  "("                            { return token(TokenType.OPERATOR,  PAREN); }
   ")"                            { return token(TokenType.OPERATOR, -PAREN); }
   "{"                            { return token(TokenType.OPERATOR,  CURLY); }
   "}"                            { return token(TokenType.OPERATOR, -CURLY); }
@@ -292,9 +300,7 @@ RegExp = \/([^\r\n/]|\\\/)+\/[a-z]*
 
   // JavaDoc comments need a state so that we can highlight the @ controls
 
-  /* comments */
-  {Comment}                      { return token(TokenType.COMMENT); }
-
+  
   /* whitespace */
   {WhiteSpace}                   { }  
   /* identifiers */

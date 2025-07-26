@@ -265,12 +265,12 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
             return;
         }
 
+        this.abc = abc;        
         if (Main.isSwfAir(abc.getOpenable())) {
             libraryComboBox.setSelectedIndex(SWF.LIBRARY_AIR);
         } else {
             libraryComboBox.setSelectedIndex(SWF.LIBRARY_FLASH);
         }
-        this.abc = abc;
         decompiledTextArea.setParser(new ActionScript3SimpleParser(abc));
         setDecompiledEditMode(false);
         navigator.setAbc(abc);
@@ -1255,7 +1255,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<Scr
             }
         });
 
-        PopupButton deobfuscateOptionsButton = new PopupButton(View.getIcon("deobfuscateoptions16")) {
+        PopupButton deobfuscateOptionsButton = new PopupButton(View.getIcon("medkit16")) {
             @Override
             protected JPopupMenu getPopupMenu() {
                 JPopupMenu popupMenu = new JPopupMenu();

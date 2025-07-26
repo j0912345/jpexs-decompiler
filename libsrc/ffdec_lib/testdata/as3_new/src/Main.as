@@ -88,6 +88,7 @@ package
         TestInnerFunctionScope;
         TestInnerIf;
         TestInnerTry;
+        TestLoopInLoop;
         TestLogicalComputing;
         TestManualConvert;
         TestMetadata;
@@ -117,9 +118,11 @@ package
         TestStringConcat;
         TestStrings;        
         TestSwitch;
+        TestSwitchBig;
         TestSwitchContinue;
         TestSwitchComma;
         TestSwitchDefault;
+        TestSwitchDefaultEndMultiple;
         TestSwitchIf;
         TestTernarOperator;
         TestTernarOperator2;
@@ -135,9 +138,11 @@ package
         TestWhileAnd;
         TestWhileBreak;
         TestWhileBreak2;
+        TestWhileBreak3;
         TestWhileContinue;
         TestWhileDoWhile;
         TestWhileSwitch;
+        TestWhileTrue;
         TestWhileTry;
         TestWhileTry2;        
         TestXml;

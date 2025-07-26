@@ -1803,12 +1803,14 @@ public class ActionScript2Parser {
                     //Both ASs
                     case "dup":
                         ret = new DuplicateItem(DIALECT, null, null, expression(inFunction, inMethod, inTellTarget, allowRemainder, variables, functions, false, hasEval));
+                        allowMemberOrCall = true;                        
                         break;
                     case "push":
                         ret = new PushItem(expression(inFunction, inMethod, inTellTarget, allowRemainder, variables, functions, false, hasEval));
                         break;
                     case "pop":
                         ret = new PopItem(DIALECT, null, null);
+                        allowMemberOrCall = true;
                         break;
                     case "strict":
                         s = lexer.lex();

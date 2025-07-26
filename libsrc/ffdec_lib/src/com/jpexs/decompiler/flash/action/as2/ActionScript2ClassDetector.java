@@ -16,7 +16,6 @@
  */
 package com.jpexs.decompiler.flash.action.as2;
 
-import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
 import com.jpexs.decompiler.flash.action.ActionGraphTargetDialect;
 import com.jpexs.decompiler.flash.action.model.CallFunctionActionItem;
 import com.jpexs.decompiler.flash.action.model.CallMethodActionItem;
@@ -61,7 +60,9 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
- * Detects AS2 classes inside DoInitAction tags
+ * Detects AS2 classes inside DoInitAction tags.
+ * 
+ * This requires ActionIncorrectClassHeaderRemover is used on action list.
  *
  * @author JPEXS
  */
@@ -635,7 +636,7 @@ public class ActionScript2ClassDetector {
                             String getterNameStr = getAsString(((GetMemberActionItem) propertyGetter).memberName, "getter memberName");
                             if (!(getterNameStr.equals("__get__" + propertyNameStr))) {
                                 //throw new AssertException("getter does not match property name");
-                                Logger.getLogger(ActionScript2ClassDetector.class.getName()).warning(scriptPath + ": getter " + IdentifiersDeobfuscation.printIdentifier(false, getterNameStr) + " does not match property name " + IdentifiersDeobfuscation.printIdentifier(false, propertyNameStr));
+                                //Logger.getLogger(ActionScript2ClassDetector.class.getName()).warning(scriptPath + ": getter " + IdentifiersDeobfuscation.printIdentifier(false, getterNameStr) + " does not match property name " + IdentifiersDeobfuscation.printIdentifier(false, propertyNameStr));
                                 continue;
                             }
 
@@ -669,7 +670,7 @@ public class ActionScript2ClassDetector {
                             }
                             String setterNameStr = getAsString(((GetMemberActionItem) propertySetter).memberName, "setter memberNAme");
                             if (!(setterNameStr.equals("__set__" + propertyNameStr))) {
-                                Logger.getLogger(ActionScript2ClassDetector.class.getName()).warning(scriptPath + ": setter " + IdentifiersDeobfuscation.printIdentifier(false, setterNameStr) + " does not match property name " + IdentifiersDeobfuscation.printIdentifier(false, propertyNameStr));
+                                //Logger.getLogger(ActionScript2ClassDetector.class.getName()).warning(scriptPath + ": setter " + IdentifiersDeobfuscation.printIdentifier(false, setterNameStr) + " does not match property name " + IdentifiersDeobfuscation.printIdentifier(false, propertyNameStr));
                                 continue;
                                 //throw new AssertException("setter does not match property name");
                             }
@@ -845,7 +846,7 @@ public class ActionScript2ClassDetector {
             // goto next line and check next classes
             return true;
         } catch (AssertException ex) {
-            logger.log(Level.WARNING, "{0}: Cannot detect class - {1}", new Object[]{scriptPath, ex.getCondition()});
+            logger.log(Level.WARNING, "Cannot detect class - {0} in {1}", new Object[]{ex.getCondition(), scriptPath});
         }
         return false;
     }
@@ -913,61 +914,80 @@ public class ActionScript2ClassDetector {
             §§pop();
             if(!_global.a.b.c.D)
             {
-                ..class_content...            
+                ..class_content..        
             }
             §§pop();
          */
+        
+        /*
+            Stripped variant: (ActionIncorrectClassHeaderRemover used)
+            !!_global.a
+            _global.a = new Object();
+            §§pop();
+            !!_global.a.b
+            _global.a.b = new Object();
+            §§pop();
+            !!_global.a.b.c
+            _global.a.b.c = new Object();
+            §§pop();
+            !!_global.a.b.D
+            ..class_content..
+        */
         List<String> pathToSearchVariant1 = new ArrayList<>();
         pathToSearchVariant1.add("_global");
 
         check_variant1:
         for (int checkPos = pos; checkPos < commands.size(); checkPos++) {
             GraphTargetItem t = commands.get(checkPos);
-            if (t instanceof IfItem) {
-                IfItem ifItem = (IfItem) t;
-                if (ifItem.expression instanceof NotItem) {
-                    NotItem nti = (NotItem) ifItem.expression;
-                    GraphTargetItem condType = nti.value;
-                    Reference<String> newMemberNameRef = new Reference<>("");
+            //if (t instanceof IfItem) {
+            //    IfItem ifItem = (IfItem) t;
+            //    if (ifItem.expression instanceof NotItem) {
+            if (!(t instanceof NotItem)) {
+                break;
+            }
+            NotItem nti = (NotItem) t; //ifItem.expression;
+            GraphTargetItem condType = nti.value;
+            if (!(condType instanceof NotItem)) {
+                break;
+            }            
+            condType = ((NotItem) condType).value;
+            
+            Reference<String> newMemberNameRef = new Reference<>("");
 
-                    if (isMemberOfPath(condType, pathToSearchVariant1, newMemberNameRef)) {
-                        pathToSearchVariant1.add(newMemberNameRef.getVal());
+            if (!isMemberOfPath(condType, pathToSearchVariant1, newMemberNameRef)) {
+                break;
+            }
+            pathToSearchVariant1.add(newMemberNameRef.getVal());
 
-                        //_global.a.b.c = new Object();  
-                        if ((ifItem.onTrue.size() == 1) && (ifItem.onTrue.get(0) instanceof SetMemberActionItem) && (((SetMemberActionItem) ifItem.onTrue.get(0)).value instanceof NewObjectActionItem)) {
-                            //skip §§pop item if its there right after if
-                            if (checkPos + 1 < commands.size()) {
-                                GraphTargetItem tnext = commands.get(checkPos + 1);
-                                if (tnext instanceof PopItem) {
-                                    checkPos++;
-                                }
-                            }
-                            continue check_variant1;
-                        }
-                        List<String> classPath = pathToSearchVariant1;
-                        classPath.remove(0); //remove _global
-                        if (ifItem.onTrue.isEmpty()) { //if can have zero offset as the code is larger than bytes limit. TODO: make this check also for variant 2 (?)
-                            if (this.checkClassContent(uninitializedClassTraits, commands, variables, checkPos + 1, pos, commands.size() - 1, commands, classPath, scriptPath)) {
-                                return true;
-                            } else {
-                                break check_variant1;
-                            }
-                        } else if (this.checkClassContent(uninitializedClassTraits, ifItem.onTrue, variables, 0, pos, checkPos, commands, classPath, scriptPath)) {
-                            return true;
-                        } else {
-                            break check_variant1;
-                        }
-                    } else {
-                        break check_variant1;
+            if (checkPos + 1 >= commands.size()) {
+                break;
+            }
+            checkPos++;
+            t = commands.get(checkPos);
+            //_global.a.b.c = new Object();  
+            if ((t instanceof SetMemberActionItem) && (((SetMemberActionItem) t).value instanceof NewObjectActionItem)) {
+                //skip §§pop item if its there right after if
+                if (checkPos + 1 < commands.size()) {
+                    GraphTargetItem tnext = commands.get(checkPos + 1);
+                    if (tnext instanceof PopItem) {
+                        checkPos++;
                     }
-                } else {
-                    break check_variant1; //not an if !
                 }
+                continue check_variant1;
+            }            
+            List<String> classPath = pathToSearchVariant1;
+            classPath.remove(0); //remove _global
+
+            List<GraphTargetItem> parts = new ArrayList<>(commands);
+            if (commands.get(commands.size() - 1) instanceof PopItem) {
+                parts.remove(parts.size() - 1);
+            }           
+            if (this.checkClassContent(uninitializedClassTraits, parts, variables, checkPos, pos, commands.size() - 1, commands, classPath, scriptPath)) {
+                return true;
             } else {
-                break check_variant1; //not an if
+                break;
             }
         } //check_variant1
-
         /*
             
             Variant 2:
@@ -986,42 +1006,56 @@ public class ActionScript2ClassDetector {
                {
                   _global.a.b.c = new Object();
                }
-               ..class_content.. 
+               ..class_content..
             }  
+    
+            Stripped version: (ActionIncorrectClassHeaderRemover used)
+            !!a.b.c.D
+            !!a
+            _global.a = new Object();
+            !!a.b
+            _global.a.b = new Object();
+            !!a.b.c
+            _global.a.b.c = new Object();
+            ..class_content..
          */
         List<String> variant2CurrentPath = new ArrayList<>();
         check_variant2:
-        if (commands.get(pos) instanceof IfItem) {
-            IfItem ifItem = (IfItem) commands.get(pos);
-            if (ifItem.expression instanceof NotItem) {
-                NotItem nti = (NotItem) ifItem.expression;
+        if (commands.get(pos) instanceof NotItem) {
+            NotItem nti = (NotItem) commands.get(pos);
+            if (nti.value instanceof NotItem) {
+                nti = (NotItem) nti.value;
                 List<String> memPath = getMembersPath(nti.value);
                 if (memPath == null) {
                     break check_variant2;
                 }
-                if (ifItem.onTrue.size() < memPath.size()) {
-                    break check_variant2;
-                }
                 variant2CurrentPath.clear();
-                List<GraphTargetItem> parts = ifItem.onTrue;
                 int checkPos = 0;
                 for (; checkPos < memPath.size() - 1; checkPos++) {
                     variant2CurrentPath.add(memPath.get(checkPos));
-                    if (!(parts.get(checkPos) instanceof IfItem)) {
+                    int realPos = pos + 1 + checkPos * 2;
+                    if (!(commands.get(realPos) instanceof NotItem)) {
                         break check_variant2;
                     }
-                    IfItem ifItem2 = (IfItem) parts.get(checkPos);
-                    if (ifItem2.expression instanceof NotItem) {
-                        NotItem nti2 = (NotItem) ifItem2.expression;
-                        List<String> if2Path = getMembersPath(nti2.value);
-                        if (!variant2CurrentPath.equals(if2Path)) {
-                            break check_variant2;
-                        }
+                    NotItem nti2 = (NotItem) commands.get(realPos);
+                    if (!(nti2.value instanceof NotItem)) {
+                        break check_variant2;
                     }
+                    nti2 = (NotItem) nti2.value;
+
+                        
+                    List<String> if2Path = getMembersPath(nti2.value);
+                    if (!variant2CurrentPath.equals(if2Path)) {
+                        break check_variant2;
+                    }                    
                 }
-                if (checkClassContent(uninitializedClassTraits, parts, variables, checkPos, pos, pos, commands, memPath, scriptPath)) {
+                List<GraphTargetItem> parts = new ArrayList<>(commands);
+                if (commands.get(commands.size() - 1) instanceof PopItem) {
+                    parts.remove(parts.size() - 1);
+                }  
+                if (checkClassContent(uninitializedClassTraits, parts, variables, pos + 1 + checkPos * 2, pos, commands.size() - 1, commands, memPath, scriptPath)) {
                     return true;
-                }
+                } 
             }
         } //check_variant2
 

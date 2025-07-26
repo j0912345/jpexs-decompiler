@@ -17,6 +17,7 @@
 package com.jpexs.decompiler.flash.configuration;
 
 import com.jpexs.decompiler.flash.ApplicationInfo;
+import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.configuration.enums.GridSnapAccuracy;
 import com.jpexs.decompiler.flash.configuration.enums.GuidesSnapAccuracy;
 import com.jpexs.decompiler.flash.exporters.modes.ExeExportMode;
@@ -1145,6 +1146,18 @@ public final class Configuration {
     @ConfigurationName("warning.linkTypes")
     @ConfigurationCategory("script")
     public static ConfigurationItem<Boolean> warningLinkTypes = null;
+    
+    @ConfigurationDefaultBoolean(true)
+    @ConfigurationCategory("script")
+    public static ConfigurationItem<Boolean> showCodeCompletionOnDot = null;
+    
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("script")
+    public static ConfigurationItem<Boolean> skipDetectionOfUnitializedClassFields = null;
+    
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationInternal
+    public static ConfigurationItem<Boolean> showHeapStatusWidget = null;
 
     private static Map<String, String> configurationDescriptions = new LinkedHashMap<>();
     private static Map<String, String> configurationTitles = new LinkedHashMap<>();
@@ -1391,6 +1404,16 @@ public final class Configuration {
 
         return map.get(fileName);
     }
+    
+    /**
+     * Get per-swf custom configuration.
+     *
+     * @param swf SWF
+     * @return SWF specific custom configuration, null if not found
+     */
+    public static SwfSpecificCustomConfiguration getSwfSpecificCustomConfiguration(SWF swf) {
+        return getSwfSpecificCustomConfiguration(swf.getShortPathTitle());
+    }
 
     /**
      * Get or create per-swf custom configuration.
@@ -1406,6 +1429,16 @@ public final class Configuration {
         }
 
         return swfConf;
+    }
+    
+    /**
+     * Get or create per-swf custom configuration.
+     *
+     * @param swf SWF
+     * @return SWF specific custom configuration
+     */
+    public static SwfSpecificCustomConfiguration getOrCreateSwfSpecificCustomConfiguration(SWF swf) {
+        return getOrCreateSwfSpecificCustomConfiguration(swf.getShortPathTitle());
     }
 
     private static String getConfigFile() throws IOException {

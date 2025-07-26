@@ -16,12 +16,14 @@
  */
 package com.jpexs.decompiler.flash.gui;
 
+import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.gui.tagtree.AbstractTagTree;
 import com.jpexs.decompiler.flash.tags.DoInitActionTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.timeline.FrameScript;
 import com.jpexs.decompiler.flash.treeitems.TreeItem;
+import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.SerializableImage;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -255,7 +257,11 @@ public class FolderListPanel extends JPanel {
                         String expName = tag.getSwf().getExportName(tag.getCharacterId());
                         if (expName != null && !expName.isEmpty()) {
                             String[] pathParts = expName.contains(".") ? expName.split("\\.") : new String[]{expName};
-                            s = pathParts[pathParts.length - 1];
+                            if (expName.startsWith("__Packages.")) {
+                                s = IdentifiersDeobfuscation.printIdentifier(false, pathParts[pathParts.length - 1]);
+                            } else {
+                                s = Helper.escapeExportname(expName, false);
+                            } 
                         }
                     }
                     if (s == null) {

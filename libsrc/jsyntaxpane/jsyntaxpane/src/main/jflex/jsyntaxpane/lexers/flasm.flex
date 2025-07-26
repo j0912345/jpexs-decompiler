@@ -19,7 +19,7 @@ import jsyntaxpane.TokenType;
 %{
 
   StringBuilder string = new StringBuilder();
-
+  private static final byte CURLY     = 3;
 
     /**
      * Create an empty lexer, yyrset will be called later to reset and assign
@@ -83,17 +83,21 @@ StringCharacter = [^\r\n\"\\]
 Register= register{NumberLiteral}
 Constant= constant{NumberLiteral}
 
-%state STRING,PARAMETERS
+%state STRING,IDENT,PARAMETERS
 
 %%
 
 <YYINITIAL> {
   
+  /* operator */
+  "{"                            { return token(TokenType.OPERATOR, CURLY); }
+  "}"                            { return token(TokenType.OPERATOR, -CURLY); }
 
   /* whitespace */
   {WhiteSpace}                   {  }
 
   {Label}                        {
+                                    pushBack(token(TokenType.OPERATOR,yychar+yylength()-1,1));
                                     return token(TokenType.IDENTIFIER,yychar,yylength()-1);
                                 }
 
@@ -113,10 +117,17 @@ Constant= constant{NumberLiteral}
                                     tokenLength = 1;
                                  }
 
+  /* operator*/  
+  ","                            { return token(TokenType.OPERATOR);}
+  "{"                            { return token(TokenType.OPERATOR, CURLY); }
+  "}"                            { yybegin(YYINITIAL);
+                                   return token(TokenType.OPERATOR, -CURLY); }
+
   /* numeric literals */
 
   {NumberLiteral}            { return token(TokenType.NUMBER);  }
-  {FloatLiteral}                 { return token(TokenType.NUMBER);  }
+  {FloatLiteral} "f"         { return token(TokenType.NUMBER);  }
+  {FloatLiteral}             { return token(TokenType.NUMBER);  }
   {LineTerminator}      {yybegin(YYINITIAL); }
   {Comment}             {return token(TokenType.COMMENT);}
   {StartOfBlock}                        { }

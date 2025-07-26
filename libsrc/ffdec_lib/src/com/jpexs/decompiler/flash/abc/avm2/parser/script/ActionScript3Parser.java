@@ -694,7 +694,7 @@ public class ActionScript3Parser {
             //s = lex();
 
             ParsedSymbol s = lex();
-            while (s.isType(SymbolType.NATIVE, SymbolType.STATIC, SymbolType.PUBLIC, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.OVERRIDE, SymbolType.FINAL, SymbolType.DYNAMIC, SymbolGroup.IDENTIFIER, SymbolType.INTERNAL, SymbolType.PREPROCESSOR)) {
+            loops: while (s.isType(SymbolType.NATIVE, SymbolType.STATIC, SymbolType.PUBLIC, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.OVERRIDE, SymbolType.FINAL, SymbolType.DYNAMIC, SymbolGroup.IDENTIFIER, SymbolType.INTERNAL, SymbolType.PREPROCESSOR)) {
                 if (s.type == SymbolType.FINAL) {
                     if (isFinal) {
                         throw new AVM2ParseException("Only one final keyword allowed", lexer.yyline());
@@ -783,6 +783,7 @@ public class ActionScript3Parser {
 
                         } else {
                             lexer.pushback(s);
+                            break loops;
                         }
                         break;
                 }
@@ -2445,12 +2446,14 @@ public class ActionScript3Parser {
                     //Both ASs
                     case "dup":
                         ret = new DuplicateItem(DIALECT, null, null, expression(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, true, variables, false, abc));
+                        allowMemberOrCall = true;
                         break;
                     case "push":
                         ret = new PushItem(expression(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, registerVars, inFunction, inMethod, true, variables, false, abc));
                         break;
                     case "pop":
                         ret = new PopItem(DIALECT, null, null);
+                        allowMemberOrCall = true;
                         break;
                     case "goto": //TODO
                     case "multiname":
@@ -2728,18 +2731,22 @@ public class ActionScript3Parser {
                 ret = name(allOpenedNamespaces, thisType, pkg, needsActivation, false, openedNamespaces, registerVars, inFunction, inMethod, variables, importedClasses, abc);
                 allowMemberOrCall = true;
 
-                //var = memberOrCall(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, var, registerVars, inFunction, inMethod, variables);
-                //ret = var;
                 break;
             default:
-                GraphTargetItem excmd = expressionCommands(s, registerVars, inFunction, inMethod, -1, variables);
-                if (excmd != null) {
-                    //?
-                    ret = excmd;
-                    allowMemberOrCall = true; //?
-                    break;
+                if (s.isType(SymbolGroup.IDENTIFIER)) {
+                    lexer.pushback(s);
+                    ret = name(allOpenedNamespaces, thisType, pkg, needsActivation, false, openedNamespaces, registerVars, inFunction, inMethod, variables, importedClasses, abc);
+                    allowMemberOrCall = true;
+                } else {
+                    GraphTargetItem excmd = expressionCommands(s, registerVars, inFunction, inMethod, -1, variables);
+                    if (excmd != null) {
+                        //?
+                        ret = excmd;
+                        allowMemberOrCall = true; //?
+                        break;
+                    }
+                    lexer.pushback(s);
                 }
-                lexer.pushback(s);
         }
         if (allowMemberOrCall && ret != null) {
             ret = memberOrCall(allOpenedNamespaces, thisType, pkg, needsActivation, importedClasses, openedNamespaces, ret, registerVars, inFunction, inMethod, variables, abc);

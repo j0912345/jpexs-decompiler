@@ -8,7 +8,7 @@
           <DOMSoundItem name="punch_or_whack_-Vladimir-403040765.wav" itemID="56b4f54f-0000020c" sourceExternalFilepath="./LIBRARY/punch_or_whack_-Vladimir-403040765.wav" sourceLastImported="1454699830" externalFileCRC32="3062495803" externalFileSize="140100" href="punch_or_whack_-Vladimir-403040765.wav" soundDataHRef="M 5 1454699855.dat" format="44kHz 16bit Stereo" sampleCount="34995"/>
      </media>
      <symbols>
-          <Include href="blue.xml" itemID="50f29ad0-000001d6" lastModified="1678904510"/>
+          <Include href="blue.xml" itemID="50f29ad0-000001d6" lastModified="1753117135"/>
           <Include href="klikatice.xml" loadImmediate="false" itemID="51a64400-0000024b" lastModified="1369850880"/>
           <Include href="kolo.xml" loadImmediate="false" itemID="51a5fc86-00000244" lastModified="1370164793"/>
           <Include href="list.xml" loadImmediate="false" itemID="602d8c01-00000217" lastModified="1613718129"/>
@@ -28,11 +28,21 @@
           <Include href="Tween 2.xml" itemIcon="1" loadImmediate="false" itemID="50f29bc3-000001e6" lastModified="1358076867"/>
           <Include href="Tween 3.xml" itemIcon="1" loadImmediate="false" itemID="50f29c22-000001eb" lastModified="1358076962"/>
           <Include href="Tween 4.xml" itemIcon="1" loadImmediate="false" itemID="50f29c22-000001ed" lastModified="1358076962"/>
-          <Include href="Tween 5.xml" itemIcon="1" loadImmediate="false" itemID="60429674-00000289" lastModified="1614976628"/>
+          <Include href="Tween 5.xml" itemIcon="1" loadImmediate="false" itemID="60429674-00000289" lastModified="1753122968"/>
      </symbols>
      <timelines>
-          <DOMTimeline name="Scene 1" currentFrame="91">
+          <DOMTimeline name="Scene 1" currentFrame="18">
                <layers>
+                    <DOMLayer name="Layer 17" color="#4FFF4F" current="true" isSelected="true">
+                         <frames>
+                              <DOMFrame index="0" duration="12" keyMode="9728">
+                                   <elements/>
+                              </DOMFrame>
+                              <DOMFrame index="12" duration="82" name="my name" labelType="name" keyMode="9728">
+                                   <elements/>
+                              </DOMFrame>
+                         </frames>
+                    </DOMLayer>
                     <DOMLayer name="Layer 16" color="#FF4F4F">
                          <frames>
                               <DOMFrame index="0" duration="78" keyMode="9728">
@@ -587,7 +597,7 @@
                               </DOMFrame>
                               <DOMFrame index="52" keyMode="9728">
                                    <elements>
-                                        <DOMDynamicText width="187" height="46.75" isSelectable="false">
+                                        <DOMDynamicText width="187" height="46.75" isSelectable="false" variableName="myTextVariable">
                                              <matrix>
                                                   <Matrix tx="169.95" ty="80.25"/>
                                              </matrix>
@@ -862,7 +872,7 @@
                          <frames>
                               <DOMFrame index="0" duration="75" keyMode="9728">
                                    <elements>
-                                        <DOMSymbolInstance libraryItemName="blue" centerPoint3DX="41.8" centerPoint3DY="341.7">
+                                        <DOMSymbolInstance libraryItemName="blue" name="myBlueInstance" centerPoint3DX="41.8" centerPoint3DY="341.7">
                                              <matrix>
                                                   <Matrix a="0.39276123046875" d="0.39276123046875" tx="31.15" ty="328.65"/>
                                              </matrix>
@@ -1009,7 +1019,7 @@
                               </DOMFrame>
                          </frames>
                     </DOMLayer>
-                    <DOMLayer name="Layer 1" color="#4FFF4F" current="true" isSelected="true">
+                    <DOMLayer name="Layer 1" color="#4FFF4F">
                          <frames>
                               <DOMFrame index="0" duration="22" keyMode="9728">
                                    <elements/>
@@ -3426,6 +3436,52 @@ f(tst);]]></script>
                                    </Actionscript>
                                    <elements/>
                               </DOMFrame>
+                              <DOMFrame index="92" keyMode="9728">
+                                   <Actionscript>
+                                        <script><![CDATA[trace("testInnerSwitchNoLabel");
+var a;
+var b;
+switch(a) {		
+	case 4:	
+		trace("4");
+		break;	
+	case 7:
+		trace("7");
+		break;
+	default:
+		switch(b) {
+			case 1:
+				trace("1");
+				break;
+			case 2:
+				trace("2");
+				break;
+		}
+}
+trace("end");]]></script>
+                                   </Actionscript>
+                                   <elements/>
+                              </DOMFrame>
+                              <DOMFrame index="93" keyMode="9728">
+                                   <Actionscript>
+                                        <script><![CDATA[trace("functionSwitchTest");
+function reset()
+{
+}
+stop();
+switch(test)
+{
+   case 1:
+      trace("A");
+      break;
+   case 2:
+   case 3:
+      trace("B");
+}
+]]></script>
+                                   </Actionscript>
+                                   <elements/>
+                              </DOMFrame>
                          </frames>
                     </DOMLayer>
                </layers>
@@ -3433,6 +3489,14 @@ f(tst);]]></script>
      </timelines>
      <PrinterSettings/>
      <publishHistory>
+          <PublishItem publishSize="109225" publishTime="1753123464"/>
+          <PublishItem publishSize="109226" publishTime="1753122983"/>
+          <PublishItem publishSize="109225" publishTime="1753122880"/>
+          <PublishItem publishSize="109211" publishTime="1753117139"/>
+          <PublishItem publishSize="109103" publishTime="1753117077"/>
+          <PublishItem publishSize="109188" publishTime="1752429800"/>
+          <PublishItem publishSize="109184" publishTime="1752429338"/>
+          <PublishItem publishSize="109169" publishTime="1752429277"/>
           <PublishItem publishSize="108954" publishTime="1729981302"/>
           <PublishItem publishSize="108785" publishTime="1729981275"/>
           <PublishItem publishSize="108954" publishTime="1729979068"/>
@@ -3445,13 +3509,5 @@ f(tst);]]></script>
           <PublishItem publishSize="108707" publishTime="1722538175"/>
           <PublishItem publishSize="108698" publishTime="1722538074"/>
           <PublishItem publishSize="108712" publishTime="1722538048"/>
-          <PublishItem publishSize="108683" publishTime="1722537974"/>
-          <PublishItem publishSize="108493" publishTime="1710662026"/>
-          <PublishItem publishSize="1157" publishTime="1710661951"/>
-          <PublishItem publishSize="1156" publishTime="1710661951"/>
-          <PublishItem publishSize="1156" publishTime="1710661950"/>
-          <PublishItem publishSize="108292" publishTime="1702243778"/>
-          <PublishItem publishSize="108294" publishTime="1702243745"/>
-          <PublishItem publishSize="108294" publishTime="1702243721"/>
      </publishHistory>
 </DOMDocument>

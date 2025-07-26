@@ -386,7 +386,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private void createParametersPanel() {
         displayWithPreview = new JPanel(new CardLayout());
 
-        textPanel = new TextPanel(mainPanel);
+        textPanel = new TextPanel(mainPanel, null);
         displayWithPreview.add(textPanel, CARDTEXTPANEL);
 
         fontPanel = new FontPanel(mainPanel);
@@ -590,6 +590,13 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         JPanel previewCnt = new JPanel(new BorderLayout());
         imagePanel = new ImagePanel();
 
+        imagePanel.addTextChangedListener(new Runnable() {
+            @Override
+            public void run() {
+                textPanel.refresh();
+            }            
+        });
+        
         imagePanel.addPlaceObjectSelectedListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

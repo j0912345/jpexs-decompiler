@@ -79,6 +79,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -476,6 +477,14 @@ public class VariableMarker implements SyntaxComponent, CaretListener, PropertyC
     public void config(Configuration config) {
         Color markerColor = config.getColor(PROPERTY_COLOR, DEFAULT_COLOR);
         Color errorColor = config.getColor(PROPERTY_ERRORCOLOR, DEFAULT_ERRORCOLOR);
+        
+        
+        Color editorBackground = UIManager.getColor("EditorPane.background");
+        int light = (editorBackground.getRed() + editorBackground.getGreen() + editorBackground.getBlue()) / 3;
+        if (light < 128) {
+            markerColor = new Color(0x443322);
+        }
+        
         this.marker = new OccurencesMarker(markerColor);
         this.errorMarker = new WavyUnderLinePainter(errorColor); //Markers.SimpleMarker(errorColor);
         String types = config.getString(
@@ -706,7 +715,7 @@ public class VariableMarker implements SyntaxComponent, CaretListener, PropertyC
                     tim.cancel();
                     tim = null;
                 }
-                if (e.getKeyChar() == '.') {
+                if (e.getKeyChar() == '.' && com.jpexs.decompiler.flash.configuration.Configuration.showCodeCompletionOnDot.get()) {
                     if (!editor.isEditable()) {
                         return;
                     }
@@ -989,6 +998,7 @@ public class VariableMarker implements SyntaxComponent, CaretListener, PropertyC
         errors.clear();
         removeErrorMarkers();
         highlightsPanel.repaint();
+        boolean doClear = false;
         try {
             SyntaxDocument sDoc = (SyntaxDocument) pane.getDocument();
 
@@ -1042,7 +1052,23 @@ public class VariableMarker implements SyntaxComponent, CaretListener, PropertyC
                 Path type = newExternalTypes.get(i);
                 newSimpleExternalClassNameToFullClassName.put(type.getLast(), type);
             }
-            definitionPosToReferences = newDefinitionPosToReferences;
+            
+            definitionPosToReferences.clear();            
+            referenceToDefinition.clear();
+            externalTypes.clear();
+            referenceToExternalTypeIndex.clear();
+            externalTypeIndexToReference.clear();
+            simpleExternalClassNameToFullClassName.clear();
+            referenceToExternalTraitKey.clear();
+            externalTraitKeyToReference.clear();
+            separatorPosToType.clear();
+            localTypeTraits.clear();
+            definitionToType.clear();
+            definitionToCallType.clear();
+            separatorIsStatic.clear();
+            variableSuggestions.clear();
+            
+            definitionPosToReferences = newDefinitionPosToReferences;            
             referenceToDefinition = newReferenceToDefinition;
             externalTypes = newExternalTypes;
             referenceToExternalTypeIndex = newReferenceToExternalTypeIndex;
@@ -1062,12 +1088,31 @@ public class VariableMarker implements SyntaxComponent, CaretListener, PropertyC
         } catch (BadLocationException | IOException | InterruptedException ex) {
             definitionPosToReferences.clear();
             referenceToDefinition.clear();
-            //ex.printStackTrace();
+            doClear = true;
         } catch (SimpleParseException ex) {
-            definitionPosToReferences.clear();
-            referenceToDefinition.clear();
+            doClear = true;
             errors.put((int) ex.position, ex.getMessage());
         }
+        
+        if (doClear) {
+            definitionPosToReferences.clear();
+            referenceToDefinition.clear();
+            definitionPosToReferences.clear();            
+            referenceToDefinition.clear();
+            externalTypes.clear();
+            referenceToExternalTypeIndex.clear();
+            externalTypeIndexToReference.clear();
+            simpleExternalClassNameToFullClassName.clear();
+            referenceToExternalTraitKey.clear();
+            externalTraitKeyToReference.clear();
+            separatorPosToType.clear();
+            localTypeTraits.clear();
+            definitionToType.clear();
+            definitionToCallType.clear();
+            separatorIsStatic.clear();
+            variableSuggestions.clear();
+        }
+        
         Timer tim = errorsTimer;
         if (tim != null) {
             tim.cancel();

@@ -35,16 +35,19 @@ import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.base.ASMSource;
 import com.jpexs.decompiler.flash.tags.base.CharacterIdTag;
 import com.jpexs.decompiler.flash.tags.base.CharacterTag;
+import com.jpexs.decompiler.flash.tags.base.ShapeTag;
 import com.jpexs.decompiler.flash.timeline.Timelined;
 import com.jpexs.decompiler.flash.types.ARGB;
 import com.jpexs.decompiler.flash.types.BasicType;
 import com.jpexs.decompiler.flash.types.CLIPACTIONRECORD;
 import com.jpexs.decompiler.flash.types.CLIPACTIONS;
+import com.jpexs.decompiler.flash.types.GRADRECORD;
 import com.jpexs.decompiler.flash.types.HasSwfAndTag;
 import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.decompiler.flash.types.RGBA;
 import com.jpexs.decompiler.flash.types.annotations.Conditional;
 import com.jpexs.decompiler.flash.types.annotations.ConditionalType;
+import com.jpexs.decompiler.flash.types.annotations.DottedIdentifier;
 import com.jpexs.decompiler.flash.types.annotations.EnumValue;
 import com.jpexs.decompiler.flash.types.annotations.EnumValues;
 import com.jpexs.decompiler.flash.types.annotations.HideInRawEdit;
@@ -57,8 +60,10 @@ import com.jpexs.decompiler.flash.types.annotations.UUID;
 import com.jpexs.decompiler.flash.types.annotations.parser.AnnotationParseException;
 import com.jpexs.decompiler.flash.types.annotations.parser.ConditionEvaluator;
 import com.jpexs.decompiler.flash.types.filters.CONVOLUTIONFILTER;
+import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.ByteArrayRange;
 import com.jpexs.helpers.ConcreteClasses;
+import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.ReflectionTools;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -903,15 +908,30 @@ public class GenericTagTreePanel extends GenericTagPanel {
                     enumAdd = " - " + values.get(val);
                 }
 
-                if (val instanceof byte[]) {
+                DottedIdentifier di = field.getAnnotation(DottedIdentifier.class);
+                if (val instanceof String && di != null) {
+                    if (di.exportName()) {
+                        valStr += " = " + escapeHtml(Helper.escapeExportname(val.toString(), true));
+                    } else {
+                        valStr += " = " + escapeHtml(DottedChain.parseNoSuffix(val.toString()).toPrintableString(di.as3()));
+                    }
+                } else if (val instanceof byte[]) {
                     valStr += " = " + ((byte[]) val).length + " byte";
                 } else if (val instanceof ByteArrayRange) {
                     valStr += " = " + ((ByteArrayRange) val).getLength() + " byte";
+                } else if (val instanceof String) {
+                    valStr += " = \"" + escapeHtml(Helper.escapePCodeString(val.toString())) + "\"";
                 } else {
-                    valStr += " = " + colorAdd + val.toString() + enumAdd;
+                    valStr += " = " + colorAdd + escapeHtml(val.toString()) + enumAdd;
                 }
             }
             return getNameType(fieldIndex) + valStr;
+        }
+        
+        private String escapeHtml(String val) {
+            return val.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;");
         }
 
         public String getType(int fieldIndex) {
@@ -952,6 +972,17 @@ public class GenericTagTreePanel extends GenericTagPanel {
             }
 
             String typeStr = type.getSimpleName();
+            
+            if ("RGB".equals(typeStr)) {
+                try {
+                    Object val = ReflectionTools.getValue(obj, fieldSet.get(fieldIndex), index);
+                    if (val instanceof RGBA) {
+                        typeStr = "RGBA";
+                    }
+                } catch (IllegalArgumentException | IllegalAccessException ex) {
+                    //ignore
+                }
+            }
 
             boolean bracketsDetected = false;
             if (swfType != null) {
@@ -1587,6 +1618,21 @@ public class GenericTagTreePanel extends GenericTagPanel {
                 //Hack to set CLIPACTIONRECORD parent
                 if ((obj instanceof CLIPACTIONS) && (v instanceof CLIPACTIONRECORD)) {
                     ((CLIPACTIONRECORD) v).setParentClipActions((CLIPACTIONS) obj);
+                }
+                
+                //Hack to set GRADRECORD to RGB or RGBA based on shape num
+                if (v instanceof GRADRECORD) {
+                    GRADRECORD grad = (GRADRECORD) v;
+                    if (editedTag instanceof ShapeTag) {
+                        ShapeTag shape = (ShapeTag) editedTag;
+                        if (shape.getShapeNum() >= 3) {
+                            grad.color = new RGBA(Color.black);
+                        } else {
+                            grad.color = new RGB(Color.black);
+                        }
+                    } else {
+                        grad.color = new RGBA(Color.black);
+                    }
                 }
 
                 if (obj instanceof HasSwfAndTag) {

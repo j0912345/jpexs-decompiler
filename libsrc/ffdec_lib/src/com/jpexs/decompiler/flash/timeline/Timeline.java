@@ -25,6 +25,7 @@ import com.jpexs.decompiler.flash.exporters.FrameExporter;
 import com.jpexs.decompiler.flash.exporters.commonshape.ExportRectangle;
 import com.jpexs.decompiler.flash.exporters.commonshape.Matrix;
 import com.jpexs.decompiler.flash.exporters.commonshape.SVGExporter;
+import com.jpexs.decompiler.flash.tags.DefineEditTextTag;
 import com.jpexs.decompiler.flash.tags.DefineScalingGridTag;
 import com.jpexs.decompiler.flash.tags.DefineSceneAndFrameLabelDataTag;
 import com.jpexs.decompiler.flash.tags.DefineSpriteTag;
@@ -53,6 +54,7 @@ import com.jpexs.decompiler.flash.tags.base.RemoveTag;
 import com.jpexs.decompiler.flash.tags.base.RenderContext;
 import com.jpexs.decompiler.flash.tags.base.ShapeTag;
 import com.jpexs.decompiler.flash.tags.base.SoundStreamHeadTypeTag;
+import com.jpexs.decompiler.flash.tags.base.StaticTextTag;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.tags.gfx.DefineExternalStreamSound;
 import com.jpexs.decompiler.flash.types.BlendMode;
@@ -66,6 +68,7 @@ import com.jpexs.decompiler.flash.types.MATRIX;
 import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.decompiler.flash.types.RGBA;
 import com.jpexs.decompiler.flash.types.SOUNDINFO;
+import com.jpexs.decompiler.flash.types.TEXTRECORD;
 import com.jpexs.decompiler.flash.types.filters.BlendComposite;
 import com.jpexs.decompiler.flash.types.filters.FILTER;
 import com.jpexs.decompiler.flash.types.shaperecords.SHAPERECORD;
@@ -75,6 +78,7 @@ import com.jpexs.helpers.SerializableImage;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -82,17 +86,23 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.FlatteningPathIterator;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
+import javax.swing.SwingUtilities;
 import org.w3c.dom.Element;
 
 /**
@@ -211,6 +221,20 @@ public class Timeline {
      * Mode of drawing only sprites.
      */
     public static final int DRAW_MODE_SPRITES = 2;
+
+    /**
+     * Decimal format for clip path
+     */
+    private static final DecimalFormat svgPathDecimalFormat;
+
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        svgPathDecimalFormat = new DecimalFormat("0.##", symbols); // max 3 desetinná místa, žádné zbytečné nuly
+    }
+
+    private static String formatDoubleSvg(double value) {
+        return svgPathDecimalFormat.format(value);
+    }
 
     /**
      * Ensures that the timeline is initialized.
@@ -1160,6 +1184,8 @@ public class Timeline {
 
             Matrix m = mat.preConcatenate(Matrix.getTranslateInstance(-rect.xMin, -rect.yMin));
 
+            
+            
             if (drawable instanceof ButtonTag) {
                 dtime = time;
                 dframe = ButtonTag.FRAME_UP;
@@ -1202,6 +1228,166 @@ public class Timeline {
             } else {
                 img = new SerializableImage(newWidth, newHeight, SerializableImage.TYPE_INT_ARGB_PRE);
                 img.fillTransparent();
+            }
+            
+            if (drawable instanceof TextTag) {
+                TextTag textTag = (TextTag) drawable;                    
+                Matrix textMatrix = new Matrix(textTag.getTextMatrix());
+                if (drawable == renderContext.selectionText) {
+                    renderContext.selectionAbsMatrix = absMat.concatenate(textMatrix);
+                }
+                if (renderContext.enableTexts) {
+                    int dx = (int) (viewRect.xMin * unzoom);
+                    int dy = (int) (viewRect.yMin * unzoom);
+                    Point cursorPositionInView = renderContext.cursorPosition == null ? new Point(0, 0) : new Point((int) Math.round(renderContext.cursorPosition.x * unzoom) - dx, (int) Math.round(renderContext.cursorPosition.y * unzoom) - dy);
+
+                    Shape textShape = ((TextTag) drawable).getOutline(true, 0, 0, 0, renderContext, absMat, true, viewRect, unzoom);
+                    
+                    
+                            
+                    if (textShape.contains(cursorPositionInView)) {
+                        renderContext.mouseOverText = textTag;                        
+                        renderContext.mouseOverTextAbsMatrix = absMat;
+                    }
+                    
+                    if (textShape.contains(cursorPositionInView) || (drawable == renderContext.selectionText && renderContext.mouseButton == 1)) {  
+                        Rectangle textBounds = textShape.getBounds();
+                        List<TEXTRECORD> textRecords = new ArrayList<>();
+                        if (textTag instanceof StaticTextTag) {
+                            textRecords = ((StaticTextTag) textTag).textRecords;                        
+                        }
+                        if (textTag instanceof DefineEditTextTag) {
+                            textRecords = ((DefineEditTextTag) textTag).getTextRecords(textTag.getSwf());
+                        }
+                        
+                        List<RECT> glyphPositions = TextTag.getGlyphEntriesPositions(textRecords, textTag.getSwf());
+                        int pos = 0;
+                        renderContext.glyphPosUnderCursor = -1;
+                        int closestPos = -1;
+                        double closestDistance = Double.MAX_VALUE;
+                        Point cursorPosNoTrans = absMat.concatenate(textMatrix).inverse().transform(cursorPositionInView);                            
+                                                
+                        pos = 0;
+                        for (RECT gp : glyphPositions) {
+                            /*Rectangle2D r = new Rectangle2D.Double(
+                                    textBounds.x + gp.Xmin * unzoom, 
+                                    textBounds.y + gp.Ymin * unzoom,
+                                    (gp.Xmax - gp.Xmin)* unzoom,
+                                    (gp.Ymax - gp.Ymin)* unzoom
+                            );*/
+                            Rectangle2D r = new Rectangle2D.Double(
+                                    gp.Xmin, 
+                                    gp.Ymin,
+                                    gp.Xmax - gp.Xmin,
+                                    gp.Ymax - gp.Ymin
+                            );
+                            //Shape ts = absMat.toTransform().createTransformedShape(r);
+                            
+                          
+                                        
+                            /*
+                            double tx = Math.max(r.getMinX() - cursorPositionInView.getX(), 0);
+                            tx = Math.max(tx, cursorPositionInView.getX() - r.getMaxX());
+
+                            double ty = Math.max(r.getMinY() - cursorPositionInView.getY(), 0);
+                            ty = Math.max(ty, cursorPositionInView.getY() - r.getMaxY());
+                            
+                            double distance = Math.hypot(tx, ty);
+                            
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestPos = pos;
+                            }*/
+                            
+                            if (r.contains(cursorPosNoTrans)) {
+                                closestPos = pos;
+                                closestDistance = 0;
+                                break;
+                            }
+                            
+                            /*if (drawable == renderContext.selectionText && pos == renderContext.selectionStart) {
+                                closestPos = pos;
+                                closestDistance = 0;
+                                break;
+                            }*/
+                            
+                            if (cursorPosNoTrans.y >= r.getY() && cursorPosNoTrans.y <= r.getMaxY()) {
+                                double tx = Math.max(r.getMinX() - cursorPosNoTrans.getX(), 0);
+                                tx = Math.max(tx, cursorPosNoTrans.getX() - r.getMaxX());
+                                
+                                if (tx < closestDistance) {
+                                    closestDistance = tx;
+                                    closestPos = pos;
+                                }
+                            }
+                            
+                            /*if (pos >= renderContext.selectionStart && pos < renderContext.selectionEnd) {
+                                Rectangle rPx = new Rectangle(
+                                    (int) Math.round(r.getX() / SWF.unitDivisor), 
+                                    (int) Math.round(r.getY() / SWF.unitDivisor),
+                                    (int) Math.round(r.getWidth() / SWF.unitDivisor),
+                                    (int) Math.round(r.getHeight() / SWF.unitDivisor));
+                            
+                                Graphics gi = img.getGraphics();
+                                gi.setColor(Color.black);
+                                gi.drawRect(
+                                        rPx.x,
+                                        rPx.y,
+                                        rPx.width,
+                                        rPx.height
+                                );
+                            }*/
+                            
+                            pos++;
+                        }
+                        
+                        if (closestPos == -1 && renderContext.mouseButton == 1) {
+                            if (!glyphPositions.isEmpty()) {
+                                RECT gp = glyphPositions.get(0);
+                                Rectangle2D r = new Rectangle2D.Double(
+                                    gp.Xmin, 
+                                    gp.Ymin,
+                                    gp.Xmax - gp.Xmin,
+                                    gp.Ymax - gp.Ymin
+                                );
+                                if (cursorPosNoTrans.y < r.getY()) {
+                                    closestPos = 0;
+                                }
+                                
+                                gp = glyphPositions.get(glyphPositions.size() - 1);
+                                r = new Rectangle2D.Double(
+                                    gp.Xmin, 
+                                    gp.Ymin,
+                                    gp.Xmax - gp.Xmin,
+                                    gp.Ymax - gp.Ymin
+                                );
+                                if (cursorPosNoTrans.y > r.getMaxY()) {
+                                    closestPos = glyphPositions.size() - 1;
+                                }
+                            }
+                        }
+                                                
+                        if (closestPos > -1) {
+                            RECT gp = glyphPositions.get(closestPos);
+                            Rectangle2D r = new Rectangle2D.Double(
+                                        gp.Xmin, 
+                                        gp.Ymin,
+                                        gp.Xmax - gp.Xmin,
+                                        gp.Ymax - gp.Ymin
+                                );
+                            renderContext.glyphUnderCursorRect = r;
+                            renderContext.glyphUnderCursorXPosition = cursorPosNoTrans.x;
+                            if (renderContext.glyphUnderCursorXPosition < r.getX()) {
+                                renderContext.glyphUnderCursorXPosition = r.getX();
+                            }
+                            if (renderContext.glyphUnderCursorXPosition > r.getMaxX()) {
+                                renderContext.glyphUnderCursorXPosition = r.getMaxX();
+                            }
+                            
+                            renderContext.glyphPosUnderCursor = closestPos;
+                        }
+                    }
+                }
             }
 
             ColorTransform mergedColorTransform2 = mergedColorTransform;
@@ -1438,6 +1624,7 @@ public class Timeline {
             for (int c = 0; c < clips.size(); c++) {
                 if (clips.get(c).depth < i) {
                     clips.remove(c);
+                    c--;
                     clipChanged = true;
                 }
             }
@@ -1666,7 +1853,7 @@ public class Timeline {
 
         Frame frameObj = getFrame(frame);
         List<SvgClip> clips = new ArrayList<>();
-
+        
         int maxDepth = getMaxDepth();
         int clipCount = 0;
         Element clipGroup = null;
@@ -1675,6 +1862,7 @@ public class Timeline {
             for (int c = 0; c < clips.size(); c++) {
                 if (clips.get(c).depth < i) {
                     clips.remove(c);
+                    c--;
                     clipChanged = true;
                 }
             }
@@ -1686,9 +1874,63 @@ public class Timeline {
                 }
 
                 if (!clips.isEmpty()) {
-                    String clip = clips.get(clips.size() - 1).shape; // todo: merge clip areas
+                    String clipName = exporter.getUniqueId("clipPath");
+                    exporter.createClipPath(null, clipName);
+                    Area a = null;
+                    for (SvgClip c : clips) {
+                        if (a == null) {
+                            a = new Area(c.shape);
+                        } else {
+                            a.intersect(new Area(c.shape));
+                        }
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+                    PathIterator pathIterator = new FlatteningPathIterator(a.getPathIterator(AffineTransform.getScaleInstance(1 / 20.0, 1 / 20.0)), 0.01);
+                    float[] coords = new float[6];
+
+                    while (!pathIterator.isDone()) {
+                        int type = pathIterator.currentSegment(coords);
+                        switch (type) {
+                            case PathIterator.SEG_MOVETO:
+                                sb.append("M ")
+                                        .append(formatDoubleSvg(coords[0])).append(" ")
+                                        .append(formatDoubleSvg(coords[1])).append(" ");
+                                break;
+                            case PathIterator.SEG_LINETO:
+                                sb.append("L ")
+                                        .append(formatDoubleSvg(coords[0])).append(" ")
+                                        .append(formatDoubleSvg(coords[1])).append(" ");
+                                break;
+                            case PathIterator.SEG_QUADTO:
+                                sb.append("Q ")
+                                        .append(formatDoubleSvg(coords[0])).append(" ")
+                                        .append(formatDoubleSvg(coords[1])).append(" ")
+                                        .append(formatDoubleSvg(coords[2])).append(" ")
+                                        .append(formatDoubleSvg(coords[3])).append(" ");
+                                break;
+                            case PathIterator.SEG_CUBICTO:
+                                sb.append("C ")
+                                        .append(formatDoubleSvg(coords[0])).append(" ")
+                                        .append(formatDoubleSvg(coords[1])).append(" ")
+                                        .append(formatDoubleSvg(coords[2])).append(" ")
+                                        .append(formatDoubleSvg(coords[3])).append(" ")
+                                        .append(formatDoubleSvg(coords[4])).append(" ")
+                                        .append(formatDoubleSvg(coords[5])).append(" ");
+                                break;
+                            case PathIterator.SEG_CLOSE:
+                                sb.append("Z ");
+                                break;
+                        }
+                        pathIterator.next();
+                    }
+
+                    Element path = exporter.createElement("path");
+                    path.setAttribute("d", sb.toString().trim());
+                    exporter.addToGroup(path);
+                    exporter.endGroup();
                     clipGroup = exporter.createSubGroup(null, null);
-                    clipGroup.setAttribute("clip-path", "url(#" + clip + ")");
+                    clipGroup.setAttribute("clip-path", "url(#" + clipName + ")");
                 }
 
                 clipCount = clips.size();
@@ -1729,13 +1971,9 @@ public class Timeline {
                 // TODO: if (layer.filters != null)
                 // TODO: if (layer.blendMode > 1)                                               
                 if (layer.clipDepth > -1) {
-                    String clipName = exporter.getUniqueId("clipPath");
-                    Matrix mat = new Matrix(layer.matrix);
-                    exporter.createClipPath(mat, clipName);
-                    SvgClip clip = new SvgClip(clipName, layer.clipDepth);
+                    Shape shape = drawable.getOutline(false, 0, 0, layer.ratio, new RenderContext(), layerMatrix, false, null, 1);;
+                    SvgClip clip = new SvgClip(layer.clipDepth, shape);
                     clips.add(clip);
-                    drawable.toSVG(exporter, layer.ratio, clrTrans, level + 1, transformation, strokeTransformation);
-                    exporter.endGroup();
                 } else {
                     boolean createNew = false;
 

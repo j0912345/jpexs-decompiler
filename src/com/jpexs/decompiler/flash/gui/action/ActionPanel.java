@@ -23,6 +23,7 @@ import com.jpexs.decompiler.flash.action.Action;
 import com.jpexs.decompiler.flash.action.ActionGraph;
 import com.jpexs.decompiler.flash.action.ActionList;
 import com.jpexs.decompiler.flash.action.ConstantPoolTooBigException;
+import com.jpexs.decompiler.flash.action.as2.UninitializedClassFieldsDetector;
 import com.jpexs.decompiler.flash.action.deobfuscation.BrokenScriptDetector;
 import com.jpexs.decompiler.flash.action.parser.ActionParseException;
 import com.jpexs.decompiler.flash.action.parser.pcode.ASMParsedSymbol;
@@ -73,6 +74,7 @@ import com.jpexs.decompiler.flash.tags.base.ASMSource;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.helpers.CancellableWorker;
 import com.jpexs.helpers.Helper;
+import com.jpexs.helpers.ProgressListener;
 import com.jpexs.helpers.utf8.Utf8Helper;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -200,6 +202,8 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
     
     private JPanel pcodePanel;
 
+    private JPanel iconsPanel;
+    
     public synchronized boolean isScriptLoaded() {
         return scriptLoaded;
     }
@@ -525,7 +529,11 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         if (!decompile) {
             decompiledText = new HighlightedText(Helper.getDecompilationSkippedComment());
         } else {
-            decompiledText = SWF.getFromCache(asm);
+            if (src.getSwf().needsCalculatingAS2UninitializeClassTraits(src) && src.getSwf().isDetectingUninitialized()) {
+                decompiledText = null;
+            } else {
+                decompiledText = SWF.getFromCache(asm);
+            }
         }
 
         HighlightedText fdecompiledText = decompiledText;
@@ -575,19 +583,46 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
                     if (decompileNeeded) {
                         View.execInEventDispatch(() -> {
                             decompiledEditor.setShowMarkers(false);
-                            if (src.getSwf().needsCalculatingAS2UninitializeClassTraits(src)) {
+                            if (!Configuration.skipDetectionOfUnitializedClassFields.get() && src.getSwf().needsCalculatingAS2UninitializeClassTraits(src)) {
                                 setEditorText(asm.getScriptName(), asm.getExportedScriptName(), "; ...", "text/flasm");
-                                setDecompiledText("-", "-", "// " + AppStrings.translate("work.decompiling.allScripts.ucf") + "...");
+                                setDecompiledText("-", "-", 
+                                        "// " + AppStrings.translate("work.decompiling.allScripts.ucf") + "..." + "\r\n"
+                                        + "// " + AppStrings.translate("work.decompiling.allScripts.ucf.canBeSkipped")
+                                );
                             } else {
                                 setDecompiledText("-", "-", "// " + AppStrings.translate("work.decompiling") + "...");
                             }
                         });
 
-                        HighlightedText htext = SWF.getCached(asm, innerActions);
-                        ActionList finalActions = innerActions;
-                        View.execInEventDispatch(() -> {
-                            setSourceCompleted(asm, htext, finalActions);
-                        });
+                        CancellableWorker that = this;
+                        ProgressListener progressListener = new ProgressListener() {
+                            @Override
+                            public void progress(int p) {
+                            }
+
+                            @Override
+                            public void status(String status) {
+                                Main.startWork(AppStrings.translate("work.decompiling") + " " + status + "  ...", that);
+                            }                            
+                        };
+                        UninitializedClassFieldsDetector det = asm.getSwf().getUninitializedClassFieldsDetector();
+                        det.addProgressListener(progressListener);
+                        
+                        if (src.getSwf().needsCalculatingAS2UninitializeClassTraits(src)) {
+                            src.getSwf().waitForUninitializedClassDetector();                                                        
+                        }
+                        if (isCancelled()) {
+                            return null;
+                        }
+                        try {
+                            HighlightedText htext = SWF.getCached(asm, innerActions);                        
+                            ActionList finalActions = innerActions;
+                            View.execInEventDispatch(() -> {
+                                setSourceCompleted(asm, htext, finalActions);
+                            });
+                        } finally {
+                            det.removeProgressListener(progressListener);
+                        }
                     } else {
                         ActionList finalActions = innerActions;
                         View.execInEventDispatch(() -> {
@@ -611,7 +646,7 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
                         } catch (CancellationException ex) {
                             editor.setShowMarkers(false);
                             setEditorText("-", "-", "; " + AppStrings.translate("work.canceled"), "text/flasm");
-                            setDecompiledText("-", "-", "// " + AppStrings.translate("work.canceled"));
+                            setDecompiledText("-", "-", "// " + AppStrings.translate("work.canceled"));                                                        
                         } catch (Exception ex) {
                             logger.log(Level.SEVERE, "Error", ex);
                             decompiledEditor.setShowMarkers(false);
@@ -955,7 +990,7 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         
         brokenHintPanel.setVisible(false);
 
-        JPanel iconsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        iconsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JToggleButton deobfuscateButton = new JToggleButton(View.getIcon("deobfuscate16"));
         deobfuscateButton.setMargin(new Insets(5, 5, 5, 5));
         deobfuscateButton.addActionListener(this::deobfuscateButtonActionPerformed);
@@ -968,7 +1003,14 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
             }
         });
 
-        PopupButton deobfuscateOptionsButton = new PopupButton(View.getIcon("deobfuscateoptions16")) {
+        Configuration.skipDetectionOfUnitializedClassFields.addListener(new ConfigurationItemChangeListener<Boolean>() {
+            @Override
+            public void configurationItemChanged(Boolean newValue) {
+                mainPanel.skipDetectionOfUnitializedClassFieldsChanged();
+            }            
+        });
+        
+        PopupButton deobfuscateOptionsButton = new PopupButton(View.getIcon("medkit16")) {
             @Override
             protected JPopupMenu getPopupMenu() {
                 JPopupMenu popupMenu = new JPopupMenu();
@@ -978,9 +1020,13 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
                 JCheckBox removeObfuscatedDeclarationsMenuItem = new JCheckBox(AppStrings.translate("deobfuscate_options.remove_obfuscated_declarations"));
                 removeObfuscatedDeclarationsMenuItem.setSelected(Configuration.deobfuscateAs12RemoveInvalidNamesAssignments.get());
                 removeObfuscatedDeclarationsMenuItem.addActionListener(ActionPanel.this::removeObfuscatedDeclarationsMenuItemActionPerformed);
-
+                JCheckBox skipUninitializedClassFieldsDetectionMenuItem = new JCheckBox(AppStrings.translate("deobfuscate_options.skip_uninitialized_class_fields_detection"));
+                skipUninitializedClassFieldsDetectionMenuItem.setSelected(Configuration.skipDetectionOfUnitializedClassFields.get());
+                skipUninitializedClassFieldsDetectionMenuItem.addActionListener(ActionPanel.this::skipUninitializedClassFieldsDetectionMenuItemActionPerformed);
+                
                 popupMenu.add(simplifyExpressionsMenuItem);
                 popupMenu.add(removeObfuscatedDeclarationsMenuItem);
+                popupMenu.add(skipUninitializedClassFieldsDetectionMenuItem);
 
                 return popupMenu;
             }
@@ -1124,6 +1170,12 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         Configuration.deobfuscateAs12RemoveInvalidNamesAssignments.set(checkBox.isSelected());
         mainPanel.autoDeobfuscateChanged();
     }
+    
+    private void skipUninitializedClassFieldsDetectionMenuItemActionPerformed(ActionEvent evt) {
+        JCheckBox checkBox = (JCheckBox) evt.getSource();
+        Configuration.skipDetectionOfUnitializedClassFields.set(checkBox.isSelected());
+        mainPanel.skipDetectionOfUnitializedClassFieldsChanged();
+    }
 
     private void breakPointListButtonActionPerformed(ActionEvent evt) {
         Main.showBreakpointsList();
@@ -1150,6 +1202,8 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         mainPanel.setEditingStatus();
         saveButton.setEnabled(value);
         cancelButton.setEnabled(value);
+        topButtonsPan.setVisible(false);
+        decompiledEditor.setEditable(false);
     }
 
     private boolean isDecompiledModified() {
@@ -1165,6 +1219,8 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         mainPanel.setEditingStatus();
         saveDecompiledButton.setEnabled(value);
         cancelDecompiledButton.setEnabled(value);
+        iconsPanel.setVisible(false);
+        editor.setEditable(false);
     }
 
     public void setEditMode(boolean val) {
@@ -1182,11 +1238,13 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
 
         if (Configuration.editorMode.get()) {
             editor.setEditable(true);
+            decompiledEditor.setEditable(true);
             editButton.setVisible(false);
             saveButton.setVisible(true);
             saveButton.setEnabled(false);
             cancelButton.setVisible(true);
             cancelButton.setEnabled(false);
+            topButtonsPan.setVisible(true);
         } else {
             editor.setEditable(val);
             saveButton.setVisible(val);
@@ -1195,6 +1253,7 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
             cancelButton.setVisible(val);
             
             editDecompiledButton.setEnabled(!val);
+            topButtonsPan.setVisible(!val);
         }
 
         editor.getCaret().setVisible(true);
@@ -1216,12 +1275,14 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         }
 
         if (Configuration.editorMode.get()) {
+            editor.setEditable(true);
             decompiledEditor.setEditable(true);
             editDecompiledButton.setVisible(false);
             saveDecompiledButton.setVisible(true);
             saveDecompiledButton.setEnabled(false);
             cancelDecompiledButton.setVisible(true);
             cancelDecompiledButton.setEnabled(false);
+            iconsPanel.setVisible(true);            
         } else {
             decompiledEditor.setEditable(val);
             saveDecompiledButton.setVisible(val);
@@ -1229,6 +1290,7 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
             editDecompiledButton.setVisible(!val);
             cancelDecompiledButton.setVisible(val);
             pcodePanel.setVisible(!val);
+            iconsPanel.setVisible(!val);
         }
         decompiledEditor.getCaret().setVisible(true);
         decLabel.setIcon(val ? View.getIcon("editing16") : null);
@@ -1242,7 +1304,7 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         if (lastCode != null) {
             try {
                 boolean insideDoInitAction = (this.src instanceof DoInitActionTag);
-                GraphDialog gf = new GraphDialog(mainPanel.getMainFrame().getWindow(), new ActionGraph(new HashMap<>(), this.src.getScriptName(), insideDoInitAction, false, lastCode, new HashMap<>(), new HashMap<>(), new HashMap<>(), SWF.DEFAULT_VERSION, Utf8Helper.charsetName), "");
+                GraphDialog gf = new GraphDialog(mainPanel.getMainFrame().getWindow(), new ActionGraph(false, new HashMap<>(), this.src.getScriptName(), insideDoInitAction, false, lastCode, new HashMap<>(), new HashMap<>(), new HashMap<>(), SWF.DEFAULT_VERSION, Utf8Helper.charsetName, 0), "");
                 gf.setVisible(true);
             } catch (InterruptedException ex) {
                 logger.log(Level.SEVERE, null, ex);
