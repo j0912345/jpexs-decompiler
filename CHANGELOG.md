@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 - [#2478] Simple editor - remembering last frame / timeline
 - Optional heap memory status widget in the titlebar
 - [#2485] Show variable name in the text tree node label
+- Deobfuscate identifiers option - non destructible renaming identifiers for display purposes
+- Unknown and errored tags moved to special folders
 
 ### Fixed
 - [#2474] Gotos incorrectly decompiled
@@ -48,6 +50,8 @@ All notable changes to this project will be documented in this file.
 - AS direct editation/highlighter §§pop and §§dup can have getmember or call
 - [#1295], [#116] AS3 dynamic construction via MultinameL
 - ABC cleaner not properly fixing namespace sets
+- The hex view does not display bytes if there are too few of them
+- SymbolClass export/import did not support obfuscated names
 
  ### Changed
 - Icon of "Deobfuscation options" menu from pile of pills to medkit
@@ -57,6 +61,10 @@ All notable changes to this project will be documented in this file.
 - AS1/2: Export names are deobfuscated only when start with `__Packages.`,
   if not, then classical escaping is performed
 - Quotes in tree node parameter values that need them
+- The label of option "automatic deobfuscation" changed to "deobfuscate code"
+
+### Removed
+- Resample wav to 44kHz feature from GUI
 
 ## [24.0.1] - 2025-06-27
 ### Fixed

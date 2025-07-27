@@ -242,7 +242,6 @@ import java.awt.event.KeyEvent;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2010,7 +2009,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             if (!oldName.equals(newName)) {
 
                 if (oldName.equals(abcPanel.decompiledTextArea.getScriptLeaf().getClassPath().className)) {
-                    scriptName = abcPanel.decompiledTextArea.getScriptLeaf().getClassPath().packageStr.add(newName, "").toPrintableString(true);
+                    scriptName = abcPanel.decompiledTextArea.getScriptLeaf().getClassPath().packageStr.add(newName, "").toPrintableString(new LinkedHashSet<>(), swf, true);
                 }
 
                 final String fScriptName = scriptName;
@@ -2849,7 +2848,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
         String documentClass = swf.getDocumentClass();
         if (documentClass != null && currentView != VIEW_DUMP) {
-            String documentClassPrintable = DottedChain.parseNoSuffix(documentClass).toPrintableString(true);
+            String documentClassPrintable = DottedChain.parseNoSuffix(documentClass).toPrintableString(new LinkedHashSet<>(), swf, true);
             List<ABCContainerTag> abcList = swf.getAbcList();
             if (!abcList.isEmpty()) {
                 ABCPanel abcPanel = getABCPanel();
@@ -6152,7 +6151,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             previewPanel.setImageReplaceButtonVisible(false, false, false, !((SoundTag) treeItem).isReadOnly() && ((SoundTag) treeItem).importSupported(), false, false, false);
             if (!(treeItem instanceof SoundStreamHeadTypeTag)) {
                 try {
-                    SoundTagPlayer soundThread = new SoundTagPlayer(null, (SoundTag) treeItem, Configuration.loopMedia.get() ? Integer.MAX_VALUE : 1, true, Configuration.previewResampleSound.get());
+                    SoundTagPlayer soundThread = new SoundTagPlayer(null, (SoundTag) treeItem, Configuration.loopMedia.get() ? Integer.MAX_VALUE : 1, true, false); // Configuration.previewResampleSound.get());
                     if (!Configuration.autoPlaySounds.get()) {
                         soundThread.pause();
                     }

@@ -16,8 +16,8 @@
  */
 package com.jpexs.decompiler.flash.gui.generictageditors;
 
+import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.types.annotations.DottedIdentifier;
-import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.ReflectionTools;
 import java.awt.Component;
@@ -44,6 +44,7 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
     private String fieldName;
 
     private boolean multiline;
+    private final SWF swf;
 
     @Override
     public boolean getScrollableTracksViewportWidth() {
@@ -67,7 +68,7 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
         return 0;
     }
 
-    public StringEditor(String fieldName, Object obj, Field field, int index, Class<?> type, boolean multiline) {
+    public StringEditor(String fieldName, Object obj, Field field, int index, Class<?> type, boolean multiline, SWF swf) {
         setLineWrap(true);
         this.obj = obj;
         this.field = field;
@@ -75,6 +76,7 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
         this.type = type;
         this.fieldName = fieldName;
         this.multiline = multiline;
+        this.swf = swf;
         if (multiline) {
             Dimension d = new Dimension(500, 200);
             setPreferredSize(d);
@@ -90,9 +92,10 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
             DottedIdentifier di = field.getAnnotation(DottedIdentifier.class);
             if (di != null) {
                 if (di.exportName()) {
-                    newValue = Helper.escapeExportname(newValue, false);
+                    newValue = Helper.escapeExportname(swf, newValue, false);
                 } else {
-                    newValue = DottedChain.parseNoSuffix(newValue).toPrintableString(di.as3());
+                    newValue = Helper.escapePCodeString(newValue);
+                    //DottedChain.parseNoSuffix(newValue).toPrintableString(new LinkedHashSet<>(), swf, di.as3());
                 }
             }
             setText(newValue);
@@ -109,12 +112,13 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
             DottedIdentifier di = field.getAnnotation(DottedIdentifier.class);
             if (di != null) {
                 if (di.exportName()) {
-                    newValue = Helper.unescapeExportname(newValue);
+                    newValue = Helper.unescapeExportname(swf, newValue);
                 } else {
-                    newValue = DottedChain.parsePrintable(newValue).toRawString();
+                    newValue = Helper.unescapePCodeString(newValue);
+                    //DottedChain.parsePrintable(newValue).toRawString();
                 }
             }
-            
+
             if (Objects.equals(oldValue, newValue)) {
                 return false;
             }
@@ -171,9 +175,9 @@ public class StringEditor extends JTextArea implements GenericTagEditor {
     public Object getObject() {
         return obj;
     }
-    
+
     @Override
     public void setValueNormalizer(ValueNormalizer normalizer) {
-    
-    }  
+
+    }
 }

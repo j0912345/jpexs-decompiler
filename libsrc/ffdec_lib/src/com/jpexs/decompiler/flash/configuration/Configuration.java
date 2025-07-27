@@ -1158,6 +1158,10 @@ public final class Configuration {
     @ConfigurationDefaultBoolean(false)
     @ConfigurationInternal
     public static ConfigurationItem<Boolean> showHeapStatusWidget = null;
+    
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("script")
+    public static ConfigurationItem<Boolean> autoDeobfuscateIdentifiers = null;
 
     private static Map<String, String> configurationDescriptions = new LinkedHashMap<>();
     private static Map<String, String> configurationTitles = new LinkedHashMap<>();
@@ -1453,15 +1457,18 @@ public final class Configuration {
      * Save configuration to file
      */
     public static void saveConfig() {
+        Logger.getLogger(Configuration.class.getName()).fine("Saving configuration...");
         try {
             storage.saveToFile(getConfigFile());
+            Logger.getLogger(Configuration.class.getName()).fine("TOML configuration saved.");        
         } catch (IOException ex) {
-            // ignore
+            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, "Cannot save TOML configuration", ex);           
         }
         try {
             legacyStorage.saveToFile(getLegacyConfigFile());
+            Logger.getLogger(Configuration.class.getName()).fine("Legacy configuration saved.");                
         } catch (IOException ex) {
-            // ignore
+            Logger.getLogger(Configuration.class.getName()).log(Level.WARNING, "Cannot save legacy configuration", ex);           
         }
     }
 

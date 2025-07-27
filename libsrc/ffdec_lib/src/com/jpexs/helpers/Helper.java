@@ -18,6 +18,7 @@ package com.jpexs.helpers;
 
 import com.jpexs.decompiler.flash.AppResources;
 import com.jpexs.decompiler.flash.ApplicationInfo;
+import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.helpers.Freed;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
@@ -57,6 +58,7 @@ import java.util.Base64;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -240,25 +242,27 @@ public class Helper {
 
     /**
      * Escapes export name
+     * @param swf SWF
      * @param s Input string
      * @param quote Add quotes when not starts __Packages.
      * @return Escaped string
      */
-    public static String escapeExportname(String s, boolean quote) {
+    public static String escapeExportname(SWF swf, String s, boolean quote) {
         if (s.startsWith("__Packages.")) {
-            return DottedChain.parseNoSuffix(s).toPrintableString(false);
+            return DottedChain.parseNoSuffix(s).toPrintableString(new LinkedHashSet<>(), swf, false);
         }
         return (quote ? "\"" : "") + escapePCodeString(s) + (quote ? "\"" : "");
     }
     
     /**
      * Unescape export name
+     * @param swf SWF
      * @param s Input string
      * @return Unescaped string
      */
-    public static String unescapeExportname(String s) {
+    public static String unescapeExportname(SWF swf, String s) {
         if (s.startsWith("__Packages.")) {
-            return DottedChain.parsePrintable(s).toRawString();
+            return DottedChain.parsePrintable(swf, s).toRawString();
         }
         return unescapePCodeString(s);
     }

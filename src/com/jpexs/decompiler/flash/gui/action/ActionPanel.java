@@ -99,6 +99,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -1014,9 +1015,15 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
             @Override
             protected JPopupMenu getPopupMenu() {
                 JPopupMenu popupMenu = new JPopupMenu();
+                JCheckBoxMenuItem deobfuscateIdentifiersMenuItem = new JCheckBoxMenuItem(AppStrings.translate("deobfuscate_options.deobfuscateIdentifiers"));
+                deobfuscateIdentifiersMenuItem.setSelected(Configuration.autoDeobfuscateIdentifiers.get());
+                deobfuscateIdentifiersMenuItem.addActionListener(ActionPanel.this::autoDeobfuscateIdentifiersMenuItemActionPerformed);
                 JCheckBox simplifyExpressionsMenuItem = new JCheckBox(AppStrings.translate("deobfuscate_options.simplify_expressions"));
                 simplifyExpressionsMenuItem.setSelected(Configuration.simplifyExpressions.get());
                 simplifyExpressionsMenuItem.addActionListener(ActionPanel.this::simplifyExpressionsMenuItemActionPerformed);
+                JCheckBoxMenuItem disableDecompilationMenuItem = new JCheckBoxMenuItem(AppStrings.translate("menu.settings.disabledecompilation"));
+                disableDecompilationMenuItem.setSelected(!Configuration.decompile.get());
+                disableDecompilationMenuItem.addActionListener(ActionPanel.this::disableDecompilationMenuItemActionPerformed);
                 JCheckBox removeObfuscatedDeclarationsMenuItem = new JCheckBox(AppStrings.translate("deobfuscate_options.remove_obfuscated_declarations"));
                 removeObfuscatedDeclarationsMenuItem.setSelected(Configuration.deobfuscateAs12RemoveInvalidNamesAssignments.get());
                 removeObfuscatedDeclarationsMenuItem.addActionListener(ActionPanel.this::removeObfuscatedDeclarationsMenuItemActionPerformed);
@@ -1024,10 +1031,12 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
                 skipUninitializedClassFieldsDetectionMenuItem.setSelected(Configuration.skipDetectionOfUnitializedClassFields.get());
                 skipUninitializedClassFieldsDetectionMenuItem.addActionListener(ActionPanel.this::skipUninitializedClassFieldsDetectionMenuItemActionPerformed);
                 
+                popupMenu.add(deobfuscateIdentifiersMenuItem);
                 popupMenu.add(simplifyExpressionsMenuItem);
+                popupMenu.add(disableDecompilationMenuItem);
                 popupMenu.add(removeObfuscatedDeclarationsMenuItem);
                 popupMenu.add(skipUninitializedClassFieldsDetectionMenuItem);
-
+                
                 return popupMenu;
             }
         };
@@ -1175,6 +1184,18 @@ public class ActionPanel extends JPanel implements SearchListener<ScriptSearchRe
         JCheckBox checkBox = (JCheckBox) evt.getSource();
         Configuration.skipDetectionOfUnitializedClassFields.set(checkBox.isSelected());
         mainPanel.skipDetectionOfUnitializedClassFieldsChanged();
+    }
+    
+    private void autoDeobfuscateIdentifiersMenuItemActionPerformed(ActionEvent evt) {
+        JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem) evt.getSource();
+        Configuration.autoDeobfuscateIdentifiers.set(menuItem.isSelected());
+        mainPanel.autoDeobfuscateChanged();
+    }
+    
+    private void disableDecompilationMenuItemActionPerformed(ActionEvent evt) {
+        JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem) evt.getSource();
+        Configuration.decompile.set(!menuItem.isSelected());
+        mainPanel.disableDecompilationChanged();
     }
 
     private void breakPointListButtonActionPerformed(ActionEvent evt) {

@@ -22,6 +22,7 @@ import com.jpexs.decompiler.flash.action.model.CallMethodActionItem;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.action.model.GetMemberActionItem;
 import com.jpexs.decompiler.flash.action.model.GetVariableActionItem;
+import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.flash.helpers.NulWriter;
 import com.jpexs.decompiler.flash.tags.DefineScalingGridTag;
@@ -99,12 +100,12 @@ public abstract class CharacterTag extends Tag implements CharacterIdTag {
             ret.put("chid", "" + chid);
         }
         if (exportName != null) {
-            ret.put("exp", Helper.escapeExportname(exportName, true));
+            ret.put("exp", Helper.escapeExportname(getSwf(), exportName, true));
         }
         if (!classNames.isEmpty()) {
             List<String> escapedList = new ArrayList<>();
             for (String className : classNames) {
-                escapedList.add(DottedChain.parseNoSuffix(className).toPrintableString(true));
+                escapedList.add(DottedChain.parseNoSuffix(className).toPrintableString(new LinkedHashSet<>(), getSwf(), true));
             }
             ret.put("cls", String.join(", ", escapedList));
         }
@@ -131,10 +132,18 @@ public abstract class CharacterTag extends Tag implements CharacterIdTag {
     public String getCharacterExportFileName() {
         String result = "" + getCharacterId();
         if (exportName != null) {
-            result += "_" + exportName;
+            if (Configuration.autoDeobfuscateIdentifiers.get()) {
+                result += "_" + Helper.escapeExportname(swf, result, false);
+            } else {
+                result += "_" + exportName;
+            }
         }
         if (classNames.size() == 1) {
-            result += "_" + classNames.iterator().next();
+            if (Configuration.autoDeobfuscateIdentifiers.get()) {
+                result += "_" + DottedChain.parseNoSuffix(classNames.iterator().next()).toPrintableString(new LinkedHashSet<>(), swf, true);
+            } else {
+                result += "_" + classNames.iterator().next();
+            }
         }
         return result;
     }

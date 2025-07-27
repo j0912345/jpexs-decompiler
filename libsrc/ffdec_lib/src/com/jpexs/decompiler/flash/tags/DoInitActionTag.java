@@ -40,6 +40,7 @@ import com.jpexs.helpers.Helper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -170,7 +171,7 @@ public class DoInitActionTag extends Tag implements CharacterIdTag, ASMSource {
 
         return Action.actionsToSource(requiresUninitielizedClassTraitsDetection() ? swf.getUninitializedAs2ClassTraits() : new HashMap<>(), this, actions, getScriptName(), writer, getCharset(), treeOperations);
     }
-    
+
     private boolean requiresUninitielizedClassTraitsDetection() {
         return swf.needsCalculatingAS2UninitializeClassTraits(this);
     }
@@ -253,7 +254,7 @@ public class DoInitActionTag extends Tag implements CharacterIdTag, ASMSource {
         if (exportName == null || exportName.isEmpty()) {
             return ret;
         }
-        ret.put("exp", Helper.escapeExportname(exportName, true));
+        ret.put("exp", Helper.escapeExportname(getSwf(), exportName, true));
         return ret;
     }
 
@@ -300,7 +301,7 @@ public class DoInitActionTag extends Tag implements CharacterIdTag, ASMSource {
     @Override
     public List<GraphTargetItem> getActionsToTree() {
         try {
-            return Action.actionsToTree(requiresUninitielizedClassTraitsDetection(), requiresUninitielizedClassTraitsDetection() ? swf.getUninitializedAs2ClassTraits() : new HashMap<>(), true, false, getActions(), swf.version, 0, getScriptName(), swf.getCharset());
+            return Action.actionsToTree(new LinkedHashSet<>(), requiresUninitielizedClassTraitsDetection(), requiresUninitielizedClassTraitsDetection() ? swf.getUninitializedAs2ClassTraits() : new HashMap<>(), true, false, getActions(), swf.version, 0, getScriptName(), swf.getCharset());
         } catch (InterruptedException ex) {
             return new ArrayList<>();
         }

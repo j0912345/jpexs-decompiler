@@ -26,7 +26,6 @@ import com.jpexs.decompiler.flash.types.annotations.SWFArray;
 import com.jpexs.decompiler.flash.types.annotations.SWFType;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.flash.types.annotations.Table;
-import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.ByteArrayRange;
 import com.jpexs.helpers.Helper;
 import java.io.IOException;
@@ -166,7 +165,7 @@ public class ExportAssetsTag extends SymbolClassTypeTag {
         if (names.size() == 1) {
             ret.put("chid", "" + tags.get(0));
             String exportName = names.get(0);
-            ret.put("exp", Helper.escapeExportname(exportName, true));           
+            ret.put("exp", Helper.escapeExportname(getSwf(), exportName, true));           
         }
         return ret;
     }

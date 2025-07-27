@@ -41,8 +41,8 @@ import com.jpexs.decompiler.flash.types.annotations.SWFArray;
 import com.jpexs.decompiler.flash.types.annotations.SWFType;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.flash.types.filters.FILTER;
-import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.ByteArrayRange;
+import com.jpexs.helpers.Helper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -711,7 +711,8 @@ public class PlaceObject4Tag extends PlaceObjectTypeTag implements ASMSourceCont
     public Map<String, String> getNameProperties() {
         Map<String, String> ret = super.getNameProperties();
         if (placeFlagHasName) {
-            ret.put("nm", DottedChain.parseNoSuffix(name).toPrintableString(false));
+            ret.put("nm", "\"" + Helper.escapePCodeString(name) + "\"");
+            //ret.put("nm", DottedChain.parseNoSuffix(name).toPrintableString(new LinkedHashSet<>(), getSwf(), false));
         }
         return ret;
     }

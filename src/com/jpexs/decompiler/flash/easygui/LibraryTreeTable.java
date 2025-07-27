@@ -41,6 +41,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JLabel;
@@ -391,13 +392,13 @@ public class LibraryTreeTable extends JTreeTable {
                         CharacterTag ct = (CharacterTag) o;
                         String exportName = ct.getExportName();
                         if (exportName != null) {
-                            return Helper.escapeExportname(exportName, false);
+                            return Helper.escapeExportname(ct.getSwf(), exportName, false);
                         }
                         Set<String> classNames = ct.getClassNames();
                         if (!classNames.isEmpty()) {
                             List<String> escapedList = new ArrayList<>();
                             for (String className : classNames) {
-                                escapedList.add(DottedChain.parseNoSuffix(className).toPrintableString(true));
+                                escapedList.add(DottedChain.parseNoSuffix(className).toPrintableString(new LinkedHashSet<>(), ct.getSwf(), true));
                             }
                             return String.join(", ", escapedList);
                         }

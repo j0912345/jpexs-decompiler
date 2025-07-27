@@ -27,7 +27,6 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.InstructionDefinition;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewCatchIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.debug.DebugLineIns;
-import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.IfFalseIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.IfStrictEqIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.IfStrictNeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.JumpIns;
@@ -46,7 +45,6 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.other.decimalsupport.Dec
 import com.jpexs.decompiler.flash.abc.avm2.instructions.other.decimalsupport.IncLocalPIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PopIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushByteIns;
-import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushFalseIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushScopeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.types.CoerceAIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.types.ConvertIIns;
@@ -120,7 +118,6 @@ import com.jpexs.decompiler.graph.model.ExitItem;
 import com.jpexs.decompiler.graph.model.FalseItem;
 import com.jpexs.decompiler.graph.model.GotoItem;
 import com.jpexs.decompiler.graph.model.IfItem;
-import com.jpexs.decompiler.graph.model.IntegerValueItem;
 import com.jpexs.decompiler.graph.model.IntegerValueTypeItem;
 import com.jpexs.decompiler.graph.model.LoopItem;
 import com.jpexs.decompiler.graph.model.NotItem;
@@ -743,6 +740,7 @@ public class AVM2Graph extends Graph {
     /**
      * Translates via Graph - decompiles.
      *
+     * @param usedDeobfuscations Used deobfuscations
      * @param swfVersion SWF version
      * @param secondPassData Second pass data
      * @param callStack Call stack
@@ -765,7 +763,7 @@ public class AVM2Graph extends Graph {
      * @return List of graph target items
      * @throws InterruptedException On interrupt
      */
-    public static List<GraphTargetItem> translateViaGraph(int swfVersion, SecondPassData secondPassData, List<MethodBody> callStack, AbcIndexing abcIndex, String path, AVM2Code code, ABC abc, MethodBody body, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, ScopeStack scopeStack, HashMap<Integer, String> localRegNames, HashMap<Integer, GraphTargetItem> localRegTypes, List<DottedChain> fullyQualifiedNames, int staticOperation, HashMap<Integer, Integer> localRegAssignmentIps, boolean thisHasDefaultToPrimitive) throws InterruptedException {
+    public static List<GraphTargetItem> translateViaGraph(Set<String> usedDeobfuscations, int swfVersion, SecondPassData secondPassData, List<MethodBody> callStack, AbcIndexing abcIndex, String path, AVM2Code code, ABC abc, MethodBody body, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, ScopeStack scopeStack, HashMap<Integer, String> localRegNames, HashMap<Integer, GraphTargetItem> localRegTypes, List<DottedChain> fullyQualifiedNames, int staticOperation, HashMap<Integer, Integer> localRegAssignmentIps, boolean thisHasDefaultToPrimitive) throws InterruptedException {
         ScopeStack localScopeStack = new ScopeStack();
         AVM2Graph g = new AVM2Graph(swfVersion, abcIndex, code, abc, body, isStatic, scriptIndex, classIndex, localRegs, scopeStack, localScopeStack, localRegNames, fullyQualifiedNames, localRegAssignmentIps);
 
@@ -788,6 +786,7 @@ public class AVM2Graph extends Graph {
         localData.ip = 0;
         localData.code = code;
         localData.swfVersion = swfVersion;
+        localData.usedDeobfuscations = usedDeobfuscations;
         g.init(localData);
         Set<GraphPart> allParts = new HashSet<>();
         for (GraphPart head : g.heads) {
@@ -2190,7 +2189,7 @@ public class AVM2Graph extends Graph {
                                                 }
                                                 if (construct.object instanceof GetLexAVM2Item) {
                                                     GetLexAVM2Item glt = (GetLexAVM2Item) construct.object;
-                                                    isXMLList = glt.propertyName.getName(aLocalData.getConstants(), aLocalData.fullyQualifiedNames, true, true).equals("XMLList");
+                                                    isXMLList = glt.propertyName.getName(new LinkedHashSet<>(), aLocalData.abc, aLocalData.getConstants(), aLocalData.fullyQualifiedNames, true, true).equals("XMLList");
                                                 }
 
                                                 if (isXMLList) {
@@ -2733,7 +2732,7 @@ public class AVM2Graph extends Graph {
                             if (sp.value instanceof LocalRegAVM2Item) {
                                 LocalRegAVM2Item lr = (LocalRegAVM2Item) sp.value;
                                 AVM2FinalProcessLocalData aLocalData = (AVM2FinalProcessLocalData) localData;
-                                if (Objects.equals(propName.resolvedMultinameName, AVM2Item.localRegName(aLocalData.localRegNames, lr.regIndex))) {
+                                if (Objects.equals(propName.resolvedMultinameName, AVM2Item.localRegName(abc.getSwf(), aLocalData.localRegNames, lr.regIndex, new LinkedHashSet<>()))) {
                                     list.remove(i);
                                     i--;
                                     continue loopi;
@@ -2746,7 +2745,7 @@ public class AVM2Graph extends Graph {
                 if (list.get(i) instanceof SetSlotAVM2Item) {
                     SetSlotAVM2Item sslot = (SetSlotAVM2Item) list.get(i);
                     if (sslot.slotObject instanceof NewActivationAVM2Item) {
-                        String slotName = sslot.slotName.getName(abc.constants, new ArrayList<>(), true, true);
+                        String slotName = sslot.slotName.getName(new LinkedHashSet<>()/*???*/, abc, abc.constants, new ArrayList<>(), true, true);
                         if (sslot.value.getNotCoercedNoDup() instanceof LocalRegAVM2Item) {
                             LocalRegAVM2Item locReg = (LocalRegAVM2Item) sslot.value.getNotCoercedNoDup();
                             if (localRegNames.containsValue(slotName)) {

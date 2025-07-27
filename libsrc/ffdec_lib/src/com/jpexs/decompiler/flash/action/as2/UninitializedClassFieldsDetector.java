@@ -16,7 +16,6 @@
  */
 package com.jpexs.decompiler.flash.action.as2;
 
-import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.action.model.CallMethodActionItem;
 import com.jpexs.decompiler.flash.action.model.DeleteActionItem;
@@ -43,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +71,7 @@ public class UninitializedClassFieldsDetector {
             DoInitActionTag doi = (DoInitActionTag) asm;
             String exportName = doi.getSwf().getExportName(doi.spriteId);
             if (exportName != null) {
-                asmPath = DottedChain.parseNoSuffix(exportName).toPrintableString(false);
+                asmPath = DottedChain.parseNoSuffix(exportName).toPrintableString(new LinkedHashSet<>(), doi.getSwf(), false);
             }
         }
         for (ProgressListener listener : progressListeners) {

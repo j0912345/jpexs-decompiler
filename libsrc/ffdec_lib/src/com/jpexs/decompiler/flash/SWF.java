@@ -190,12 +190,10 @@ import java.awt.geom.AffineTransform;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -670,6 +668,11 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * Event listeners
      */
     private final HashSet<EventListener> listeners = new HashSet<>();
+    
+    /**
+     * AS3 obfuscated identifiers map
+     */    
+    private transient Map<String, String> obfuscatedIdentifiersMap = null;
 
     /**
      * Lock for characters synchronization
@@ -3364,7 +3367,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                     }
                     return String.join(File.separator, parts);
                 }
-                return DottedChain.parseNoSuffix(pkg.getName()).toPrintableString(false);
+                return DottedChain.parseNoSuffix(pkg.getName()).toPrintableString(new LinkedHashSet<>(), this, false);
             }
         }
 
@@ -3375,7 +3378,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 String expName = tag.getSwf().getExportName(tag.getCharacterId());
                 if (expName != null && !expName.isEmpty()) {
                     String[] pathParts = expName.contains(".") ? expName.split("\\.") : new String[]{expName};
-                    return IdentifiersDeobfuscation.printIdentifier(false, pathParts[pathParts.length - 1]);
+                    return IdentifiersDeobfuscation.printIdentifier(this, new LinkedHashSet<>(), false, pathParts[pathParts.length - 1]);
                 }
             }
             
@@ -3704,7 +3707,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * @param path Path
      * @throws InterruptedException On interrupt
      */
-    private static void getVariables(ConstantPool constantPool, BaseLocalData localData, TranslateStack stack, List<GraphTargetItem> output, ActionGraphSource code, int ip, List<MyEntry<DirectValueActionItem, ConstantPool>> variables, List<GraphSourceItem> functions, HashMap<DirectValueActionItem, ConstantPool> strings, List<Integer> visited, HashMap<DirectValueActionItem, String> usageTypes, String path) throws InterruptedException {
+    private static void getVariables(SWF swf, ConstantPool constantPool, BaseLocalData localData, TranslateStack stack, List<GraphTargetItem> output, ActionGraphSource code, int ip, List<MyEntry<DirectValueActionItem, ConstantPool>> variables, List<GraphSourceItem> functions, HashMap<DirectValueActionItem, ConstantPool> strings, List<Integer> visited, HashMap<DirectValueActionItem, String> usageTypes, String path) throws InterruptedException {
         ActionLocalData aLocalData = (ActionLocalData) localData;
         boolean debugMode = false;
         while ((ip > -1) && ip < code.size()) {
@@ -3714,7 +3717,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
             GraphSourceItem ins = code.get(ip);
 
             if (debugMode) {
-                System.err.println("Visit " + ip + ": ofs" + Helper.formatAddress(((Action) ins).getAddress()) + ":" + ((Action) ins).getASMSource(new ActionList(code.getCharset()), new HashSet<>(), ScriptExportMode.PCODE) + " stack:" + Helper.stackToString(stack, LocalData.create(new ConstantPool())));
+                System.err.println("Visit " + ip + ": ofs" + Helper.formatAddress(((Action) ins).getAddress()) + ":" + ((Action) ins).getASMSource(new ActionList(code.getCharset()), new HashSet<>(), ScriptExportMode.PCODE) + " stack:" + Helper.stackToString(stack, LocalData.create(new ConstantPool(), swf, new LinkedHashSet<>())));
             }
             if (ins.isExit()) {
                 break;
@@ -3772,7 +3775,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                     ip = code.adr2pos(addr);
                     addr += size;
                     int nextip = code.adr2pos(addr);
-                    getVariables(aLocalData.insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, aLocalData.insideDoInitAction, code.getActions().subList(0, nextip), code.version, new HashMap<>(), new HashMap<>(), new HashMap<>(), code.getCharset(), ip), 0, path + (cntName == null ? "" : "/" + cntName));
+                    getVariables(swf, aLocalData.insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, aLocalData.insideDoInitAction, code.getActions().subList(0, nextip), code.version, new HashMap<>(), new HashMap<>(), new HashMap<>(), code.getCharset(), ip), 0, path + (cntName == null ? "" : "/" + cntName));
                     ip = nextip;
                 }
                 List<List<GraphTargetItem>> r = new ArrayList<>();
@@ -3851,7 +3854,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 for (int b : branches) {
                     TranslateStack brStack = (TranslateStack) stack.clone();
                     if (b >= 0) {
-                        getVariables(constantPool, localData, brStack, output, code, b, variables, functions, strings, visited, usageTypes, path);
+                        getVariables(swf, constantPool, localData, brStack, output, code, b, variables, functions, strings, visited, usageTypes, path);
                     } else if (debugMode) {
                         System.out.println("Negative branch:" + b);
                     }
@@ -3866,6 +3869,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
     /**
      * Gets variables from AS1/2 code.
      *
+     * @param swf SWF
      * @param insideDoInitAction Is inside DoInitAction
      * @param variables Variables
      * @param functions Functions
@@ -3876,9 +3880,9 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
      * @param path Path
      * @throws InterruptedException On interrupt
      */
-    private static void getVariables(boolean insideDoInitAction, List<MyEntry<DirectValueActionItem, ConstantPool>> variables, List<GraphSourceItem> functions, HashMap<DirectValueActionItem, ConstantPool> strings, HashMap<DirectValueActionItem, String> usageTypes, ActionGraphSource code, int addr, String path) throws InterruptedException {
-        ActionLocalData localData = new ActionLocalData(null, insideDoInitAction, new HashMap<>() /*??*/);
-        getVariables(null, localData, new TranslateStack(path), new ArrayList<>(), code, code.adr2pos(addr), variables, functions, strings, new ArrayList<>(), usageTypes, path);
+    private static void getVariables(SWF swf, boolean insideDoInitAction, List<MyEntry<DirectValueActionItem, ConstantPool>> variables, List<GraphSourceItem> functions, HashMap<DirectValueActionItem, ConstantPool> strings, HashMap<DirectValueActionItem, String> usageTypes, ActionGraphSource code, int addr, String path) throws InterruptedException {
+        ActionLocalData localData = new ActionLocalData(null, insideDoInitAction, new HashMap<>() /*??*/, new LinkedHashSet<>());
+        getVariables(swf, null, localData, new TranslateStack(path), new ArrayList<>(), code, code.adr2pos(addr), variables, functions, strings, new ArrayList<>(), usageTypes, path);
     }
 
     /**
@@ -3900,7 +3904,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
         ActionList actions = src.getActions();
         actionsMap.put(src, actions);
         boolean insideDoInitAction = src instanceof DoInitActionTag;
-        getVariables(insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, insideDoInitAction, actions, version, new HashMap<>(), new HashMap<>(), new HashMap<>(), src.getSwf().getCharset(), 0), 0, path);
+        getVariables(this, insideDoInitAction, variables, functions, strings, usageTypes, new ActionGraphSource(path, insideDoInitAction, actions, version, new HashMap<>(), new HashMap<>(), new HashMap<>(), src.getSwf().getCharset(), 0), 0, path);
         return ret;
     }
 
@@ -3997,6 +4001,26 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
         }
     }
 
+    /**
+     * Gets obfuscated identifiers map in this SWF and their suggested SafeStr replacement.
+     * For AS3 it calculates all replacements on first call.
+     * For AS1/2 it adds new items as they are opened in FFDec
+     * @return Map source identifier to SafeStr replacement
+     */
+    public synchronized Map<String, String> getObfuscatedIdentifiersMap() {
+        if (obfuscatedIdentifiersMap != null) {
+            return obfuscatedIdentifiersMap;
+        }
+        Map<String, String> ret = Collections.synchronizedMap(new LinkedHashMap<>());
+        for (Tag tag : getTags()) {
+            if (tag instanceof ABCContainerTag) {
+                ABCContainerTag abcTag = (ABCContainerTag) tag;
+                abcTag.getABC().getObfuscatedIdentifiers(ret);
+            }
+        }
+        return obfuscatedIdentifiersMap = ret;
+    }
+    
     /**
      * Deobfuscates AS3 identifiers.
      *
@@ -4154,7 +4178,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 int staticOperation = 0;
                 List<GraphTargetItem> dec;
                 try {
-                    dec = Action.actionsToTree(false, new HashMap<>() /*??*/, true /*Yes, inside doInitAction*/, false, dia.getActions(), version, staticOperation, ""/*FIXME*/, getCharset());
+                    dec = Action.actionsToTree(new LinkedHashSet<>(), false, new HashMap<>() /*??*/, true /*Yes, inside doInitAction*/, false, dia.getActions(), version, staticOperation, ""/*FIXME*/, getCharset());
                 } catch (EmptyStackException ex) {
                     continue;
                 }
@@ -4512,6 +4536,10 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
 
         asmsCache = null;
         asmsCacheExportFilenames = null;
+        synchronized (this) {
+            obfuscatedIdentifiersMap = null;
+        }
+        
         IdentifiersDeobfuscation.clearCache();
     }
 
@@ -5956,10 +5984,10 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                 if (firstTrait instanceof TraitClass) {
                     int cindex = ((TraitClass) firstTrait).class_info;
                     Multiname superName = documentPack.abc.constants.getMultiname(documentPack.abc.instance_info.get(cindex).super_index);
-                    String parentClass = superName.getNameWithNamespace(documentPack.abc.constants, true).toRawString();
+                    String parentClass = superName.getNameWithNamespace(new LinkedHashSet<>(), documentPack.abc, documentPack.abc.constants, true).toRawString();
                     if ("mx.managers.SystemManager".equals(parentClass)) {
                         for (Trait t : documentPack.abc.instance_info.get(cindex).instance_traits.traits) {
-                            if ((t instanceof TraitMethodGetterSetter) && "info".equals(t.getName(documentPack.abc).getName(documentPack.abc.constants, new ArrayList<>(), true, true))) {
+                            if ((t instanceof TraitMethodGetterSetter) && "info".equals(t.getName(documentPack.abc).getName(new LinkedHashSet<>(), documentPack.abc, documentPack.abc.constants, new ArrayList<>(), true, true))) {
 
                                 int mi = ((TraitMethodGetterSetter) t).method_info;
                                 try {
@@ -5969,7 +5997,7 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                                     if (documentPack.getOpenable() instanceof SWF) {
                                         swfVersion = ((SWF) documentPack.getOpenable()).version;
                                     }
-                                    documentPack.abc.findBody(mi).convert(swfVersion, callStack, getAbcIndex(), new ConvertData(), "??", ScriptExportMode.AS, true, mi, documentPack.scriptIndex, cindex, documentPack.abc, t, new ScopeStack(), 0, new NulWriter(), new ArrayList<>(), new Traits(), true, new HashSet<>(), new ArrayList<>());
+                                    documentPack.abc.findBody(mi).convert(swfVersion, callStack, getAbcIndex(), new ConvertData(), "??", ScriptExportMode.AS, true, mi, documentPack.scriptIndex, cindex, documentPack.abc, t, new ScopeStack(), 0, new NulWriter(), new ArrayList<>(), new Traits(), true, new HashSet<>(), new ArrayList<>(), new LinkedHashSet<>());
                                     List<GraphTargetItem> infos = documentPack.abc.findBody(mi).convertedItems;
                                     if (!infos.isEmpty()) {
                                         if (infos.get(0) instanceof IfItem) {
@@ -6047,13 +6075,13 @@ public final class SWF implements SWFContainerItem, Timelined, Openable {
                                                                             int cinit = p.abc.class_info.get(ci).cinit_index;
                                                                             callStack = new ArrayList<>();
                                                                             callStack.add(p.abc.findBody(cinit));
-                                                                            p.abc.findBody(cinit).convert(swfVersion, callStack, getAbcIndex(), new ConvertData(), "??", ScriptExportMode.AS, true, cinit, p.scriptIndex, cindex, p.abc, t, new ScopeStack(), 0, new NulWriter(), new ArrayList<>(), new Traits(), true, new HashSet<>(), new ArrayList<>());
+                                                                            p.abc.findBody(cinit).convert(swfVersion, callStack, getAbcIndex(), new ConvertData(), "??", ScriptExportMode.AS, true, cinit, p.scriptIndex, cindex, p.abc, t, new ScopeStack(), 0, new NulWriter(), new ArrayList<>(), new Traits(), true, new HashSet<>(), new ArrayList<>(), new LinkedHashSet<>());
                                                                             List<GraphTargetItem> cinitBody = p.abc.findBody(cinit).convertedItems;
                                                                             for (GraphTargetItem cit : cinitBody) {
                                                                                 if (cit instanceof SetPropertyAVM2Item) {
                                                                                     if (cit.value instanceof GetLexAVM2Item) {
                                                                                         GetLexAVM2Item gl = (GetLexAVM2Item) cit.value;
-                                                                                        ignoredClasses.add(gl.propertyName.getNameWithNamespace(p.abc.constants, true).toRawString());
+                                                                                        ignoredClasses.add(gl.propertyName.getNameWithNamespace(new LinkedHashSet<>(), p.abc, p.abc.constants, true).toRawString());
                                                                                     }
                                                                                 }
                                                                             }

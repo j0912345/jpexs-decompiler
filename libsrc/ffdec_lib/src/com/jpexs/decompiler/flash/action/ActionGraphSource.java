@@ -17,7 +17,6 @@
 package com.jpexs.decompiler.flash.action;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
-import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.exporters.modes.ScriptExportMode;
 import com.jpexs.decompiler.graph.Graph;
 import com.jpexs.decompiler.graph.GraphPart;
@@ -213,7 +212,7 @@ public class ActionGraphSource extends GraphSource {
     public void translatePart(List<GraphTargetItem> output, Graph graph, GraphPart part, BaseLocalData localData, TranslateStack stack, int start, int end, int staticOperation, String path) throws InterruptedException, GraphPartChangeException {
         Reference<GraphSourceItem> fi = new Reference<>(localData.lineStartInstruction);
 
-        Action.actionsPartToTree(output, (ActionGraph) graph, localData.allSwitchParts, localData.secondPassData, this.insideDoInitAction, fi, registerNames, variables, functions, stack, actions, start, end, version, staticOperation, path, charset);
+        Action.actionsPartToTree(localData.usedDeobfuscations, output, (ActionGraph) graph, localData.allSwitchParts, localData.secondPassData, this.insideDoInitAction, fi, registerNames, variables, functions, stack, actions, start, end, version, staticOperation, path, charset);
         localData.lineStartInstruction = fi.getVal();
     }
 
