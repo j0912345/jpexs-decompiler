@@ -1127,18 +1127,14 @@ public class AVM2SourceGenerator implements SourceGenerator {
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
             // references to a const variable are still UnresolvedAVM2Items in getValueKind
             if (optional[i] == null && paramValues.get(i) instanceof UnresolvedAVM2Item) {
-                System.out.println("optional[i] == null && paramValues.get(i) instanceof UnresolvedAVM2Item");
                 String fullClass = localData.getFullClass();
                 GraphTargetItem resolved = ((UnresolvedAVM2Item) paramValues.get(i)).resolve(localData, fullClass, new TypeItem(fullClass), paramTypes, paramNames, abcIndex, callStack, subvariables);
-                System.out.println("methodHeader(): resolved's type: "+resolved.getClass().getName());
                 if(resolved instanceof PropertyAVM2Item && ((NameAVM2Item) ((PropertyAVM2Item) resolved).object).isConst())
                 {
-                    System.out.println("resolved instanceof NameAVM2Item && ((NameAVM2Item) resolved).isConst()");
                     optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), ((NameAVM2Item) ((PropertyAVM2Item) resolved).object).assignedValue, false);
                 }
             }
             if (optional[i] == null) {
-                System.out.println("methodHeader(): throwing compiletime constant exception...");
                 throw new CompilationException("Default value must be compiletime constant", line);
             }
         }
@@ -1472,7 +1468,6 @@ public class AVM2SourceGenerator implements SourceGenerator {
         for (int i = 0; i < paramValues.size(); i++) {
             optional[i] = getValueKind(Namespace.KIND_NAMESPACE/*FIXME*/, paramTypes.get(paramTypes.size() - paramValues.size() + i), paramValues.get(i), false);
             if (optional[i] == null) {
-                System.out.println("method(): throwing compiletime constant exception...");
                 throw new CompilationException("Default value must be compiletime constant", line);
             }
         }
@@ -1693,29 +1688,6 @@ public class AVM2SourceGenerator implements SourceGenerator {
                 isNs = true;
             }
         }
-        if(val instanceof UnresolvedAVM2Item)
-        {
-            System.out.println("getValueKind(): UnresolvedAVM2Item.resovled == null: " + String.valueOf(((UnresolvedAVM2Item)val).resolved == null));
-            System.out.println("getValueKind(): UnresolvedAVM2Item.getVariableName(): " + String.valueOf(((UnresolvedAVM2Item)val).getVariableName()));
-            if(((UnresolvedAVM2Item)val).resolved != null){
-                System.out.println("getValueKind(): UnresolvedAVM2Item.resolved.getClass().getName(): " + ((UnresolvedAVM2Item)val).resolved.getClass().getName());
-            }
-
-        }
-        if(val instanceof PropertyAVM2Item)
-        {
-            System.out.println("getValueKind(): PropertyAVM2Item: " + ((PropertyAVM2Item) val).propertyName + " value: " + String.valueOf(((PropertyAVM2Item) val).assignedValue)
-                    + " | object: " + String.valueOf(((PropertyAVM2Item) val).object));
-            if(((PropertyAVM2Item) val).object instanceof NameAVM2Item)
-            {
-                System.out.println("getValueKind(): PropertyAVM2Item object instanceof NameAVM2Item: " + ((NameAVM2Item) ((PropertyAVM2Item) val).object).getVariableName() +
-                        " value: " + String.valueOf(((NameAVM2Item) ((PropertyAVM2Item) val).object).assignedValue) + " | isConst: " + String.valueOf(((NameAVM2Item) ((PropertyAVM2Item) val).object).isConst()));
-            }
-        }
-        if(val instanceof Object){
-            System.out.println("- getValueKind(): " + String.valueOf(val.getClass().getCanonicalName()));
-        }
-        
 
         if ((val instanceof TypeItem) && (((TypeItem) val).fullTypeName.equals(DottedChain.NAMESPACE))) {
             isNs = true;
@@ -2007,7 +1979,6 @@ public class AVM2SourceGenerator implements SourceGenerator {
                 }
                 boolean generatedNs = false;
                 if (item instanceof ConstAVM2Item) {
-                    System.out.println("recieved ConstAVM2Item in generateTraitsPhase4()!");
                     ConstAVM2Item cai = (ConstAVM2Item) item;
                     generatedNs = cai.generatedNs;
                     if (!isScriptTraits && cai.isStatic() != generateStatic) {

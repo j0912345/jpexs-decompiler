@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -248,8 +249,8 @@ public class AS3ScriptImporter {
             DottedChain dc = new DottedChain(pkgParts);
             // due to classes possibly being compiled before their dependencies,
             // scripts are created blank here and then actually compiled later during the main import loop.
-            String script = "package " + dc.toPrintableString(true) + " {"
-                        + "public class " + IdentifiersDeobfuscation.printIdentifier(true, classSimpleName) + " {"
+            String script = "package " + dc.toPrintableString(new LinkedHashSet<>(), swf, true) + " {"
+                        + "public class " + IdentifiersDeobfuscation.printIdentifier(swf, new LinkedHashSet<>(), true, classSimpleName) + " {"
                         + " }"
                         + "}";
             parser.addScript(script, fileName, 0, 0, swf.getDocumentClass(), doAbc.getABC());
