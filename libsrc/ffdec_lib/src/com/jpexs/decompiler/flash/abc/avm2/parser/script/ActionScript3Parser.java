@@ -183,79 +183,21 @@ public class ActionScript3Parser {
 
     private GraphTargetItem type(List<List<NamespaceItem>> allOpenedNamespaces, TypeItem thisType, NamespaceItem pkg, Reference<Boolean> needsActivation, List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, List<AssignableAVM2Item> variables, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
         ParsedSymbol s = lex();
+        if (s.type == SymbolType.ASSIGN_MULTIPLY) {
+            // assign multiply fix. `function whatever(param:*= "")` fails to compile because *= is misinterpreted.
+            // TODO: maybe move this to a separate function like the other EdgeCaseToCorrectInterpretationFix() functions?
+            s.type = SymbolType.MULTIPLY;
+            s.group = SymbolGroup.OPERATOR;
+            s.value = "*";
+            //lexer.pushback(s);
+            lexer.yypushbackstr("=", ActionScriptLexer.YYINITIAL, 1);
+        }
+        
         if (s.type == SymbolType.MULTIPLY) {
             return TypeItem.UNBOUNDED;
         } else if (s.type == SymbolType.VOID) {
             return new TypeItem(DottedChain.VOID);
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-        } else if (s.type == SymbolType.ASSIGN_MULTIPLY) { // TODO!!!!!!!!!!!!!!!!!!! assign multiply fix. `function whatever(param:*= "")` fails to compile because *= is misinterpreted.
-            
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        } 
         
         else {
             lexer.pushback(s);
@@ -2251,7 +2193,6 @@ public class ActionScript3Parser {
                 pos++;
             }
             lexer.yypushbackstr(pb, ActionScriptLexer.YYINITIAL, pos); //parse again as DIVIDE
-
         }
     }
 
