@@ -118,9 +118,10 @@ public class AS3ScriptImporter {
             
             if (!allFiles.isEmpty()) {
                 // the next 3 functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
-                swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
+                swf.clearAllCache();
                 swf.setModified(true);
+                
                 
                 // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
                 // At time of writing static const variables aren't treated as compile time constants anyway, but hopefully that'll be fixed/added in future.
@@ -133,6 +134,7 @@ public class AS3ScriptImporter {
                 ArrayList<File> unresolvedVisitedScripts = new ArrayList<>();
                 
                 
+                // REFRESH AGAIN!!
                         
                 // new scripts will have their real contents compiled with the normal import loop.
                 // we create all of the scripts blank first to avoid issues with scripts being compiled before their dependencies exist. 
