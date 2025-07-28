@@ -20,6 +20,7 @@ import com.jpexs.decompiler.flash.AppResources;
 import com.jpexs.decompiler.flash.ApplicationInfo;
 import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.helpers.Helper;
+import com.jpexs.helpers.utf8.Utf8Helper;
 import java.awt.Color;
 import java.io.File;
 import java.io.FileWriter;
@@ -61,6 +62,8 @@ public class TomlConfigurationStorage implements ConfigurationStorage {
 
     @Override
     public Map<String, Object> loadFromFile(String file) {
+        Logger.getLogger(TomlConfigurationStorage.class.getName()).log(Level.FINE, "Loading TOML file {0}", file);
+            
         Map<String, Object> result = new LinkedHashMap<>();
         TomlParseResult tomlResult;
         try {
@@ -209,6 +212,7 @@ public class TomlConfigurationStorage implements ConfigurationStorage {
                 Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, "Exception during loading TOML configuration", ex);
             }
         }
+        Logger.getLogger(TomlConfigurationStorage.class.getName()).log(Level.FINE, "TOML file loaded.");
         return result;
     }
 
@@ -274,8 +278,7 @@ public class TomlConfigurationStorage implements ConfigurationStorage {
         if (modifiedOnly == null) {
             modifiedOnly = true;
         }
-        try (
-                Writer w = new FileWriter(file); PrintWriter pw = new PrintWriter(w)) {
+        try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
             String header = AppResources.translate("configurationFile").replace("%app%", ApplicationInfo.APPLICATION_NAME);
             String splitter = stringOfChar('-', header.length());
             pw.println("# " + splitter);
