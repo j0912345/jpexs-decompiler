@@ -108,6 +108,7 @@ public class AS3ScriptImporter {
                 String fileRelativePath = curFile.getAbsolutePath().substring(scriptsFolder.length());
                 fileRelativePath = fileRelativePath.substring(0, fileRelativePath.lastIndexOf("."));
                 fileRelativePath = fileRelativePath.replace("/", ".").replace("\\", ".");
+                System.out.println(fileRelativePath);
                 if(packs.get(0).abc.findScriptPacksByPath(fileRelativePath, packs.get(0).allABCs).isEmpty())
                 {
                     addNewClassBeingImported(fileRelativePath, curFile, NewScriptABCContainer, swf);
@@ -117,7 +118,6 @@ public class AS3ScriptImporter {
             
             if (!allFiles.isEmpty()) {
                 // the next 3 functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
-                // these are in an if to avoid setting the same values every loop in addNewClassBeingImported().
                 swf.clearAllCache();
                 ((Tag) NewScriptABCContainer).setModified(true);
                 swf.setModified(true);

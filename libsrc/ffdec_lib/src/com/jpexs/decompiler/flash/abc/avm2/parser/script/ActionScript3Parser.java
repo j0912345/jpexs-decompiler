@@ -187,7 +187,77 @@ public class ActionScript3Parser {
             return TypeItem.UNBOUNDED;
         } else if (s.type == SymbolType.VOID) {
             return new TypeItem(DottedChain.VOID);
-        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        } else if (s.type == SymbolType.ASSIGN_MULTIPLY) { // TODO!!!!!!!!!!!!!!!!!!! assign multiply fix. `function whatever(param:*= "")` fails to compile because *= is misinterpreted.
+            
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        else {
             lexer.pushback(s);
         }
 
