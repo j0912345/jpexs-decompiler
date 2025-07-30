@@ -92,7 +92,7 @@ public class FFDecAs3ScriptReplacer implements As3ScriptReplacerInterface {
         } catch (CompilationException ex) {
             pack.delete(abc, false);
             abcIndex.refreshAbc(abc);
-            //ex.printStackTrace();
+            ex.printStackTrace();
             throw new As3ScriptReplaceException(new As3ScriptReplaceExceptionItem(null, ex.text, (int) ex.line));
         }
     }

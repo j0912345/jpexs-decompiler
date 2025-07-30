@@ -23,6 +23,7 @@ import com.jpexs.decompiler.flash.abc.ScriptPack;
 import com.jpexs.decompiler.flash.abc.avm2.parser.AVM2ParseException;
 import com.jpexs.decompiler.flash.abc.avm2.parser.script.AbcIndexing;
 import com.jpexs.decompiler.flash.abc.avm2.parser.script.ActionScript3Parser;
+import com.jpexs.decompiler.flash.abc.avm2.parser.script.NamespaceItem;
 import com.jpexs.decompiler.flash.exporters.modes.ScriptExportMode;
 import com.jpexs.decompiler.flash.exporters.settings.ScriptExportSettings;
 import com.jpexs.decompiler.flash.tags.ABCContainerTag;
@@ -133,8 +134,6 @@ public class AS3ScriptImporter {
                 ArrayList<File> orderedScripts = new ArrayList<>(); 
                 ArrayList<File> unresolvedVisitedScripts = new ArrayList<>();
                 
-                
-                // REFRESH AGAIN!!
                         
                 // new scripts will have their real contents compiled with the normal import loop.
                 // we create all of the scripts blank first to avoid issues with scripts being compiled before their dependencies exist. 
@@ -158,7 +157,32 @@ public class AS3ScriptImporter {
                     swf.informListeners("importing_as", file.getAbsolutePath());
                     String fileName = file.getAbsolutePath();
                     String txt = Helper.readTextFile(fileName);
-
+                    
+                    
+                    try{
+                        ActionScript3Parser parser = new ActionScript3Parser(swf.getAbcIndex());
+                        ActionScript3Parser.importsAndNamespaces importedClassesAndNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), 0, pack.scriptIndex, swf.getDocumentClass(), pack.abc);
+                        List<DottedChain> scriptImportList = importedClassesAndNamespaces.importedClasses;
+                        List<NamespaceItem> importedNamespaces = importedClassesAndNamespaces.openedNamespaces;
+                        String importsOutputString = "";
+                        String namespacesOutputString = "";
+                        for(int i = 0; i < scriptImportList.size(); i++)
+                        {
+                            importsOutputString += "\n - [" + scriptImportList.get(i).toPrintableString(new LinkedHashSet<>(), swf, true) + "]";
+                        }
+                        for(int i = 0; i < importedNamespaces.size(); i++)
+                        {
+                            namespacesOutputString +=  "\n - [" + importedNamespaces.get(i).name.toPrintableString(new LinkedHashSet<>(), swf, true)  + "]";
+                        }
+                        
+                        System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " namespaces: " + namespacesOutputString);
+                        }
+                    catch(Exception e)
+                    {
+                        logger.log(Level.SEVERE, e.getMessage());
+                    }
+                    
+                    
                     try {
                         pack.abc.replaceScriptPack(scriptReplacer, pack, txt, dependencies);
                     } catch (As3ScriptReplaceException asre) {

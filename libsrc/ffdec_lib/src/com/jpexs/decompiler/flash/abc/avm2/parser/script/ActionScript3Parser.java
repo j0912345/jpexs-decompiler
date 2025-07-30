@@ -3063,6 +3063,97 @@ public class ActionScript3Parser {
         List<GraphTargetItem> traits = scriptTraitsFromString(importedClasses, openedNamespaces, allOpenedNamespaces, s, fileName, scriptIndex, numberContextRef, abc, sinitNeedsActivation, sinitVariables);
         addScriptFromTree(sinitVariables, sinitNeedsActivation.getVal(), importedClasses, openedNamespaces, allOpenedNamespaces, traits, classPos, documentClass, numberContextRef.getVal());
     }
+    
+    // kinda annoying but I don't think I have any pair/tuple classes I can use
+    public class importsAndNamespaces
+    {
+        public List<DottedChain> importedClasses;
+        public List<NamespaceItem> openedNamespaces;
+    }
+    
+    
+    /**
+     * Parses and returns a script's imports for topological sorting. Note that this creates a new lexer.
+     * 
+     * @param str Source code
+     * @param fileName File name
+     * @param classPos Class position
+     * @param scriptIndex Script index
+     * @param documentClass Document class
+     * @param abc ABC
+     * @return A list of this script's imports at index 0 and a list of namespaces at index 1.
+     * @throws AVM2ParseException On parsing error
+     * @throws IOException On I/O error
+     * @throws InterruptedException On interrupt
+     */
+    public importsAndNamespaces parseAndReturnScriptImports(String str, String fileName, int classPos, int scriptIndex, String documentClass, ABC abc) throws IOException, AVM2ParseException, InterruptedException
+    {
+        List<DottedChain> importedClasses = new ArrayList<>();
+        List<NamespaceItem> openedNamespaces = new ArrayList<>();
+        Reference<Integer> numberUsageRef = new Reference<>(NumberContext.USE_NUMBER);
+        Reference<Integer> numberRoundingRef = new Reference<>(NumberContext.ROUND_HALF_EVEN);
+        Reference<Integer> numberPrecisionRef = new Reference<>(34);
+        
+        //Reference<Integer> numberContextRef = new Reference<>(null);
+        
+        lexer = new ActionScriptLexer(str);
+        List<List<NamespaceItem>> allOpenedNamespaces = new ArrayList<>();
+        
+        // copied from scriptTraitsBlock().
+        ParsedSymbol s;
+        boolean inPackage = false;
+        s = lex();
+        NamespaceItem publicNs;
+        NamespaceItem packageInternalNs;
+        DottedChain pkgName = DottedChain.TOPLEVEL;
+        if (s.type == SymbolType.PACKAGE) {
+            s = lex();
+            if (s.type != SymbolType.CURLY_OPEN) {
+                expected(s, lexer.yyline(), SymbolGroup.IDENTIFIER);
+                pkgName = pkgName.addWithSuffix(s.value.toString());
+                s = lex();
+            }
+            while (s.type == SymbolType.DOT) {
+                s = lex();
+                expected(s, lexer.yyline(), SymbolGroup.IDENTIFIER);
+                pkgName = pkgName.addWithSuffix(s.value.toString());
+                s = lex();
+            }
+            expected(s, lexer.yyline(), SymbolType.CURLY_OPEN);
+            publicNs = new NamespaceItem(pkgName, Namespace.KIND_PACKAGE);
+            packageInternalNs = new NamespaceItem(pkgName, Namespace.KIND_PACKAGE_INTERNAL);
+            s = lex();
+            inPackage = true;
+        } else {
+            publicNs = null;
+            packageInternalNs = new NamespaceItem(fileName + "$" + scriptIndex, Namespace.KIND_PRIVATE);
+        }
+        lexer.pushback(s);
+
+        allOpenedNamespaces.add(openedNamespaces);
+        NamespaceItem emptyNs = new NamespaceItem("", Namespace.KIND_PACKAGE);
+        openedNamespaces.add(emptyNs);
+        NamespaceItem as3Ns = new NamespaceItem(AS3_NAMESPACE, Namespace.KIND_NAMESPACE);
+        as3Ns.forceResolve(abcIndex);
+        openedNamespaces.add(as3Ns);
+
+        for (List<NamespaceItem> ln : allOpenedNamespaces) {
+            if (publicNs != null && !ln.contains(publicNs)) {
+                ln.add(publicNs);
+            }
+            if (!ln.contains(packageInternalNs)) {
+                ln.add(packageInternalNs);
+            }
+        }
+        
+        parseImportsUsages(importedClasses, openedNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
+        
+        importsAndNamespaces ret = new importsAndNamespaces();
+        ret.importedClasses = importedClasses;
+        ret.openedNamespaces = openedNamespaces;
+        
+        return ret;
+    }
 
     /**
      * Constructor.
