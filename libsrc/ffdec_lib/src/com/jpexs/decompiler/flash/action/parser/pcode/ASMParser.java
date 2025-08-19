@@ -26,16 +26,16 @@ import com.jpexs.decompiler.flash.action.special.ActionDeobfuscatePop;
 import com.jpexs.decompiler.flash.action.special.ActionEnd;
 import com.jpexs.decompiler.flash.action.special.ActionNop;
 import com.jpexs.decompiler.flash.action.special.ActionUnknown;
-import com.jpexs.decompiler.flash.action.swf3.ActionGetURL;
+import com.jpexs.decompiler.flash.action.swf1.ActionGetURL;
+import com.jpexs.decompiler.flash.action.swf1.ActionGotoFrame;
+import com.jpexs.decompiler.flash.action.swf1.ActionNextFrame;
+import com.jpexs.decompiler.flash.action.swf1.ActionPlay;
+import com.jpexs.decompiler.flash.action.swf1.ActionPrevFrame;
+import com.jpexs.decompiler.flash.action.swf1.ActionStop;
+import com.jpexs.decompiler.flash.action.swf1.ActionToggleQuality;
+import com.jpexs.decompiler.flash.action.swf2.ActionStopSounds;
 import com.jpexs.decompiler.flash.action.swf3.ActionGoToLabel;
-import com.jpexs.decompiler.flash.action.swf3.ActionGotoFrame;
-import com.jpexs.decompiler.flash.action.swf3.ActionNextFrame;
-import com.jpexs.decompiler.flash.action.swf3.ActionPlay;
-import com.jpexs.decompiler.flash.action.swf3.ActionPrevFrame;
 import com.jpexs.decompiler.flash.action.swf3.ActionSetTarget;
-import com.jpexs.decompiler.flash.action.swf3.ActionStop;
-import com.jpexs.decompiler.flash.action.swf3.ActionStopSounds;
-import com.jpexs.decompiler.flash.action.swf3.ActionToggleQuality;
 import com.jpexs.decompiler.flash.action.swf3.ActionWaitForFrame;
 import com.jpexs.decompiler.flash.action.swf4.ActionAdd;
 import com.jpexs.decompiler.flash.action.swf4.ActionAnd;
@@ -193,7 +193,7 @@ public class ASMParser {
         } else if (instructionName.compareToIgnoreCase("EndDrag") == 0) {
             a = new ActionEndDrag();
         } else if (instructionName.compareToIgnoreCase("Equals") == 0) {
-            a = new ActionEquals(charset);
+            a = new ActionEquals();
         } else if (instructionName.compareToIgnoreCase("GetProperty") == 0) {
             a = new ActionGetProperty();
         } else if (instructionName.compareToIgnoreCase("GetTime") == 0) {
@@ -311,13 +311,13 @@ public class ASMParser {
         } else if (instructionName.compareToIgnoreCase("NewObject") == 0) {
             a = new ActionNewObject();
         } else if (instructionName.compareToIgnoreCase("PushDuplicate") == 0) {
-            a = new ActionPushDuplicate(charset);
+            a = new ActionPushDuplicate();
         } else if (instructionName.compareToIgnoreCase("Return") == 0) {
             a = new ActionReturn();
         } else if (instructionName.compareToIgnoreCase("SetMember") == 0) {
             a = new ActionSetMember();
         } else if (instructionName.compareToIgnoreCase("StackSwap") == 0) {
-            a = new ActionStackSwap(charset);
+            a = new ActionStackSwap();
         } else if (instructionName.compareToIgnoreCase("StoreRegister") == 0) {
             a = new ActionStoreRegister(lexer, charset);
         } else if (instructionName.compareToIgnoreCase("TargetPath") == 0) {
@@ -357,9 +357,9 @@ public class ASMParser {
         } else if (instructionName.compareToIgnoreCase("StrictMode") == 0) {
             a = new ActionStrictMode(lexer, charset);
         } else if (instructionName.compareToIgnoreCase("Nop") == 0) {
-            a = new ActionNop(charset);
+            a = new ActionNop();
         } else if (instructionName.compareToIgnoreCase("End") == 0) {
-            a = new ActionEnd(charset);
+            a = new ActionEnd();
         } else if (instructionName.compareToIgnoreCase("FFDec_DeobfuscatePop") == 0) {
             a = new ActionDeobfuscatePop();
         } else if (instructionName.compareToIgnoreCase("FFDec_DeobfuscateJump") == 0) {
@@ -595,7 +595,7 @@ public class ASMParser {
         }
 
         if (ret.size() == 0 || !(ret.get(ret.size() - 1) instanceof ActionEnd)) {
-            ret.add(new ActionEnd(charset));
+            ret.add(new ActionEnd());
         }
 
         return ret;

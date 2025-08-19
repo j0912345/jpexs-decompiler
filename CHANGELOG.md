@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 - AS3 docs generator - reorganized to distinguish float and float 4 instructions,
   hilight float instruction blue
 - Icons for every tag type
+- [#2499] Information about frames which do not have ShowFrame tag
+- [#2504] WebP image format for export/import (not animated)
+  Limitation: It's not available on Mac x86-64 platform
 
 ### Fixed
 - [#2474] Gotos incorrectly decompiled
@@ -56,6 +59,16 @@ All notable changes to this project will be documented in this file.
 - The hex view does not display bytes if there are too few of them
 - SymbolClass export/import did not support obfuscated names
 - Configuration TOML file encoding (UTF-8)
+- [#2496] Fonts - adding characters - truncating too wide advance widths
+- [#2498] Public traits with same name were not distinguishable
+- [#2503] Exporting sound streams as FLV
+- [#2507] FLA export - Button hit test frame placing morphshapes
+- [#2507] FLA export - Place characters over multiple button frames
+- [#2508] AS1/2 direct editation - first command in for loop header not compiled
+- [#2510] AS direct editation - popped value
+- [#2511] Allowing to search or to jump from search window while in editation mode
+- [#2515] AS1/2 direct editation - getURL incorrect casing, generating ActionGetURL2 when not needed
+- AS1/2 actions must use SWF charset when writing its length
 
  ### Changed
 - Icon of "Deobfuscation options" menu from pile of pills to medkit
@@ -67,6 +80,9 @@ All notable changes to this project will be documented in this file.
 - Quotes in tree node parameter values that need them
 - The label of option "automatic deobfuscation" changed to "deobfuscate code"
 - SetTabIndex tag moved from others to frames folder
+- SWF3 actions split into SWF1, SWF2 and SWF3 actions (in FFDec source code, docs, etc.)
+- Serial form of AS3 search results changed so the decompiler is unable to read
+  saved AS3 search result from older versions and vice-versa
 
 ### Removed
 - Resample wav to 44kHz feature from GUI
@@ -3945,6 +3961,8 @@ Major version of SWF to XML export changed to 2.
 [#2477]: https://www.free-decompiler.com/flash/issues/2477
 [#2478]: https://www.free-decompiler.com/flash/issues/2478
 [#2485]: https://www.free-decompiler.com/flash/issues/2485
+[#2499]: https://www.free-decompiler.com/flash/issues/2499
+[#2504]: https://www.free-decompiler.com/flash/issues/2504
 [#2474]: https://www.free-decompiler.com/flash/issues/2474
 [#2480]: https://www.free-decompiler.com/flash/issues/2480
 [#2338]: https://www.free-decompiler.com/flash/issues/2338
@@ -3954,6 +3972,14 @@ Major version of SWF to XML export changed to 2.
 [#2493]: https://www.free-decompiler.com/flash/issues/2493
 [#1295]: https://www.free-decompiler.com/flash/issues/1295
 [#116]: https://www.free-decompiler.com/flash/issues/116
+[#2496]: https://www.free-decompiler.com/flash/issues/2496
+[#2498]: https://www.free-decompiler.com/flash/issues/2498
+[#2503]: https://www.free-decompiler.com/flash/issues/2503
+[#2507]: https://www.free-decompiler.com/flash/issues/2507
+[#2508]: https://www.free-decompiler.com/flash/issues/2508
+[#2510]: https://www.free-decompiler.com/flash/issues/2510
+[#2511]: https://www.free-decompiler.com/flash/issues/2511
+[#2515]: https://www.free-decompiler.com/flash/issues/2515
 [#2476]: https://www.free-decompiler.com/flash/issues/2476
 [#2404]: https://www.free-decompiler.com/flash/issues/2404
 [#1418]: https://www.free-decompiler.com/flash/issues/1418

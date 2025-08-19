@@ -526,7 +526,7 @@ public class ActionSourceGenerator implements SourceGenerator {
 
     @Override
     public List<GraphSourceItem> generateDiscardValue(SourceGeneratorLocalData localData, GraphTargetItem item) throws CompilationException {
-        List<GraphSourceItem> ret = item.toSource(localData, this);
+        List<GraphSourceItem> ret = new ArrayList<>(item.toSource(localData, this));
         ret.add(new ActionPop());
         return ret;
     }
@@ -769,7 +769,7 @@ public class ActionSourceGenerator implements SourceGenerator {
     public List<GraphSourceItem> generate(SourceGeneratorLocalData localData, AndItem item) throws CompilationException {
         List<GraphSourceItem> ret = new ArrayList<>();
         ret.addAll(generateToActionList(localData, item.leftSide));
-        ret.add(new ActionPushDuplicate(charset));
+        ret.add(new ActionPushDuplicate());
         ret.add(new ActionNot());
         List<Action> andExpr = generateToActionList(localData, item.rightSide);
         andExpr.add(0, new ActionPop());
@@ -784,7 +784,7 @@ public class ActionSourceGenerator implements SourceGenerator {
     public List<GraphSourceItem> generate(SourceGeneratorLocalData localData, OrItem item) throws CompilationException {
         List<GraphSourceItem> ret = new ArrayList<>();
         ret.addAll(generateToActionList(localData, item.leftSide));
-        ret.add(new ActionPushDuplicate(charset));
+        ret.add(new ActionPushDuplicate());
         List<Action> orExpr = generateToActionList(localData, item.rightSide);
         orExpr.add(0, new ActionPop());
         int orExprLen = Action.actionsToBytes(orExpr, false, SWF.DEFAULT_VERSION).length;
@@ -880,6 +880,7 @@ public class ActionSourceGenerator implements SourceGenerator {
         forajmp.setJumpOffset(-(forExprLen
                 + forBodyLen + forFinalLen + forajmpLen));
         foraif.setJumpOffset(forBodyLen + forFinalLen + forajmpLen);
+        ret.addAll(generateToActionList(localData, item.firstCommands));
         ret.addAll(forExpr);
         ret.addAll(forBody);
         ret.addAll(forFinalCommands);
@@ -1016,7 +1017,7 @@ public class ActionSourceGenerator implements SourceGenerator {
     @Override
     public List<GraphSourceItem> generate(SourceGeneratorLocalData localData, DuplicateItem item) {
         List<GraphSourceItem> ret = new ArrayList<>();
-        ret.add(new ActionPushDuplicate(charset));
+        ret.add(new ActionPushDuplicate());
         return ret;
     }
 

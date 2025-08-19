@@ -182,6 +182,7 @@ import com.jpexs.decompiler.flash.tags.base.SymbolClassTypeTag;
 import com.jpexs.decompiler.flash.tags.base.TextImportErrorHandler;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.tags.base.UnsupportedSamplingRateException;
+import com.jpexs.decompiler.flash.tags.enums.ImageFormat;
 import com.jpexs.decompiler.flash.tags.gfx.DefineExternalStreamSound;
 import com.jpexs.decompiler.flash.tags.text.TextParseException;
 import com.jpexs.decompiler.flash.timeline.AS3Package;
@@ -2178,6 +2179,9 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                     if (nodeType == TreeNodeType.SOUND) {
                         sounds.add((SoundTag) d);
                     }
+                    if (nodeType == TreeNodeType.SOUND_STREAM_RANGE) {
+                        sounds.add((SoundStreamFrameRange) d);
+                    }
                     if (nodeType == TreeNodeType.BINARY_DATA) {
                         binaryData.add((BinaryDataInterface) d);
                     }
@@ -2189,10 +2193,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                     } else if (nodeType == TreeNodeType.FONT) {
                         fonts.add((Tag) d);
                     }
-                    if (nodeType == TreeNodeType.OTHER_TAG) {
-                        if (d instanceof SymbolClassTypeTag) {
-                            symbolNames.add((Tag) d);
-                        }
+                    if (nodeType == TreeNodeType.SYMBOL_CLASS) {
+                        symbolNames.add((Tag) d);
                     }
                 }
 
@@ -2937,6 +2939,10 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     public void searchInActionScriptOrText(Boolean searchInText, Openable openable, boolean useSelection) {
         View.checkAccess();
+        
+        if (checkEdited()) {
+            return;
+        }
 
         /*if (!(openable instanceof SWF)) { //FIXME for ABCs
             return;
@@ -5257,10 +5263,19 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             //}
         }
         if (ti0 instanceof ImageTag) {
-            file = showImportFileChooser("filter.images|*.jpg;*.jpeg;*.gif;*.png;*.bmp", true, "importimage");
+            String filters = "*.jpg;*.jpeg;*.gif;*.png;*.bmp";
+            if (ImageFormat.WEBP.available()) {
+                filters += ";*.webp";
+            }
+            file = showImportFileChooser("filter.images|" + filters, true, "importimage");
         }
         if (ti0 instanceof ShapeTag) {
-            file = showImportFileChooser("filter.images|*.jpg;*.jpeg;*.gif;*.png;*.bmp;*.svg", true, "importshape");
+            String filters = "*.jpg;*.jpeg;*.gif;*.png;*.bmp";
+            if (ImageFormat.WEBP.available()) {
+                filters += ";*.webp";
+            }
+            filters += ";*.svg";
+            file = showImportFileChooser("filter.images|" + filters, true, "importshape");
         }
         if (ti0 instanceof MorphShapeTag) {
             return replaceMorphShape((MorphShapeTag) ti0, create, true);
