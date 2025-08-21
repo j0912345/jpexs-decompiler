@@ -161,21 +161,28 @@ public class AS3ScriptImporter {
                     
                     try{
                         ActionScript3Parser parser = new ActionScript3Parser(swf.getAbcIndex());
+                        // TODO: rename,,, basically everything below to be more accurate
                         ActionScript3Parser.importsAndNamespaces importedClassesAndNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), 0, pack.scriptIndex, swf.getDocumentClass(), pack.abc);
                         List<DottedChain> scriptImportList = importedClassesAndNamespaces.importedClasses;
-                        List<NamespaceItem> importedNamespaces = importedClassesAndNamespaces.openedNamespaces;
+                        List<DottedChain> usedCustomNamespaces = importedClassesAndNamespaces.usedCustomNamespacePaths;
+                        List<String> definedCustomNamespaces = importedClassesAndNamespaces.definedCustomNamespaces;
                         String importsOutputString = "";
-                        String namespacesOutputString = "";
+                        String usedNamespacesOutputString = "";
+                        String definedNamespacesOutputString = "";
                         for(int i = 0; i < scriptImportList.size(); i++)
                         {
                             importsOutputString += "\n - [" + scriptImportList.get(i).toPrintableString(new LinkedHashSet<>(), swf, true) + "]";
                         }
-                        for(int i = 0; i < importedNamespaces.size(); i++)
+                        for(int i = 0; i < usedCustomNamespaces.size(); i++)
                         {
-                            namespacesOutputString +=  "\n - [" + importedNamespaces.get(i).name.toPrintableString(new LinkedHashSet<>(), swf, true)  + "]";
+                            usedNamespacesOutputString +=  "\n - [" + usedCustomNamespaces.get(i).toPrintableString(new LinkedHashSet<>(), swf, true)  + "]";
+                        }
+                        for(int i = 0; i < definedCustomNamespaces.size(); i++)
+                        {
+                            definedNamespacesOutputString +=  "\n - [" + definedCustomNamespaces.get(i)  + "]";
                         }
                         
-                        System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " namespaces: " + namespacesOutputString);
+                        System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " used namespaces: " + usedNamespacesOutputString + "\n------\n " + pack.getPath() + " defined namespaces: ");
                         }
                     catch(Exception e)
                     {

@@ -2781,14 +2781,13 @@ public class ActionScript3Parser {
     private Map<String, String> replacements = new LinkedHashMap<>();
 
     private List<String> constantPool;
-
-    private boolean parseImportsUsages(List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, Reference<Integer> numberUsageRef, Reference<Integer> numberPrecisionRef, Reference<Integer> numberRoundingRef, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
-
+    
+    private boolean parseImportsAndCustomNamespaceUsages(List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, List<DottedChain> usedCustomNamespaces, List<String> createdCustomNamespaces, Reference<Integer> numberUsageRef, Reference<Integer> numberPrecisionRef, Reference<Integer> numberRoundingRef, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
         boolean isEmpty = true;
         ParsedSymbol s;
 
         s = lex();
-        while (s.isType(SymbolType.IMPORT, SymbolType.USE)) {
+        while (s.isType(SymbolType.IMPORT, SymbolType.USE, /* start of a custom NS --> */ SymbolType.INTERNAL, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC)) {
 
             if (s.isType(SymbolType.IMPORT)) {
                 isEmpty = false;
@@ -2842,6 +2841,8 @@ public class ActionScript3Parser {
                             fullName = fullName.add(s.value.toString(), "");
                             s = lex();
                         }
+                        System.out.println("usedCustomNamespaces.add([rest of dottedchain]." + s.value.toString() + ")");
+                        usedCustomNamespaces.add(fullName);
                         lexer.pushback(s);
                     } else {
                         if (!abc.hasDecimalSupport()) {
@@ -2915,6 +2916,28 @@ public class ActionScript3Parser {
                 } while (s.isType(SymbolType.COMMA));
                 expected(s, lexer.yyline(), SymbolType.SEMICOLON);
             }
+            else if(s.isType(SymbolType.INTERNAL, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC)){
+                // isEmpty = false; // should this be here? I'll just comment it I guess so that parseImportsUsages() isn't changed.
+                s = lex();
+                System.out.println("found internal/private/protected/public. next value: " + s.value.toString() + " | s.isType(SymbolType.NAMESPACE): " + String.valueOf(s.isType(SymbolType.NAMESPACE)));
+                if(!s.isType(SymbolType.NAMESPACE)){
+                    break;
+                }
+                //expected(s, lexer.yyline(), SymbolType.NAMESPACE);
+                s = lex();
+                expected(s, lexer.yyline(), SymbolGroup.IDENTIFIER);
+                createdCustomNamespaces.add(s.value.toString());
+                // we don't need to do anything with the URI if it's here but we need to finish parsing the expression
+                s = lex();
+                if(s.isType(SymbolType.ASSIGN)){
+                    expectedType(SymbolGroup.STRING);
+                    s = expectedType(SymbolType.SEMICOLON);
+                }
+                else
+                {
+                    expected(s, lexer.yyline(), SymbolType.SEMICOLON);
+                }
+            }
             /*boolean isUse = s.type == SymbolType.USE;
             if (isUse) {
                 
@@ -2926,6 +2949,11 @@ public class ActionScript3Parser {
         lexer.pushback(s);
         return !isEmpty;
     }
+
+    private boolean parseImportsUsages(List<DottedChain> importedClasses, List<NamespaceItem> openedNamespaces, Reference<Integer> numberUsageRef, Reference<Integer> numberPrecisionRef, Reference<Integer> numberRoundingRef, ABC abc) throws IOException, AVM2ParseException, InterruptedException {
+        return parseImportsAndCustomNamespaceUsages(importedClasses, openedNamespaces, new ArrayList<>(), new ArrayList<>(), numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
+    }
+    
 
     private List<GraphTargetItem> parseScript(
             List<DottedChain> importedClasses,
@@ -3068,12 +3096,13 @@ public class ActionScript3Parser {
     public class importsAndNamespaces
     {
         public List<DottedChain> importedClasses;
-        public List<NamespaceItem> openedNamespaces;
+        public List<DottedChain> usedCustomNamespacePaths;
+        public List<String> definedCustomNamespaces;
     }
     
     
     /**
-     * Parses and returns a script's imports for topological sorting. Note that this creates a new lexer.
+     * Parses and returns a script's imports for topological sorting. This creates a new lexer.
      * 
      * @param str Source code
      * @param fileName File name
@@ -3081,7 +3110,7 @@ public class ActionScript3Parser {
      * @param scriptIndex Script index
      * @param documentClass Document class
      * @param abc ABC
-     * @return A list of this script's imports at index 0 and a list of namespaces at index 1.
+     * @return An instance of ActionScript3Parser.importsAndNamespaces; A list of imported scripts and used namespaces
      * @throws AVM2ParseException On parsing error
      * @throws IOException On I/O error
      * @throws InterruptedException On interrupt
@@ -3100,6 +3129,7 @@ public class ActionScript3Parser {
         List<List<NamespaceItem>> allOpenedNamespaces = new ArrayList<>();
         
         // copied from scriptTraitsBlock().
+        // TODO: clean this up and remove anything unnecessary.
         ParsedSymbol s;
         boolean inPackage = false;
         s = lex();
@@ -3146,11 +3176,25 @@ public class ActionScript3Parser {
             }
         }
         
-        parseImportsUsages(importedClasses, openedNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
+        // OK now we can look for the type of namespace i care about.
+        // also see the stuff starting at line 1629 in this file.
+        // what I need to do: 
+        // - look for `public namespace namespaceVarName` before we get to the class body. we may have to skip over imports to get here. compile this first.
+        //    * usually this is then assigned to a URL string but we only need the namespace's identifier here.
+        // - look for `use namespace namespaceVarName` before(?) we get to the class body. compile this later.
+        //    * namespaces can also be imported without `use namespace namespaceVarName`!
+        //    * hopefully `import`ed but not `use`d namespaces defined in scripts that haven't been compiled will just work without the compiler exploding on me?
+        //    * even if not it should be easy enough to also search the lists of script imports for `namespaceVarName`
+        // - add a flag/separate list(?) to differentiate between classes that define and that use a specific `namespaceVarName`.
+        List<DottedChain> usedCustomNamespacePaths = new ArrayList<>();
+        List<String> definedCustomNamespaces = new ArrayList<>();
+        // cool i guess this just straight up doesn't work for listing custom namespaces some reason. kinda demortalizing but whatever. I'll come back later.
+        parseImportsAndCustomNamespaceUsages(importedClasses, openedNamespaces, usedCustomNamespacePaths, definedCustomNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
         
         importsAndNamespaces ret = new importsAndNamespaces();
         ret.importedClasses = importedClasses;
-        ret.openedNamespaces = openedNamespaces;
+        ret.usedCustomNamespacePaths = usedCustomNamespacePaths;
+        ret.definedCustomNamespaces = definedCustomNamespaces;
         
         return ret;
     }
