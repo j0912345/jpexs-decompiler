@@ -3173,16 +3173,6 @@ public class ActionScript3Parser {
             }
         }
         
-        // OK now we can look for the type of namespace i care about.
-        // also see the stuff starting at line 1629 in this file.
-        // what I need to do: 
-        // - look for `public namespace namespaceVarName` before we get to the class body. we may have to skip over imports to get here. compile this first.
-        //    * usually this is then assigned to a URL string but we only need the namespace's identifier here.
-        // - look for `use namespace namespaceVarName` before(?) we get to the class body. compile this later.
-        //    * namespaces can also be imported without `use namespace namespaceVarName`!
-        //    * hopefully `import`ed but not `use`d namespaces defined in scripts that haven't been compiled will just work without the compiler exploding on me?
-        //    * even if not it should be easy enough to also search the lists of script imports for `namespaceVarName`
-        // - add a flag/separate list(?) to differentiate between classes that define and that use a specific `namespaceVarName`.
         List<DottedChain> usedCustomNamespacePaths = new ArrayList<>();
         List<String> definedCustomNamespaces = new ArrayList<>();
         parseImportsAndCustomNamespaceUsages(importedClasses, openedNamespaces, usedCustomNamespacePaths, definedCustomNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
