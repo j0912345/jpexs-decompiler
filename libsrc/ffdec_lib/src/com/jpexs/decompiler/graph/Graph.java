@@ -1051,8 +1051,7 @@ public class Graph {
             }
         }
     }
-    */
-    
+     */
     /**
      * This is needed to avoid loop/switch identifiers in AS1/2. AS3 supports
      * them, but AS1/2 not.
@@ -1292,7 +1291,7 @@ public class Graph {
                                 break;
                             }
                         }
-                        
+
                         //No continue, change for back to while
                         if (!hasContinue) {
                             List<GraphTargetItem> expr = new ArrayList<>();
@@ -1303,7 +1302,7 @@ public class Graph {
                             for (int j = 0; j < fi.firstCommands.size(); j++) {
                                 list.add(i, fi.firstCommands.get(j));
                                 i++;
-                            }                            
+                            }
                         }
                     }
                 }
@@ -2356,7 +2355,7 @@ public class Graph {
         translatePart(new ArrayList<>(), localData, part, stack, staticOperation, null);
         return stack.pop();
     }
-    
+
     /**
      * Translates part and get its stack with output
      *
@@ -2656,6 +2655,7 @@ public class Graph {
                 currentLoop = null;
                 if (isLoop) {
                     currentLoop = new Loop(loops.size(), part, null);
+                    currentLoop.stopParts = stopPart == null ? new ArrayList<>() : stopPart;
                     currentLoop.phase = 1;
                     loops.add(currentLoop);
                 }
@@ -2803,6 +2803,29 @@ public class Graph {
 
                 }
 
+                //When some of breakcandidates pass through current stoppart,
+                //Remove other candidantes.                                
+                Set<GraphPart> removedX = new LinkedHashSet<>();
+                if (!currentLoop.stopParts.isEmpty()) {
+                    List<Integer> bcsLeft = new ArrayList<>();
+                    for (int c = 0; c < currentLoop.breakCandidates.size(); c++) {
+                        GraphPart cand = currentLoop.breakCandidates.get(c);
+                        GraphPart sp = currentLoop.stopParts.get(currentLoop.stopParts.size() - 1);
+                        if (cand == sp || cand.leadsTo(localData, this, code, sp, new ArrayList<>() /*ingore existing loop states*/, throwStates, false /* ?? */)) {
+                            bcsLeft.add(c);
+                        }
+                    }
+
+                    if (!bcsLeft.isEmpty()) {
+                        for (int c = currentLoop.breakCandidates.size() - 1; c >= 0; c--) {                            
+                            if (!bcsLeft.contains(c)) {
+                                GraphPart cand = currentLoop.breakCandidates.get(c);
+                                removedX.add(cand);
+                            }
+                        }
+                    }
+                }
+
                 do {
                     found = null;
 
@@ -2894,6 +2917,12 @@ public class Graph {
                 }
 
                 for (GraphPart cand : currentLoop.breakCandidates) {
+                    if (removedX.contains(cand)) {
+                        if (debugPrintLoopList) {
+                            System.err.println("cand " + cand + " is removed");
+                        }                        
+                        continue;
+                    }
                     if (bannedCandidates.contains(cand)) {
                         if (debugPrintLoopList) {
                             System.err.println("cand " + cand + " is banned");
@@ -3258,7 +3287,13 @@ public class Graph {
                         System.err.println("Adding break");
                     }
                     makeAllCommands(ret, stack);
-                    ret.add(new BreakItem(dialect, null, localData.lineStartInstruction, el.id));
+                    
+                    BreakItem br = new BreakItem(dialect, null, localData.lineStartInstruction, el.id);
+                    if (part.start >= code.size() - 1) {
+                        br.isScriptEnd = true;
+                    }
+                    ret.add(br);
+                    
                     return ret;
                 }
                 if (el.loopPreContinue == part) {
@@ -3268,7 +3303,7 @@ public class Graph {
                     if (debugPrintGraph) {
                         System.err.println("Adding precontinue");
                     }
-                    makeAllCommands(ret, stack);                    
+                    makeAllCommands(ret, stack);
                     ret.add(new ContinueItem(dialect, null, localData.lineStartInstruction, el.id));
                     return ret;
                 }
@@ -3279,7 +3314,7 @@ public class Graph {
                     if (debugPrintGraph) {
                         System.err.println("Adding continue");
                     }
-                    makeAllCommands(ret, stack);                    
+                    makeAllCommands(ret, stack);
                     ret.add(new ContinueItem(dialect, null, localData.lineStartInstruction, el.id));
                     return ret;
                 }
@@ -3307,9 +3342,8 @@ public class Graph {
                     }
                 }*/
 
-                
                 //This weird stuff also tries to handle some goto problems
-                for (int i = stopPartKind.size() - 1; i >= 0; i--) {                    
+                for (int i = stopPartKind.size() - 1; i >= 0; i--) {
                     if (stopPartKind.get(i) == StopPartKind.OTHER && stopPart.get(i) == part) {
                         isRealStopPart = true;
                         break;
@@ -3321,7 +3355,7 @@ public class Graph {
                         break;
                     }
                 }
-                
+
                 if (isRealStopPart) {
                     if (currentLoop != null) {
                         currentLoop.phase = 0;
@@ -3333,7 +3367,7 @@ public class Graph {
                 }
             }
 
-            if (code.size() <= part.start) {                
+            if (code.size() <= part.start) {
                 if (!(!ret.isEmpty() && ret.get(ret.size() - 1) instanceof ExitItem)) {
                     ret.add(new ScriptEndItem(dialect));
                 }
@@ -3739,7 +3773,7 @@ public class Graph {
                         }
                         boolean hasOnTrue = nps.get(1) != next;
                         boolean hasOnFalse = nps.get(0) != next;
-                        
+
                         if (nps.get(1).start >= code.size()) {
                             next = null;
                             hasOnTrue = true;
@@ -3750,14 +3784,12 @@ public class Graph {
                             hasOnFalse = true;
                         }
 
-                        
-                        
                         List<GraphPart> stopPart2 = new ArrayList<>(stopPart);
-                        List<StopPartKind> stopPartKind2 = new ArrayList<>(stopPartKind);                       
-                        
-                        if ((!isEmpty) && (next != null)) {                                                                               
+                        List<StopPartKind> stopPartKind2 = new ArrayList<>(stopPartKind);
+
+                        if ((!isEmpty) && (next != null)) {
                             stopPart2.add(next);
-                            stopPartKind2.add(StopPartKind.BLOCK_CLOSE);                            
+                            stopPartKind2.add(StopPartKind.BLOCK_CLOSE);
                         }
 
                         List<GraphTargetItem> onTrue = new ArrayList<>();
@@ -4744,7 +4776,7 @@ public class Graph {
                     }
                 }
             }
-            caseCommands.add(currentCaseCommands);            
+            caseCommands.add(currentCaseCommands);
         }
 
         /*
@@ -4872,8 +4904,7 @@ public class Graph {
                 }
             }
         }
-        
-        
+
         //remove last break from last section                
         if (!caseCommands.isEmpty()) {
             List<GraphTargetItem> lastc = caseCommands.get(caseCommands.size() - 1);
