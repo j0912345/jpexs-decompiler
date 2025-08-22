@@ -2841,7 +2841,6 @@ public class ActionScript3Parser {
                             fullName = fullName.add(s.value.toString(), "");
                             s = lex();
                         }
-                        System.out.println("usedCustomNamespaces.add([rest of dottedchain]." + s.value.toString() + ")");
                         usedCustomNamespaces.add(fullName);
                         lexer.pushback(s);
                     } else {
@@ -2919,11 +2918,9 @@ public class ActionScript3Parser {
             else if(s.isType(SymbolType.INTERNAL, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC)){
                 // isEmpty = false; // should this be here? I'll just comment it I guess so that parseImportsUsages() isn't changed.
                 s = lex();
-                System.out.println("found internal/private/protected/public. next value: " + s.value.toString() + " | s.isType(SymbolType.NAMESPACE): " + String.valueOf(s.isType(SymbolType.NAMESPACE)));
                 if(!s.isType(SymbolType.NAMESPACE)){
                     break;
                 }
-                //expected(s, lexer.yyline(), SymbolType.NAMESPACE);
                 s = lex();
                 expected(s, lexer.yyline(), SymbolGroup.IDENTIFIER);
                 createdCustomNamespaces.add(s.value.toString());
@@ -3188,7 +3185,6 @@ public class ActionScript3Parser {
         // - add a flag/separate list(?) to differentiate between classes that define and that use a specific `namespaceVarName`.
         List<DottedChain> usedCustomNamespacePaths = new ArrayList<>();
         List<String> definedCustomNamespaces = new ArrayList<>();
-        // cool i guess this just straight up doesn't work for listing custom namespaces some reason. kinda demortalizing but whatever. I'll come back later.
         parseImportsAndCustomNamespaceUsages(importedClasses, openedNamespaces, usedCustomNamespacePaths, definedCustomNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
         
         importsAndNamespaces ret = new importsAndNamespaces();

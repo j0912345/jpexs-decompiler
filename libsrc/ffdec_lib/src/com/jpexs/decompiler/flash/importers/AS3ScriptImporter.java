@@ -182,7 +182,7 @@ public class AS3ScriptImporter {
                             definedNamespacesOutputString +=  "\n - [" + definedCustomNamespaces.get(i)  + "]";
                         }
                         
-                        System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " used namespaces: " + usedNamespacesOutputString + "\n------\n " + pack.getPath() + " defined namespaces: ");
+                        System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " used namespaces: " + usedNamespacesOutputString + "\n------\n " + pack.getPath() + " defined namespaces: " + definedNamespacesOutputString);
                         }
                     catch(Exception e)
                     {
