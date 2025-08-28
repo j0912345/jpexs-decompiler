@@ -126,7 +126,7 @@ public class AS3ScriptImporter {
                 
                 // TODO: compile newly imported dependencies in order! we need to do this for compile time constants that exist in other classes.
                 // At time of writing static const variables aren't treated as compile time constants anyway, but hopefully that'll be fixed/added in future.
-                // This is also needed for multi-script namespaces.
+                // This is also needed for custom namespaces, as the compiler throws an error if a script tries to use a custom NS that doesn't exist.
                 // see https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
                 
                 
@@ -161,11 +161,10 @@ public class AS3ScriptImporter {
                     
                     try{
                         ActionScript3Parser parser = new ActionScript3Parser(swf.getAbcIndex());
-                        // TODO: rename,,, basically everything below to be more accurate
-                        ActionScript3Parser.importsAndNamespaces importedClassesAndNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), 0, pack.scriptIndex, swf.getDocumentClass(), pack.abc);
-                        List<DottedChain> scriptImportList = importedClassesAndNamespaces.importedClasses;
-                        List<DottedChain> usedCustomNamespaces = importedClassesAndNamespaces.usedCustomNamespacePaths;
-                        List<String> definedCustomNamespaces = importedClassesAndNamespaces.definedCustomNamespaces;
+                        ActionScript3Parser.importsAndCustomNamespaces importedClassesAndCustomNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), 0, pack.scriptIndex, swf.getDocumentClass(), pack.abc);
+                        List<DottedChain> scriptImportList = importedClassesAndCustomNamespaces.importedClasses;
+                        List<DottedChain> usedCustomNamespaces = importedClassesAndCustomNamespaces.usedCustomNamespaces;
+                        List<String> definedCustomNamespaces = importedClassesAndCustomNamespaces.definedCustomNamespaces;
                         String importsOutputString = "";
                         String usedNamespacesOutputString = "";
                         String definedNamespacesOutputString = "";

@@ -3090,10 +3090,10 @@ public class ActionScript3Parser {
     }
     
     // kinda annoying but I don't think I have any pair/tuple classes I can use
-    public class importsAndNamespaces
+    public class importsAndCustomNamespaces
     {
         public List<DottedChain> importedClasses;
-        public List<DottedChain> usedCustomNamespacePaths;
+        public List<DottedChain> usedCustomNamespaces;
         public List<String> definedCustomNamespaces;
     }
     
@@ -3112,7 +3112,7 @@ public class ActionScript3Parser {
      * @throws IOException On I/O error
      * @throws InterruptedException On interrupt
      */
-    public importsAndNamespaces parseAndReturnScriptImports(String str, String fileName, int classPos, int scriptIndex, String documentClass, ABC abc) throws IOException, AVM2ParseException, InterruptedException
+    public importsAndCustomNamespaces parseAndReturnScriptImports(String str, String fileName, int classPos, int scriptIndex, String documentClass, ABC abc) throws IOException, AVM2ParseException, InterruptedException
     {
         List<DottedChain> importedClasses = new ArrayList<>();
         List<NamespaceItem> openedNamespaces = new ArrayList<>();
@@ -3177,9 +3177,9 @@ public class ActionScript3Parser {
         List<String> definedCustomNamespaces = new ArrayList<>();
         parseImportsAndCustomNamespaceUsages(importedClasses, openedNamespaces, usedCustomNamespacePaths, definedCustomNamespaces, numberUsageRef, numberPrecisionRef, numberRoundingRef, abc);
         
-        importsAndNamespaces ret = new importsAndNamespaces();
+        importsAndCustomNamespaces ret = new importsAndCustomNamespaces();
         ret.importedClasses = importedClasses;
-        ret.usedCustomNamespacePaths = usedCustomNamespacePaths;
+        ret.usedCustomNamespaces = usedCustomNamespacePaths;
         ret.definedCustomNamespaces = definedCustomNamespaces;
         
         return ret;
