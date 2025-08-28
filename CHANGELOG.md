@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 - [#2499] Information about frames which do not have ShowFrame tag
 - [#2504] WebP image format for export/import (not animated)
   Limitation: It's not available on Mac x86-64 platform
+- [#2519] AS1/2 Direct editation + P-code - better handling of "too large"
+  error messages - highlight actual problematic structure
+- AS1/2 Debugging - _global variable accessible
+- AS Debugging - Variables with flag DontEnumerate are hidden by default
+  (can be changed in Advanced Settings)
+- Basic support for PlaceImagePrivate tag
 
 ### Fixed
 - [#2474] Gotos incorrectly decompiled
@@ -35,7 +41,6 @@ All notable changes to this project will be documented in this file.
 - [#2477] AS1/2 deobfuscation - and/or operators, jumps before function start, 
   jumps to function end, jumps in for..in return/break
 - [#2477] AS1/2 Switch in last statement of switch break labels
-- [#2338] AS2 Reading large classes with incorrect if jumps on the beginning
 - [#2338] AS1/2/3 Obfuscated code - jump to jump handling
 - [#1277] AS1/2 Propagate break/continue to avoid loop/switch labels
 - [#2483] Editing shape gradient records - RGB vs RGBA
@@ -75,6 +80,8 @@ All notable changes to this project will be documented in this file.
 - AS1/2 Renaming of identifiers must not rename integer array offsets
 - [#2517] Loop break detection problems in some cases
 - [#2519] AS1/2 avoid multi-level loops in cases where possible
+- [#2522] Hex view - reseting view when mouse over panel bottom
+- [#2519] AS1/2 direct editation - generating too large ConstantPool
 
  ### Changed
 - Icon of "Deobfuscation options" menu from pile of pills to medkit
@@ -89,6 +96,7 @@ All notable changes to this project will be documented in this file.
 - SWF3 actions split into SWF1, SWF2 and SWF3 actions (in FFDec source code, docs, etc.)
 - Serial form of AS3 search results changed so the decompiler is unable to read
   saved AS3 search result from older versions and vice-versa
+- CSMTextSettings tag renamed to CSMSettings
 
 ### Removed
 - Resample wav to 44kHz feature from GUI
@@ -3969,6 +3977,7 @@ Major version of SWF to XML export changed to 2.
 [#2485]: https://www.free-decompiler.com/flash/issues/2485
 [#2499]: https://www.free-decompiler.com/flash/issues/2499
 [#2504]: https://www.free-decompiler.com/flash/issues/2504
+[#2519]: https://www.free-decompiler.com/flash/issues/2519
 [#2474]: https://www.free-decompiler.com/flash/issues/2474
 [#2480]: https://www.free-decompiler.com/flash/issues/2480
 [#2338]: https://www.free-decompiler.com/flash/issues/2338
@@ -3988,7 +3997,7 @@ Major version of SWF to XML export changed to 2.
 [#2515]: https://www.free-decompiler.com/flash/issues/2515
 [#2516]: https://www.free-decompiler.com/flash/issues/2516
 [#2517]: https://www.free-decompiler.com/flash/issues/2517
-[#2519]: https://www.free-decompiler.com/flash/issues/2519
+[#2522]: https://www.free-decompiler.com/flash/issues/2522
 [#2476]: https://www.free-decompiler.com/flash/issues/2476
 [#2404]: https://www.free-decompiler.com/flash/issues/2404
 [#1418]: https://www.free-decompiler.com/flash/issues/1418
