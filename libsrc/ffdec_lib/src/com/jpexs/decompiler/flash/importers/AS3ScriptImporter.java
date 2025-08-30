@@ -117,6 +117,26 @@ public class AS3ScriptImporter {
                 }
             }
             
+            // ok list of things to do and how to organise it:
+            // - get a list of all of the new scripts, either as Files or ScriptPacks.
+            //   * I might actually need both, or at least the text content + a ScriptPack. the ScriptPacks are more annoying to retrieve because parser.addScript() doesn't
+            //     return anything, and having to search for the script I literally just made feels very inefficent. 
+            //       * is there another way to do this that would return the ScriptPack without needing to search for it?
+            //       * double check how/if the context menu gets the script after creation.
+            //       * could I directly index the script without needing to search the whole list somehow?
+            //       * having to compile a blank dummy script first also feels inefficent but I'm not sure if I can easily avoid that? I think I need to because I'm doing
+            //         any kind of pre-processing (ie sorting) before I actually compile.
+            //           * actually the more I look at it I think I can. I'll have to patch some stuff but I think I can get away with import parsing without a ScriptPack.
+            //             though maybe I shouldn't. Yeah it's kinda clunky and slower but I might cause more issues because of how the app is architected.
+            //           * can I directly create new instaces of ScriptPack without needing to compile an empty package?
+            // - get each script's list of imports and used/defined custom namespaces. I already have some code for this!
+            // - sort each script by their dependencies.
+            // - compile the new and now sorted scripts.
+            //   * do I want to compile them separately or with the rest of the scripts in the main loop?
+            
+            
+            
+            // I should be checking the list of new scripts once it exists
             if (!allFiles.isEmpty()) {
                 // the next 3 functions are called because TagTreeContextMenu.addAs3ClassActionPerformed() does it.
                 ((Tag) NewScriptABCContainer).setModified(true);
@@ -134,7 +154,7 @@ public class AS3ScriptImporter {
                 ArrayList<File> orderedScripts = new ArrayList<>(); 
                 ArrayList<File> unresolvedVisitedScripts = new ArrayList<>();
                 
-                        
+                
                 // new scripts will have their real contents compiled with the normal import loop.
                 // we create all of the scripts blank first to avoid issues with scripts being compiled before their dependencies exist. 
                 packs = swf.getAS3Packs();
@@ -161,7 +181,7 @@ public class AS3ScriptImporter {
                     
                     try{
                         ActionScript3Parser parser = new ActionScript3Parser(swf.getAbcIndex());
-                        ActionScript3Parser.importsAndCustomNamespaces importedClassesAndCustomNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), 0, pack.scriptIndex, swf.getDocumentClass(), pack.abc);
+                        ActionScript3Parser.importsAndCustomNamespaces importedClassesAndCustomNamespaces = parser.parseAndReturnScriptImports(txt, pack.getPath(), pack.scriptIndex, pack.abc);
                         List<DottedChain> scriptImportList = importedClassesAndCustomNamespaces.importedClasses;
                         List<DottedChain> usedCustomNamespaces = importedClassesAndCustomNamespaces.usedCustomNamespaces;
                         List<String> definedCustomNamespaces = importedClassesAndCustomNamespaces.definedCustomNamespaces;
@@ -182,7 +202,7 @@ public class AS3ScriptImporter {
                         }
                         
                         System.out.println(pack.getPath() + " imports: " + importsOutputString + "\n------\n " + pack.getPath() + " used namespaces: " + usedNamespacesOutputString + "\n------\n " + pack.getPath() + " defined namespaces: " + definedNamespacesOutputString);
-                        }
+                    }
                     catch(Exception e)
                     {
                         logger.log(Level.SEVERE, e.getMessage());

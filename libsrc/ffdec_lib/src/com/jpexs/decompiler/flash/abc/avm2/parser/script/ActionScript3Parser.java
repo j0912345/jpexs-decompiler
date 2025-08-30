@@ -2844,6 +2844,7 @@ public class ActionScript3Parser {
                         usedCustomNamespaces.add(fullName);
                         lexer.pushback(s);
                     } else {
+                        // the only usage of the abc object! 
                         if (!abc.hasDecimalSupport()) {
                             throw new AVM2ParseException("Invalid use kind", lexer.yyline());
                         }
@@ -3103,16 +3104,14 @@ public class ActionScript3Parser {
      * 
      * @param str Source code
      * @param fileName File name
-     * @param classPos Class position
      * @param scriptIndex Script index
-     * @param documentClass Document class
      * @param abc ABC
      * @return An instance of ActionScript3Parser.importsAndNamespaces; A list of imported scripts and used namespaces
      * @throws AVM2ParseException On parsing error
      * @throws IOException On I/O error
      * @throws InterruptedException On interrupt
      */
-    public importsAndCustomNamespaces parseAndReturnScriptImports(String str, String fileName, int classPos, int scriptIndex, String documentClass, ABC abc) throws IOException, AVM2ParseException, InterruptedException
+    public importsAndCustomNamespaces parseAndReturnScriptImports(String str, String fileName, int scriptIndex, ABC abc) throws IOException, AVM2ParseException, InterruptedException
     {
         List<DottedChain> importedClasses = new ArrayList<>();
         List<NamespaceItem> openedNamespaces = new ArrayList<>();
@@ -3153,6 +3152,7 @@ public class ActionScript3Parser {
             inPackage = true;
         } else {
             publicNs = null;
+            // the only usages of fileName and scriptIndex! really we can just remove these.
             packageInternalNs = new NamespaceItem(fileName + "$" + scriptIndex, Namespace.KIND_PRIVATE);
         }
         lexer.pushback(s);
