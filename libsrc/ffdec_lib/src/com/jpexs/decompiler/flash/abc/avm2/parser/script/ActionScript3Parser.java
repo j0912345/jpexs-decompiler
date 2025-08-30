@@ -2844,7 +2844,6 @@ public class ActionScript3Parser {
                         usedCustomNamespaces.add(fullName);
                         lexer.pushback(s);
                     } else {
-                        // the only usage of the abc object! 
                         if (!abc.hasDecimalSupport()) {
                             throw new AVM2ParseException("Invalid use kind", lexer.yyline());
                         }
@@ -3152,7 +3151,7 @@ public class ActionScript3Parser {
             inPackage = true;
         } else {
             publicNs = null;
-            // the only usages of fileName and scriptIndex! really we can just remove these.
+            // the only usages of fileName and scriptIndex!
             packageInternalNs = new NamespaceItem(fileName + "$" + scriptIndex, Namespace.KIND_PRIVATE);
         }
         lexer.pushback(s);
