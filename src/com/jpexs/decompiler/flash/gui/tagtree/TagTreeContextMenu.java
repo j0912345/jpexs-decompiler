@@ -80,6 +80,7 @@ import com.jpexs.decompiler.flash.tags.DoInitActionTag;
 import com.jpexs.decompiler.flash.tags.ExportAssetsTag;
 import com.jpexs.decompiler.flash.tags.FileAttributesTag;
 import com.jpexs.decompiler.flash.tags.FrameLabelTag;
+import com.jpexs.decompiler.flash.tags.FreeCharacterTag;
 import com.jpexs.decompiler.flash.tags.MetadataTag;
 import com.jpexs.decompiler.flash.tags.PlaceImagePrivateTag;
 import com.jpexs.decompiler.flash.tags.PlaceObject2Tag;
@@ -93,6 +94,7 @@ import com.jpexs.decompiler.flash.tags.SoundStreamBlockTag;
 import com.jpexs.decompiler.flash.tags.StartSound2Tag;
 import com.jpexs.decompiler.flash.tags.StartSoundTag;
 import com.jpexs.decompiler.flash.tags.SymbolClassTag;
+import com.jpexs.decompiler.flash.tags.SyncFrameTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.TagTypeInfo;
 import com.jpexs.decompiler.flash.tags.UnknownTag;
@@ -101,6 +103,7 @@ import com.jpexs.decompiler.flash.tags.base.ASMSource;
 import com.jpexs.decompiler.flash.tags.base.BinaryDataInterface;
 import com.jpexs.decompiler.flash.tags.base.ButtonTag;
 import com.jpexs.decompiler.flash.tags.base.CharacterIdTag;
+import com.jpexs.decompiler.flash.tags.base.CharacterModifier;
 import com.jpexs.decompiler.flash.tags.base.CharacterTag;
 import com.jpexs.decompiler.flash.tags.base.DepthTag;
 import com.jpexs.decompiler.flash.tags.base.DrawableTag;
@@ -142,6 +145,7 @@ import com.jpexs.decompiler.flash.types.CLIPACTIONS;
 import com.jpexs.decompiler.flash.types.CXFORMWITHALPHA;
 import com.jpexs.decompiler.flash.types.HasCharacterId;
 import com.jpexs.decompiler.flash.types.MATRIX;
+import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.helpers.ByteArrayRange;
@@ -2021,17 +2025,29 @@ public class TagTreeContextMenu extends JPopupMenu {
         void call(ActionEvent evt, TreeItem item, Class<?> cl, TreeNodeType createNodeType);
     }
 
-    private void addAddTagMenuFolder(JMenu addTagMenu, String folder, boolean gfx, TreeItem item, AddTagActionListener listener) {
+    @SuppressWarnings("unchecked")
+    private void addAddTagMenuFolder(JMenu addTagMenu, String folder, int swfVersion, boolean gfx, TreeItem item, AddTagActionListener listener) {
         String folderTranslated = AppStrings.translate("node." + folder);
         JMenu folderMenu = new JMenu(folderTranslated);
         folderMenu.setIcon(View.getIcon("folder" + folder.toLowerCase(Locale.ENGLISH) + "16"));
 
-        Map<Integer, TagTypeInfo> classes = Tag.getKnownClasses();
+        Map<Integer, List<TagTypeInfo>> classes = Tag.getKnownClasses();
 
         List<Integer> allowedTagTypes = new ArrayList<>(TagTree.getSwfFolderItemNestedTagIds(folder, gfx));
         Set<Integer> mappedTagTypes = new LinkedHashSet<>();
         for (int i : allowedTagTypes) {
-            mappedTagTypes.addAll(AbstractTagTree.getMappedTagIdsForClass(classes.get(i).getCls()));
+            List<TagTypeInfo> tagTypeInfos = classes.get(i);
+            for (TagTypeInfo tagTypeInfo : tagTypeInfos) {
+                if (tagTypeInfos.size() > 1) {
+                    SWFVersion ver = (SWFVersion) tagTypeInfo.getCls().getAnnotation(SWFVersion.class);
+                    if (ver != null) {
+                        if (swfVersion < ver.from() || swfVersion > ver.to()) {
+                            continue;
+                        }
+                    }
+                }
+                mappedTagTypes.addAll(AbstractTagTree.getMappedTagIdsForClass(tagTypeInfo.getCls()));
+            }
         }
         if (allowedTagTypes.isEmpty() && mappedTagTypes.isEmpty()) {
             return;
@@ -2053,7 +2069,6 @@ public class TagTreeContextMenu extends JPopupMenu {
 
     private void addAddTagInsideMenuItems(TreeItem item) {
         AddTagActionListener listener = this::addTagInsideActionPerformed;
-        Map<Integer, TagTypeInfo> classes = Tag.getKnownClasses();
         SWF currentSwf = mainPanel.getCurrentSwf();
         if (currentSwf == null) {
             return;
@@ -2104,8 +2119,6 @@ public class TagTreeContextMenu extends JPopupMenu {
         if (parent == null) {
             return;
         }
-        Map<Integer, TagTypeInfo> classes = Tag.getKnownClasses();
-
         SWF currentSwf = mainPanel.getCurrentSwf();
 
         if (currentSwf == null) {
@@ -2175,6 +2188,7 @@ public class TagTreeContextMenu extends JPopupMenu {
     }
 
     private void addAddTagMenuItems(List<Integer> allowedTagTypes, JMenu addTagMenu, TreeItem item, AddTagActionListener listener, String parentFolder) {
+        int swfVersion = mainPanel.getCurrentSwf().version;
         if (allowedTagTypes == null) {
             boolean gfx = mainPanel.getCurrentSwf().gfx;
 
@@ -2193,14 +2207,14 @@ public class TagTreeContextMenu extends JPopupMenu {
                 TagTreeModel.FOLDER_OTHERS
             };
             for (String folder : folders) {
-                addAddTagMenuFolder(addTagMenu, folder, gfx, item, listener);
+                addAddTagMenuFolder(addTagMenu, folder, swfVersion, gfx, item, listener);
             }
 
             return;
         }
 
         for (Integer tagId : allowedTagTypes) {
-            final Class<?> cl = TagIdClassMap.getClassByTagId(tagId);
+            final Class<?> cl = TagIdClassMap.getClassByTagId(tagId, swfVersion);
             String className = cl.getSimpleName();
             if (className.endsWith("Tag")) {
                 className = className.substring(0, className.length() - 3);
@@ -5614,11 +5628,8 @@ public class TagTreeContextMenu extends JPopupMenu {
         int i = 0;
         for (int j = 0; j < swf.getTags().size(); j++) {
             Tag t2 = swf.getTags().get(j);
-            if ((t2 instanceof CharacterIdTag)
-                    && !(t2 instanceof PlaceObjectTypeTag)
-                    && !(t2 instanceof RemoveTag)
-                    && !(t2 instanceof VideoFrameTag)) {
-                CharacterIdTag chit = (CharacterIdTag) t2;
+            if (t2 instanceof CharacterModifier) {
+                CharacterModifier chit = (CharacterModifier) t2;
                 if (chit.getCharacterId() == characterId) {
                     swf.removeTag(j);
                     swf.addTag(usageIndex + i, (Tag) chit);
@@ -5855,7 +5866,9 @@ public class TagTreeContextMenu extends JPopupMenu {
                 || (tag instanceof StartSoundTag)
                 || (tag instanceof StartSound2Tag)
                 || (tag instanceof SoundStreamBlockTag)
-                || (tag instanceof DoActionTag);
+                || (tag instanceof DoActionTag)
+                || (tag instanceof FreeCharacterTag)
+                || (tag instanceof SyncFrameTag);
     }
 
     public void copyOrMoveTags(Set<TreeItem> items, boolean move, Timelined targetTimelined, Tag position) {

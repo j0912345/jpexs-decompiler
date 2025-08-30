@@ -53,6 +53,7 @@ import com.jpexs.decompiler.flash.tags.DefineScalingGridTag;
 import com.jpexs.decompiler.flash.tags.DefineSceneAndFrameLabelDataTag;
 import com.jpexs.decompiler.flash.tags.DefineSoundTag;
 import com.jpexs.decompiler.flash.tags.DefineSpriteTag;
+import com.jpexs.decompiler.flash.tags.DefineTextFormatTag;
 import com.jpexs.decompiler.flash.tags.DefineVideoStreamTag;
 import com.jpexs.decompiler.flash.tags.DoActionTag;
 import com.jpexs.decompiler.flash.tags.DoInitActionTag;
@@ -63,10 +64,13 @@ import com.jpexs.decompiler.flash.tags.EndTag;
 import com.jpexs.decompiler.flash.tags.ExportAssetsTag;
 import com.jpexs.decompiler.flash.tags.FileAttributesTag;
 import com.jpexs.decompiler.flash.tags.FrameLabelTag;
+import com.jpexs.decompiler.flash.tags.FreeCharacterTag;
+import com.jpexs.decompiler.flash.tags.GenCommandTag;
 import com.jpexs.decompiler.flash.tags.ImportAssets2Tag;
 import com.jpexs.decompiler.flash.tags.ImportAssetsTag;
 import com.jpexs.decompiler.flash.tags.JPEGTablesTag;
 import com.jpexs.decompiler.flash.tags.MetadataTag;
+import com.jpexs.decompiler.flash.tags.NameCharacterTag;
 import com.jpexs.decompiler.flash.tags.PlaceImagePrivateTag;
 import com.jpexs.decompiler.flash.tags.PlaceObject2Tag;
 import com.jpexs.decompiler.flash.tags.PlaceObject3Tag;
@@ -86,6 +90,7 @@ import com.jpexs.decompiler.flash.tags.SoundStreamHeadTag;
 import com.jpexs.decompiler.flash.tags.StartSound2Tag;
 import com.jpexs.decompiler.flash.tags.StartSoundTag;
 import com.jpexs.decompiler.flash.tags.SymbolClassTag;
+import com.jpexs.decompiler.flash.tags.SyncFrameTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.TagStub;
 import com.jpexs.decompiler.flash.tags.UnknownTag;
@@ -101,7 +106,7 @@ import com.jpexs.decompiler.flash.tags.base.PlaceObjectTypeTag;
 import com.jpexs.decompiler.flash.tags.base.RemoveTag;
 import com.jpexs.decompiler.flash.tags.base.ShapeTag;
 import com.jpexs.decompiler.flash.tags.base.SoundStreamHeadTypeTag;
-import com.jpexs.decompiler.flash.tags.base.SymbolClassTypeTag;
+import com.jpexs.decompiler.flash.tags.base.StaticTextTag;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.tags.gfx.DefineCompactedFont;
 import com.jpexs.decompiler.flash.tags.gfx.DefineExternalSound;
@@ -873,7 +878,10 @@ public abstract class AbstractTagTree extends JTree {
                 RemoveObjectTag.ID, RemoveObject2Tag.ID, ShowFrameTag.ID, FrameLabelTag.ID,
                 StartSoundTag.ID, StartSound2Tag.ID, VideoFrameTag.ID,
                 SoundStreamBlockTag.ID, SoundStreamHeadTag.ID, SoundStreamHead2Tag.ID,
-                SetTabIndexTag.ID, PlaceImagePrivateTag.ID
+                SetTabIndexTag.ID, PlaceImagePrivateTag.ID,
+                GenCommandTag.ID,
+                FreeCharacterTag.ID,
+                SyncFrameTag.ID
         );
     }
 
@@ -1111,10 +1119,13 @@ public abstract class AbstractTagTree extends JTree {
 
     public static List<Integer> getMappedTagIdsForClass(Class<?> cls) {
         if (cls == DefineSpriteTag.class) {
-            return Arrays.asList(DefineScalingGridTag.ID, DoInitActionTag.ID);
+            return Arrays.asList(DefineScalingGridTag.ID, DoInitActionTag.ID, NameCharacterTag.ID);
         }
         if (FontTag.class.isAssignableFrom(cls)) {
             return Arrays.asList(DefineFontNameTag.ID, DefineFontAlignZonesTag.ID, DefineFontInfoTag.ID, DefineFontInfo2Tag.ID);
+        }
+        if (StaticTextTag.class.isAssignableFrom(cls)) {
+            return Arrays.asList(CSMSettingsTag.ID, DefineTextFormatTag.ID);
         }
         if (TextTag.class.isAssignableFrom(cls)) {
             return Arrays.asList(CSMSettingsTag.ID);
@@ -1124,6 +1135,12 @@ public abstract class AbstractTagTree extends JTree {
         }
         if (cls == DefineButton2Tag.class) {
             return Arrays.asList(DefineButtonSoundTag.ID, DefineScalingGridTag.ID);
+        }
+        if (ImageTag.class.isAssignableFrom(cls)) {
+            return Arrays.asList(NameCharacterTag.ID);
+        }
+        if (cls == DefineSoundTag.class) {
+            return Arrays.asList(NameCharacterTag.ID);
         }
         return new ArrayList<>();
     }

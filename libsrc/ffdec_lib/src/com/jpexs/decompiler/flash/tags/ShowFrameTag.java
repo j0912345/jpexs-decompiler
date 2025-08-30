@@ -52,6 +52,9 @@ public class ShowFrameTag extends Tag {
             add(VideoFrameTag.ID);
             add(SoundStreamBlockTag.ID);
             add(SetTabIndexTag.ID);
+            add(GenCommandTag.ID);
+            add(FreeCharacterTag.ID);
+            add(SyncFrameTag.ID);
             /*add(SoundStreamHeadTag.ID);
              add(SoundStreamHead2Tag.ID);*/
         }

@@ -24,42 +24,34 @@ import com.jpexs.helpers.ByteArrayRange;
 import java.io.IOException;
 
 /**
- * FreeAll tag - undocumented. Seems to do nothing.
  *
  * @author JPEXS
  */
 @SWFVersion(from = 3)
-public class FreeAllTag extends Tag {
+public class CharacterSetTag extends Tag {
+    public static final int ID = 51;
 
-    public static final int ID = 31;
-
-    public static final String NAME = "FreeAll";
-
-    /**
-     * Constructor
-     *
-     * @param swf SWF
-     */
-    public FreeAllTag(SWF swf) {
-        super(swf, ID, NAME, null);
+    public static final String NAME = "CharacterSet";
+   
+    
+    public long unknown;
+    
+    public CharacterSetTag(SWF swf) {
+        super(swf, ID, NAME, null);       
     }
-
-    public FreeAllTag(SWFInputStream sis, ByteArrayRange data) throws IOException {
+    
+    public CharacterSetTag(SWFInputStream sis, ByteArrayRange data) throws IOException {
         super(sis.getSwf(), ID, NAME, data);
         readData(sis, data, 0, false, false, false);
     }
 
     @Override
-    public final void readData(SWFInputStream sis, ByteArrayRange data, int level, boolean parallel, boolean skipUnusualTags, boolean lazy) throws IOException {
-
+    public void readData(SWFInputStream sis, ByteArrayRange data, int level, boolean parallel, boolean skipUnusualTags, boolean lazy) throws IOException {
+        unknown = sis.readUI32("unknown");
     }
 
-    /**
-     * Gets data bytes
-     *
-     * @param sos SWF output stream
-     */
     @Override
-    public void getData(SWFOutputStream sos) {
+    public void getData(SWFOutputStream sos) throws IOException {
+        sos.writeUI32(unknown);
     }
 }

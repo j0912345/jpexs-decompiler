@@ -28,6 +28,18 @@ All notable changes to this project will be documented in this file.
 - AS Debugging - Variables with flag DontEnumerate are hidden by default
   (can be changed in Advanced Settings)
 - Basic support for PlaceImagePrivate tag
+- Generator Templates (.swt) files support and related tags (Flash 3-5)
+  (CharacterSet, GenCommand, NameCharacter, DefineTextFormat, FontRef)
+- DefineVideo tag support (Flash 4)
+- SerialNumber tag support (before Flash 7)
+- FreeCharacter tag support
+- SyncFrame tag support
+- Hex dump improvements:
+  - view bit count in SB, UB fields
+  - view tagIDTagLength field parts
+  - show type after colon, not in parenthesis
+  - view bytes length in bytes fields
+- [#2526] Option to disable drag & drop from Resources view to avoid problems on Mac OS
 
 ### Fixed
 - [#2474] Gotos incorrectly decompiled
@@ -82,6 +94,8 @@ All notable changes to this project will be documented in this file.
 - [#2519] AS1/2 avoid multi-level loops in cases where possible
 - [#2522] Hex view - reseting view when mouse over panel bottom
 - [#2519] AS1/2 direct editation - generating too large ConstantPool
+- Hex View - incorrect table height when switching tags
+- [#2525] AMF editor (like in Sol cookie editor) - saving empty standard array `[]`
 
  ### Changed
 - Icon of "Deobfuscation options" menu from pile of pills to medkit
@@ -3978,6 +3992,7 @@ Major version of SWF to XML export changed to 2.
 [#2499]: https://www.free-decompiler.com/flash/issues/2499
 [#2504]: https://www.free-decompiler.com/flash/issues/2504
 [#2519]: https://www.free-decompiler.com/flash/issues/2519
+[#2526]: https://www.free-decompiler.com/flash/issues/2526
 [#2474]: https://www.free-decompiler.com/flash/issues/2474
 [#2480]: https://www.free-decompiler.com/flash/issues/2480
 [#2338]: https://www.free-decompiler.com/flash/issues/2338
@@ -3998,6 +4013,7 @@ Major version of SWF to XML export changed to 2.
 [#2516]: https://www.free-decompiler.com/flash/issues/2516
 [#2517]: https://www.free-decompiler.com/flash/issues/2517
 [#2522]: https://www.free-decompiler.com/flash/issues/2522
+[#2525]: https://www.free-decompiler.com/flash/issues/2525
 [#2476]: https://www.free-decompiler.com/flash/issues/2476
 [#2404]: https://www.free-decompiler.com/flash/issues/2404
 [#1418]: https://www.free-decompiler.com/flash/issues/1418
