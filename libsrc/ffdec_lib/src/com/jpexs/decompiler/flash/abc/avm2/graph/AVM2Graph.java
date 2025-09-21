@@ -124,6 +124,7 @@ import com.jpexs.decompiler.graph.model.NotItem;
 import com.jpexs.decompiler.graph.model.OrItem;
 import com.jpexs.decompiler.graph.model.PopItem;
 import com.jpexs.decompiler.graph.model.PushItem;
+import com.jpexs.decompiler.graph.model.SetTemporaryItem;
 import com.jpexs.decompiler.graph.model.SwitchItem;
 import com.jpexs.decompiler.graph.model.TernarOpItem;
 import com.jpexs.decompiler.graph.model.TrueItem;
@@ -339,6 +340,7 @@ public class AVM2Graph extends Graph {
             localData2.localScopeStack = new ScopeStack();
 
             List<GraphTargetItem> targetOutput = new GraphPartMarkedArrayList<>();
+            finallyTryTargetStack.setConnectedOutput(0, targetOutput, localData);
             try {
                 translatePart(targetOutput, localData2, finallyTryTargetPart, finallyTryTargetStack, 0 /*??*/, "try_target");
             } catch (GraphPartChangeException ex1) { //should not happen
@@ -1249,6 +1251,7 @@ public class AVM2Graph extends Graph {
                         el.phase = 4; //Special case: try inside loop. 4 is immediately switched back to 1 inside printGraph
                     }
                 }
+                stack = (TranslateStack) stack.clone();
                 tryCommands = printGraph(foundGotos, partCodes, partCodePos, visited, localData, stack, allParts, null, part, stopPart2, stopPartKind2, loops, throwStates, staticOperation, path);
             }
 
@@ -1289,7 +1292,7 @@ public class AVM2Graph extends Graph {
                 AVM2LocalData localData2 = new AVM2LocalData(localData);
                 //localData2.scopeStack = new ScopeStack();
                 localData2.localScopeStack = new ScopeStack();
-                
+
                 try {
                     //We are assuming Finally target has only 1 part
                     translatePart(finallyTargetItems, localData2, finallyTryTargetPart, st2, staticOperation, path);
@@ -1303,7 +1306,14 @@ public class AVM2Graph extends Graph {
                     boolean isEmpty = true;
                     for (int i = 0; i < finallyTargetItems.size(); i++) {
                         GraphTargetItem it = finallyTargetItems.get(i);
-                        if (it instanceof SetLocalAVM2Item) {
+                        if (it instanceof SetTemporaryItem) {
+                            if (it.value.getNotCoerced() instanceof ExceptionAVM2Item) {
+                                //okay
+                            } else {
+                                isEmpty = false;
+                                break;
+                            }
+                        } else if (it instanceof SetLocalAVM2Item) {
                             if (it.value.getNotCoerced() instanceof ExceptionAVM2Item) {
                                 //okay
                             } else {
@@ -1390,7 +1400,15 @@ public class AVM2Graph extends Graph {
                         //should not happen
                         finallyCommands.clear();
                     }
-                    stack.pop(); //value switched by lookupswitch                   
+                    //remove Dup before switch
+                    if (!finallyCommands.isEmpty() && finallyCommands.get(finallyCommands.size() - 1) instanceof SetTemporaryItem) {
+                        SetTemporaryItem st = (SetTemporaryItem) finallyCommands.get(finallyCommands.size() - 1);
+                        if (st.value instanceof PopItem) {
+                            finallyCommands.remove(finallyCommands.size() - 1);
+                        }
+                    }
+                    stack.pop(); //duplicated switched value
+                    stack.pop(); //value switched by lookupswitch
                 }
             }
 
@@ -1426,11 +1444,16 @@ public class AVM2Graph extends Graph {
                 }
 
                 List<GraphTargetItem> currentCatchCommands = printGraph(foundGotos, partCodes, partCodePos, visited, localData2, st2, allParts, null, catchPart, stopPart2, stopPartKind2, loops, throwStates, staticOperation, path);
-                /*if (!currentCatchCommands.isEmpty() && (currentCatchCommands.get(0) instanceof SetLocalAVM2Item)) {
-                    if (currentCatchCommands.get(0).value.getNotCoerced() instanceof ExceptionAVM2Item) {
-                        currentCatchCommands.remove(0);
-                    }
-                }*/
+                st2.finishBlock(currentCatchCommands);
+                int tempExceptionPos = 0;
+                if (!currentCatchCommands.isEmpty() && currentCatchCommands.get(0) instanceof WithAVM2Item) {
+                    tempExceptionPos++;
+                }
+                while (currentCatchCommands.size() > tempExceptionPos
+                        && currentCatchCommands.get(tempExceptionPos) instanceof SetTemporaryItem
+                        && currentCatchCommands.get(tempExceptionPos).value.getNotCoerced() instanceof ExceptionAVM2Item) {
+                    currentCatchCommands.remove(tempExceptionPos);
+                }
                 loopwith:
                 while (!currentCatchCommands.isEmpty() && (currentCatchCommands.get(0) instanceof WithAVM2Item)) {
                     WithAVM2Item w = (WithAVM2Item) currentCatchCommands.get(0);
@@ -2119,6 +2142,18 @@ public class AVM2Graph extends Graph {
                             }
                             GraphTargetItem ft = w.commands.get(pos);
                             if (ft instanceof WithAVM2Item) {
+                                WithAVM2Item wi = (WithAVM2Item) ft;
+                                if (wi.scope instanceof SetLocalAVM2Item) {
+                                    if (wi.scope.value instanceof NextValueAVM2Item) {
+                                        NextValueAVM2Item nextValueItem = (NextValueAVM2Item) wi.scope.value;
+                                        if (nextValueItem.index instanceof LocalRegAVM2Item) {
+                                            localRegsToKill.add(((LocalRegAVM2Item) nextValueItem.index).regIndex);
+                                        }
+                                        if (nextValueItem.obj instanceof LocalRegAVM2Item) {
+                                            localRegsToKill.add(((LocalRegAVM2Item) nextValueItem.obj).regIndex);
+                                        }
+                                    }
+                                }
                                 pos++;
                                 List<GraphTargetItem> withCommands = new ArrayList<>();
                                 while (pos < w.commands.size() && !(w.commands.get(pos) instanceof WithEndAVM2Item)) {
@@ -2251,14 +2286,14 @@ public class AVM2Graph extends Graph {
                                 }
 
                                 int firstPushPos = -1;
-                                
+
                                 for (int i = output.size() - 2 /*last is loop*/; i >= 0; i--) {
                                     if (output.get(i) instanceof PushItem) {
                                         firstPushPos = i;
                                     } else {
                                         break;
                                     }
-                                }                              
+                                }
                                 if (firstPushPos > -1) {
                                     int max = output.size() - 2;
                                     for (int i = firstPushPos; i <= max; i++) {
@@ -2531,7 +2566,7 @@ public class AVM2Graph extends Graph {
         if (debugDoNotProcess) {
             return;
         }
-       
+
         loopi:
         for (int i = 1 /*not first*/; i < list.size(); i++) {
             GraphTargetItem item = list.get(i);
@@ -2609,11 +2644,51 @@ public class AVM2Graph extends Graph {
                         }
                     }
 
-                    List<Integer> thisExpressions = new ArrayList<>();
                     int defaultIndex = -1;
                     for (int k = 0; k < thisSwitch.caseValues.size(); k++) {
                         if (thisSwitch.caseValues.get(k) instanceof DefaultItem) {
                             defaultIndex = k;
+                            continue;
+                        }
+                        if (!(thisSwitch.caseValues.get(k) instanceof IntegerValueTypeItem)) {
+                            continue loopi;
+                        }
+                    }
+
+                    if (defaultIndex > -1 && !thisSwitch.additionalDefaultValues.isEmpty() && thisSwitch.additionalDefaultPosition > -1) {
+
+                        int defaultBodyIndex = thisSwitch.valuesMapping.get(defaultIndex);
+
+                        if (thisSwitch.additionalDefaultPosition != defaultIndex) {
+                            int previousBodyIndex = thisSwitch.valuesMapping.get(thisSwitch.additionalDefaultPosition);
+                            List<GraphTargetItem> defaultBody = thisSwitch.caseCommands.remove(defaultBodyIndex);
+                            thisSwitch.caseCommands.add(previousBodyIndex, defaultBody);
+                            for (int p = 0; p < thisSwitch.valuesMapping.size(); p++) {
+                                if (thisSwitch.valuesMapping.get(p) >= previousBodyIndex) {
+                                    thisSwitch.valuesMapping.set(p, thisSwitch.valuesMapping.get(p) + 1);
+                                }
+                            }
+                            defaultBodyIndex = previousBodyIndex;
+                            GraphTargetItem lastCmd = defaultBody.isEmpty() ? null : defaultBody.get(defaultBody.size() - 1);
+                            if (lastCmd != null && !(lastCmd instanceof ExitItem) && !(lastCmd instanceof BreakItem) && !(lastCmd instanceof ContinueItem)) {
+                                defaultBody.add(new BreakItem(thisSwitch.dialect, null, null, thisSwitch.loop.id));
+                            }
+                        }
+                        thisSwitch.caseValues.remove(defaultIndex);
+                        thisSwitch.valuesMapping.remove(defaultIndex);
+
+                        thisSwitch.caseValues.add(thisSwitch.additionalDefaultPosition, new DefaultItem(thisSwitch.dialect));
+                        thisSwitch.valuesMapping.add(thisSwitch.additionalDefaultPosition, defaultBodyIndex);
+                        for (int m = thisSwitch.additionalDefaultValues.size() - 1; m >= 0; m--) {
+                            thisSwitch.caseValues.add(thisSwitch.additionalDefaultPosition, thisSwitch.additionalDefaultValues.get(m));
+                            thisSwitch.valuesMapping.add(thisSwitch.additionalDefaultPosition, defaultBodyIndex);
+                        }
+                    }
+
+                    List<Integer> thisExpressions = new ArrayList<>();
+
+                    for (int k = 0; k < thisSwitch.caseValues.size(); k++) {
+                        if (thisSwitch.caseValues.get(k) instanceof DefaultItem) {
                             continue;
                         }
                         if (!(thisSwitch.caseValues.get(k) instanceof IntegerValueTypeItem)) {
@@ -2639,32 +2714,8 @@ public class AVM2Graph extends Graph {
                             return o1 - o2;
                         }
                     });
-                    
-                    /*if (!noCaseExpressions.isEmpty() && defaultIndex == -1) {
-                        thisSwitch.caseValues.add(new DefaultItem(dialect));
-                        thisSwitch.valuesMapping.add(thisSwitch.caseCommands.size());
-                        if (!thisSwitch.caseCommands.isEmpty()) {
-                            List<GraphTargetItem> lastCommands = thisSwitch.caseCommands.get(thisSwitch.caseCommands.size() - 1);
-                            if (
-                                    lastCommands.isEmpty()
-                                    || !(
-                                        (lastCommands.get(lastCommands.size() - 1) instanceof ExitItem)
-                                        || (lastCommands.get(lastCommands.size() - 1) instanceof ContinueItem)
-                                        || (lastCommands.get(lastCommands.size() - 1) instanceof BreakItem)
-                                    )
-                                    ) {
-                                lastCommands.add(new BreakItem(dialect, null, null, thisSwitch.loop.id));
-                            }
-                        }
-                        thisSwitch.caseCommands.add(new ArrayList<>());                        
-                    }*/
 
                     for (int k = 0; k < thisSwitch.caseValues.size(); k++) {
-                        /*if (thisSwitch.caseValues.get(k) instanceof DefaultItem) {
-                            thisSwitch.removeValue(k);
-                            k--;
-                            continue;
-                        }*/
                         if (thisSwitch.caseValues.get(k) instanceof DefaultItem) {
                             int m = thisSwitch.valuesMapping.get(k);
                             thisSwitch.caseValues.remove(k);
@@ -2695,12 +2746,12 @@ public class AVM2Graph extends Graph {
                             continue;
                         }
                         int cv = ((IntegerValueTypeItem) thisSwitch.caseValues.get(k)).intValue();
-                        
+
                         if (!expressionsMap.containsKey(cv)) {
                             thisSwitch.removeValue(k);
                             k--;
                             continue;
-                        }                        
+                        }
                         thisSwitch.caseValues.set(k, expressionsMap.get(cv));
                     }
 

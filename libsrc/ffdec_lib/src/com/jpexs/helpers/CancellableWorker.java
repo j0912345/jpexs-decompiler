@@ -190,9 +190,9 @@ public abstract class CancellableWorker<T> implements RunnableFuture<T> {
         THREAD_POOL.execute(this);
     }
 
-    public final boolean userCancel(boolean mayIterruptIfRunning) {
+    public final boolean userCancel(boolean mayInterruptIfRunning) {
         userCancelled = true;
-        return cancel(mayIterruptIfRunning);       
+        return cancel(mayInterruptIfRunning);       
     }
 
     public boolean isUserCancelled() {

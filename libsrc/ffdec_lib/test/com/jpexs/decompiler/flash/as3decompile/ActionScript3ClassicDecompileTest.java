@@ -132,21 +132,50 @@ public class ActionScript3ClassicDecompileTest extends ActionScript3DecompileTes
     }
 
     @Test
-    public void testChainedAssignments() {
-        decompileMethod("classic", "testChainedAssignments", "var a:int = 0;\r\n"
+    public void testChainedAssignments1() {
+        decompileMethod("classic", "testChainedAssignments1", "trace(\"c = b = a = 5;\");\r\n"
+                + "var a:int = 0;\r\n"
                 + "var b:int = 0;\r\n"
                 + "var c:int = 0;\r\n"
-                + "var d:int = 0;\r\n"
-                + "var f:int = 0;\r\n"
-                + "d = c = b = a = 5;\r\n"
-                + "var e:TestClass2 = TestClass2.createMe(\"test\");\r\n"
-                + "e.attrib1 = e.attrib2 = e.attrib3 = this.getCounter();\r\n"
-                + "this.traceIt(e.toString());\r\n"
-                + "this.prop = f = a = 4;\r\n"
-                + "if(f == 2)\r\n"
+                + "c = b = a = 5;\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments2() {
+        decompileMethod("classic", "testChainedAssignments2", "trace(\"e.attrib1 = e.attrib2 = e.attrib3 = 10;\");\r\n"
+                + "var e:TestClass = new TestClass();\r\n"
+                + "e.attrib1 = e.attrib2 = e.attrib3 = 10;\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments3() {
+        decompileMethod("classic", "testChainedAssignments3", "var a:int = 0;\r\n"
+                + "var b:int = 0;\r\n"
+                + "this.prop = a = b = 4;\r\n"
+                + "if(a == 2)\r\n"
                 + "{\r\n"
-                + "trace(\"OK: \" + f);\r\n"
+                + "trace(\"OK: \" + a);\r\n"
                 + "}\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments4() {
+        decompileMethod("classic", "testChainedAssignments4", "var slota:int;\r\n"
+                + "var slotb:int;\r\n"
+                + "var slotc:int;\r\n"
+                + "var f:Function;\r\n"
+                + "trace(\"slotc = slotb = slota = 5;\");\r\n"
+                + "slota = 0;\r\n"
+                + "slotb = 0;\r\n"
+                + "slotc = 0;\r\n"
+                + "f = function(n1:int, n2:int):int\r\n"
+                + "{\r\n"
+                + "return n1 + n2;\r\n"
+                + "};\r\n"
+                + "slotc = slotb = slota = 5;\r\n",
                  false);
     }
 
@@ -177,7 +206,7 @@ public class ActionScript3ClassicDecompileTest extends ActionScript3DecompileTes
     public void testComma() {
         decompileMethod("classic", "testComma", "var a:int = 5;\r\n"
                 + "var b:int = 0;\r\n"
-                + "trace(a > 4 ? (b = 5, a) : 35);\r\n",
+                + "trace(a > 4 ? (b = 5,a) : 35);\r\n",
                  false);
     }
 
@@ -531,9 +560,9 @@ public class ActionScript3ClassicDecompileTest extends ActionScript3DecompileTes
                 + "var g:* = undefined;\r\n"
                 + "d = new TestClass1();\r\n"
                 + "k = null;\r\n"
-                + "k.(++d.attrib, 0);\r\n"
+                + "k.(++d.attrib,0);\r\n"
                 + "trace(\"between\");\r\n"
-                + "g = k.(++d.attrib, 0);\r\n"
+                + "g = k.(++d.attrib,0);\r\n"
                 + "trace(\"end\");\r\n",
                  false);
     }
@@ -2091,7 +2120,7 @@ public class ActionScript3ClassicDecompileTest extends ActionScript3DecompileTes
                 + "break;\r\n"
                 + "case \"B\":\r\n"
                 + "trace(\"is B\");\r\n"
-                + "case TestSwitchComma.X, \"C\":\r\n"
+                + "case TestSwitchComma.X,\"C\":\r\n"
                 + "trace(\"is C\");\r\n"
                 + "}\r\n",
                  false);

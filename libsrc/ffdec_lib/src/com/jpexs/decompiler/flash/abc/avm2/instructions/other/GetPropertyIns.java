@@ -46,6 +46,9 @@ import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.TranslateStack;
 import com.jpexs.decompiler.graph.TypeItem;
 import com.jpexs.decompiler.graph.model.DuplicateItem;
+import com.jpexs.decompiler.graph.model.DuplicateSourceItem;
+import com.jpexs.decompiler.graph.model.HasTempIndex;
+import com.jpexs.decompiler.graph.model.SetTemporaryItem;
 import com.jpexs.helpers.Reference;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,8 +94,8 @@ public class GetPropertyIns extends InstructionDefinition {
 
     @Override
     public void translate(AVM2LocalData localData, TranslateStack stack, AVM2Instruction ins, List<GraphTargetItem> output, String path) {
-        int multinameIndex = ins.operands[0];
-        FullMultinameAVM2Item multiname = resolveMultiname(localData, true, stack, localData.getConstants(), multinameIndex, ins);
+        int multinameIndex = ins.operands[0];        
+        FullMultinameAVM2Item multiname = resolveMultiname(localData, true, stack, localData.getConstants(), multinameIndex, ins, output);
         GraphTargetItem obj = stack.pop();
         //remove dups
         if (obj instanceof FindPropertyAVM2Item) {
@@ -108,15 +111,25 @@ public class GetPropertyIns extends InstructionDefinition {
                             Set<Integer> usage = localData.getSetLocalUsages(localData.code.adr2pos(setLocal.getSrc().getAddress()));
                             if (usage.size() == 2) {
                                 findPropName.name = setLocal.value;
-                                output.remove(output.size() - 1);
+                                output.remove(output.size() - 1);                                
                             }
                         }
                     }
                 }
-                if (findPropName.name instanceof DuplicateItem) {
-                    if (findPropName.name.value == multiname.name) {
+                if (findPropName.name instanceof DuplicateItem || findPropName.name instanceof DuplicateSourceItem) {
+                    if (findPropName.name.getThroughDuplicate() == multiname.name.getThroughDuplicate()) {
+                        int tempIndex = ((HasTempIndex) findPropName.name).getTempIndex();
+                        
                         findPropName.name = findPropName.name.value;
+                        multiname.name = multiname.name.getThroughDuplicate();
+                        if (!output.isEmpty() && output.get(output.size() - 1) instanceof SetTemporaryItem) {
+                            SetTemporaryItem st = (SetTemporaryItem) output.get(output.size() - 1);
+                            if (st.tempIndex == tempIndex) {
+                                output.remove(output.size() - 1);
+                            }                            
+                        }
                     }
+                    
                 }
                 if (findPropName.namespace instanceof SetLocalAVM2Item) {
                     SetLocalAVM2Item setLocal = (SetLocalAVM2Item) findPropName.namespace;
@@ -130,11 +143,22 @@ public class GetPropertyIns extends InstructionDefinition {
                         }
                     }
                 }
-                if (findPropName.namespace instanceof DuplicateItem) {
-                    if (findPropName.namespace.value == multiname.namespace) {
-                        findPropName.namespace = findPropName.namespace.value;
+                if (findPropName.namespace instanceof DuplicateItem || findPropName.namespace instanceof DuplicateSourceItem) {
+                    if (findPropName.namespace.getThroughDuplicate() == multiname.namespace.getThroughDuplicate()) {
+                        int tempIndex = ((HasTempIndex) findPropName.namespace).getTempIndex();
+                        
+                        findPropName.namespace = findPropName.namespace.getThroughDuplicate();
+                        multiname.namespace = multiname.namespace.getThroughDuplicate();
+                        
+                        if (!output.isEmpty() && output.get(output.size() - 1) instanceof SetTemporaryItem) {
+                            SetTemporaryItem st = (SetTemporaryItem) output.get(output.size() - 1);
+                            if (st.tempIndex == tempIndex) {
+                                output.remove(output.size() - 1);
+                            }                            
+                        }
                     }
                 }
+                stack.moveToStack(output);
             }
         }
         Reference<Boolean> isStatic = new Reference<>(false);

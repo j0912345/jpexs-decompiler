@@ -58,7 +58,17 @@ public class SwitchItem extends LoopItem implements Block {
      * Values mapping
      */
     public List<Integer> valuesMapping;
+    
+    /**
+     * Additional default position. Mark for additional processing...
+     */
+    public int additionalDefaultPosition = -1;
 
+    /**
+     * Additional default values - they are not printed. This is just mark for additional processing...
+     */
+    public List<GraphTargetItem> additionalDefaultValues = new ArrayList<>();
+    
     /**
      * Label used
      */
@@ -151,7 +161,7 @@ public class SwitchItem extends LoopItem implements Block {
                     if (!(caseValues.get(k) instanceof DefaultItem)) {
                         writer.append("case ");
                     }
-                    caseValues.get(k).toString(writer, localData);
+                    caseValues.get(k).toString(writer, localData, "", true);
                     writer.append(":").newLine();
                 }
             }

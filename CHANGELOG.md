@@ -40,10 +40,19 @@ All notable changes to this project will be documented in this file.
   - show type after colon, not in parenthesis
   - view bytes length in bytes fields
 - [#2526] Option to disable drag & drop from Resources view to avoid problems on Mac OS
+- [#2497] AS3 - temp variables for better handling swap/dup instructions
+- [#2529], [#2471] Font normalization
+  - available as context menu command on SWFs
+  - automatically executed on PDF/SVG export
+  - shrinks oversized fonts to 1024 em
+  - fixes vertically flipped fonts / texts
+  - fixes zero/1unit spaces font glyph advance
+  - fixes zero last glyph advance in texts
+- [PR222] Replace fonts from commandline
 
 ### Fixed
 - [#2474] Gotos incorrectly decompiled
-- AS1/2/3 highligter - brackets parsing error causing memory leak / crash
+- AS1/2/3 highlighter - brackets parsing error causing memory leak / crash
 - Comments color highlighting
 - AS1/2 Obfuscated registers names not resolving because of trimming
 - Escaping HTML in raw tag editor
@@ -92,10 +101,17 @@ All notable changes to this project will be documented in this file.
 - AS1/2 Renaming of identifiers must not rename integer array offsets
 - [#2517] Loop break detection problems in some cases
 - [#2519] AS1/2 avoid multi-level loops in cases where possible
-- [#2522] Hex view - reseting view when mouse over panel bottom
+- [#2522] Hex view - resetting view when mouse over panel bottom
 - [#2519] AS1/2 direct editation - generating too large ConstantPool
 - Hex View - incorrect table height when switching tags
 - [#2525] AMF editor (like in Sol cookie editor) - saving empty standard array `[]`
+- AS3 - names with custom namespaces not being deobfuscated
+- AS Debugger - order of trace commands
+- AS1/2 print/printNum/printAsBitmap/printAsBitmapNum not correctly
+  handling bmovie boundingBox parameter
+- Font export - not setting ascent and descent
+- [#2471] PDF export - ignore control characters
+- [#2471] SVG export with typeface - white-space:pre style
 
  ### Changed
 - Icon of "Deobfuscation options" menu from pile of pills to medkit
@@ -125,11 +141,11 @@ All notable changes to this project will be documented in this file.
 - Simple editor - edit parameters of items inside buttons
 - Simple editor - add/remove frames in buttons, button timeline header
 - Configuration is now stored in easily readable/editable textual format (TOML)
-  (saved also to older binary format, but loading is preffered from
+  (saved also to older binary format, but loading is preferred from
    the new TOML file, when exists)
 - `-configFile` and `-storeConfigFile` commandline parameters for loading/storing configuration file
 - Option to .bat and .sh file to enable J2D_D3D_NO_HWCHECK
-- [#2404] Quick find in text/script editors - show number of occurences
+- [#2404] Quick find in text/script editors - show number of occurrences
 - [#1418] Option to make main window Always on top
 - [#289] Support for Aero Snap on Windows
 - [#2412] Show coordinates on stage mouse move for up to 2 decimal places
@@ -230,7 +246,7 @@ All notable changes to this project will be documented in this file.
 - Simple editor - change background color
 - Simple editor - filters
 - Simple editor - convolution filter presets
-- Simple editor - ratio (shapetweens, video)
+- Simple editor - ratio (shape tweens, video)
 
 ### Fixed
 - [#2424] DefineEditText handling of letterSpacing, font size on incorrect values
@@ -3993,6 +4009,9 @@ Major version of SWF to XML export changed to 2.
 [#2504]: https://www.free-decompiler.com/flash/issues/2504
 [#2519]: https://www.free-decompiler.com/flash/issues/2519
 [#2526]: https://www.free-decompiler.com/flash/issues/2526
+[#2497]: https://www.free-decompiler.com/flash/issues/2497
+[#2529]: https://www.free-decompiler.com/flash/issues/2529
+[#2471]: https://www.free-decompiler.com/flash/issues/2471
 [#2474]: https://www.free-decompiler.com/flash/issues/2474
 [#2480]: https://www.free-decompiler.com/flash/issues/2480
 [#2338]: https://www.free-decompiler.com/flash/issues/2338
@@ -4037,7 +4056,6 @@ Major version of SWF to XML export changed to 2.
 [#2405]: https://www.free-decompiler.com/flash/issues/2405
 [#1646]: https://www.free-decompiler.com/flash/issues/1646
 [#2469]: https://www.free-decompiler.com/flash/issues/2469
-[#2471]: https://www.free-decompiler.com/flash/issues/2471
 [#2475]: https://www.free-decompiler.com/flash/issues/2475
 [#2427]: https://www.free-decompiler.com/flash/issues/2427
 [#1826]: https://www.free-decompiler.com/flash/issues/1826
@@ -5207,6 +5225,7 @@ Major version of SWF to XML export changed to 2.
 [#32]: https://www.free-decompiler.com/flash/issues/32
 [#31]: https://www.free-decompiler.com/flash/issues/31
 [#27]: https://www.free-decompiler.com/flash/issues/27
+[PR222]: https://github.com/jindrapetrik/jpexs-decompiler/pull/222
 [PR215]: https://github.com/jindrapetrik/jpexs-decompiler/pull/215
 [PR216]: https://github.com/jindrapetrik/jpexs-decompiler/pull/216
 [PR203]: https://github.com/jindrapetrik/jpexs-decompiler/pull/203

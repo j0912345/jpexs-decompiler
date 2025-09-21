@@ -92,8 +92,8 @@ public class ActionScript3AssembledDecompileTest extends ActionScript3DecompileT
 
     @Test
     public void testCollidingPublicTraits() {
-        decompileMethod("assembled", "testCollidingPublicTraits", "trace(\"ns1 = \" + this.a#87);\r\n"
-                + "trace(\"ns2 = \" + this.a#88);\r\n",
+        decompileMethod("assembled", "testCollidingPublicTraits", "trace(\"ns1 = \" + this.a#89);\r\n"
+                + "trace(\"ns2 = \" + this.a#90);\r\n",
                  false);
     }
 
@@ -343,14 +343,29 @@ public class ActionScript3AssembledDecompileTest extends ActionScript3DecompileT
         decompileMethod("assembled", "testPushWhile", "var _loc3_:int = 5;\r\n"
                 + "§§push(obfuscated[\"xxx\"] = new (getDefinitionByName(\"flash.utils\"+\".\"+\"ByteArray\"))());\r\n"
                 + "§§push(50);\r\n"
-                + "while(§§dup(§§pop()))\r\n"
+                + "while(true)\r\n"
                 + "{\r\n"
-                + "§§dup(§§pop())[§§dup(§§dup(§§pop())).length] = 0x29 ^ 0x6F;\r\n"
-                + "§§dup(§§pop())[§§dup(§§dup(§§pop())).length] = 9 ^ 0x54;\r\n"
-                + "§§push(§§pop() - 1);\r\n"
+                + "var _temp_3:* = §§pop();\r\n"
+                + "§§push(_temp_3);\r\n"
+                + "if(!_temp_3)\r\n"
+                + "{\r\n"
+                + "break;\r\n"
+                + "}\r\n"
+                + "var _temp_4:* = §§pop();\r\n"
+                + "var _temp_5:* = §§pop() - 1;\r\n"
+                + "_temp_4[_temp_4.length] = 0x29 ^ 0x6F;\r\n"
+                + "_temp_4[_temp_4.length] = 9 ^ 0x54;\r\n"
+                + "§§push(_temp_4);\r\n"
+                + "§§push(_temp_5);\r\n"
                 + "}\r\n"
                 + "§§pop();\r\n"
                 + "§§pop();\r\n",
+                 false);
+    }
+
+    @Test
+    public void testSetGetLocalOnStack() {
+        decompileMethod("assembled", "testSetGetLocalOnStack", "this.arr[this.cnt++] = param1;\r\n",
                  false);
     }
 

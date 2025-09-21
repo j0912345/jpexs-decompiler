@@ -132,21 +132,50 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
     }
 
     @Test
-    public void testChainedAssignments() {
-        decompileMethod("classic_air", "testChainedAssignments", "var a:int = 0;\r\n"
+    public void testChainedAssignments1() {
+        decompileMethod("classic_air", "testChainedAssignments1", "trace(\"c = b = a = 5;\");\r\n"
+                + "var a:int = 0;\r\n"
                 + "var b:int = 0;\r\n"
                 + "var c:int = 0;\r\n"
-                + "var d:int = 0;\r\n"
-                + "var f:int = 0;\r\n"
-                + "d = c = b = a = 5;\r\n"
-                + "var e:TestClass2 = TestClass2.createMe(\"test\");\r\n"
-                + "e.attrib1 = e.attrib2 = e.attrib3 = this.getCounter();\r\n"
-                + "this.traceIt(e.toString());\r\n"
-                + "prop = f = a = 4;\r\n"
-                + "if(f == 2)\r\n"
+                + "c = b = a = 5;\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments2() {
+        decompileMethod("classic_air", "testChainedAssignments2", "trace(\"e.attrib1 = e.attrib2 = e.attrib3 = 10;\");\r\n"
+                + "var e:TestClass = new TestClass();\r\n"
+                + "e.attrib1 = e.attrib2 = e.attrib3 = 10;\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments3() {
+        decompileMethod("classic_air", "testChainedAssignments3", "var a:int = 0;\r\n"
+                + "var b:int = 0;\r\n"
+                + "prop = a = b = 4;\r\n"
+                + "if(a == 2)\r\n"
                 + "{\r\n"
-                + "trace(\"OK: \" + f);\r\n"
+                + "trace(\"OK: \" + a);\r\n"
                 + "}\r\n",
+                 false);
+    }
+
+    @Test
+    public void testChainedAssignments4() {
+        decompileMethod("classic_air", "testChainedAssignments4", "var slota:int;\r\n"
+                + "var slotb:int;\r\n"
+                + "var slotc:int;\r\n"
+                + "var f:Function;\r\n"
+                + "trace(\"slotc = slotb = slota = 5;\");\r\n"
+                + "slota = 0;\r\n"
+                + "slotb = 0;\r\n"
+                + "slotc = 0;\r\n"
+                + "f = function(n1:int, n2:int):int\r\n"
+                + "{\r\n"
+                + "return n1 + n2;\r\n"
+                + "};\r\n"
+                + "slotc = slotb = slota = 5;\r\n",
                  false);
     }
 
@@ -177,7 +206,7 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
     public void testComma() {
         decompileMethod("classic_air", "testComma", "var a:int = 5;\r\n"
                 + "var b:int = 0;\r\n"
-                + "trace(a > 4 ? (b = 5, a) : 35);\r\n",
+                + "trace(a > 4 ? (b = 5,a) : 35);\r\n",
                  false);
     }
 
@@ -477,8 +506,7 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
         decompileMethod("classic_air", "testDoWhile2", "var k:int = 5;\r\n"
                 + "do\r\n"
                 + "{\r\n"
-                + "k++;\r\n"
-                + "if(k == 7)\r\n"
+                + "if(++k == 7)\r\n"
                 + "{\r\n"
                 + "k = 5 * k;\r\n"
                 + "}\r\n"
@@ -486,9 +514,8 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
                 + "{\r\n"
                 + "k = 5 - k;\r\n"
                 + "}\r\n"
-                + "k--;\r\n"
                 + "}\r\n"
-                + "while(k < 9);\r\n"
+                + "while(--k < 9);\r\n"
                 + "return 2;\r\n",
                  false);
     }
@@ -529,9 +556,9 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
     public void testDotParent() {
         decompileMethod("classic_air", "testDotParent", "var d:* = new TestClass1();\r\n"
                 + "var k:* = null;\r\n"
-                + "k.(d.attrib++, false);\r\n"
+                + "k.(d.attrib++,false);\r\n"
                 + "trace(\"between\");\r\n"
-                + "var g:* = k.(d.attrib++, false);\r\n"
+                + "var g:* = k.(d.attrib++,false);\r\n"
                 + "trace(\"end\");\r\n",
                  false);
     }
@@ -1385,11 +1412,9 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
         decompileMethod("classic_air", "testIncDec7", "var a:* = [1,2,3,4,5];\r\n"
                 + "var index:int = 0;\r\n"
                 + "trace(\"a[++index]\");\r\n"
-                + "index++;\r\n"
-                + "trace(a[index]);\r\n"
+                + "trace(a[++index]);\r\n"
                 + "trace(\"a[--index]\");\r\n"
-                + "index--;\r\n"
-                + "trace(a[index]);\r\n",
+                + "trace(a[--index]);\r\n",
                  false);
     }
 
@@ -1800,8 +1825,7 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
                 + "r = -n1;\r\n"
                 + "r = ~n1;\r\n"
                 + "br = !b1;\r\n"
-                + "n1++;\r\n"
-                + "r = n1;\r\n"
+                + "r = ++n1;\r\n"
                 + "r = n1++;\r\n"
                 + "cr = c as MyClass;\r\n"
                 + "br = \"hello\" in d;\r\n"
@@ -2108,7 +2132,7 @@ public class ActionScript3ClassicAirDecompileTest extends ActionScript3Decompile
                 + "break;\r\n"
                 + "case \"B\":\r\n"
                 + "trace(\"is B\");\r\n"
-                + "case 7, \"C\":\r\n"
+                + "case 7,\"C\":\r\n"
                 + "trace(\"is C\");\r\n"
                 + "}\r\n",
                  false);

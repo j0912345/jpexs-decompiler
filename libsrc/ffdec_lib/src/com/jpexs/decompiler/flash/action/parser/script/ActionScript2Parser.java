@@ -164,6 +164,7 @@ import com.jpexs.decompiler.graph.model.OrItem;
 import com.jpexs.decompiler.graph.model.ParenthesisItem;
 import com.jpexs.decompiler.graph.model.PopItem;
 import com.jpexs.decompiler.graph.model.PushItem;
+import com.jpexs.decompiler.graph.model.SwapItem;
 import com.jpexs.decompiler.graph.model.SwitchItem;
 import com.jpexs.decompiler.graph.model.TernarOpItem;
 import com.jpexs.decompiler.graph.model.TrueItem;
@@ -1868,7 +1869,7 @@ public class ActionScript2Parser {
                         break;
                     //Both ASs
                     case "dup":
-                        ret = new DuplicateItem(DIALECT, null, null, expression(inFunction, inMethod, inTellTarget, allowRemainder, variables, functions, false, hasEval));
+                        ret = new DuplicateItem(DIALECT, null, null, expression(inFunction, inMethod, inTellTarget, allowRemainder, variables, functions, false, hasEval), 0);
                         allowMemberOrCall = true;
                         break;
                     case "push":
@@ -1877,6 +1878,9 @@ public class ActionScript2Parser {
                     case "pop":
                         ret = new PopItem(DIALECT, null, null);
                         allowMemberOrCall = true;
+                        break;
+                    case "swap":
+                        ret = new SwapItem(DIALECT, null, null);
                         break;
                     case "strict":
                         s = lex();
