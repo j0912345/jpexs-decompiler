@@ -118,11 +118,19 @@ public class AS3ScriptImporter {
             }
             
             // ok list of things to do and how to organise it:
+            // [me returning here later] ok but *why* exactly would I need ScriptPack instances?
+            //   * ohh it's probably because then I can use `pack.abc.replaceScriptPack()`.
+            //   * hmm. ok yeah I should add a new method to ActionScript3Parser that returns the info I need for sorting without compiling a dummy script. Then I can
+            //     actually compile every script with their actual contents in the sorted order we found, and I won't need to use `pack.abc.replaceScriptPack()`.
+            //     it'll also be a cleaner implementation that doesn't waste an extra compilation for every script.
+            //   * [ ] Make sure the loop for existing scripts doesn't use `pack.abc.replaceScriptPack()` on new imports!
+            //
             // - get a list of all of the new scripts, either as Files or ScriptPacks.
             //   * I might actually need both, or at least the text content + a ScriptPack. the ScriptPacks are more annoying to retrieve because parser.addScript() doesn't
             //     return anything, and having to search for the script I literally just made feels very inefficent. 
             //       * is there another way to do this that would return the ScriptPack without needing to search for it?
-            //       * double check how/if the context menu gets the script after creation.
+            //       * [x] double check how/if the context menu gets the script after creation.
+            //          * it manually searches in a few for loops. it needs a tree item instead of a ScriptPack so it's not helpful here.
             //       * could I directly index the script without needing to search the whole list somehow?
             //       * having to compile a blank dummy script first also feels inefficent but I'm not sure if I can easily avoid that? I think I need to because I'm doing
             //         any kind of pre-processing (ie sorting) before I actually compile.
@@ -133,7 +141,6 @@ public class AS3ScriptImporter {
             // - sort each script by their dependencies.
             // - compile the new and now sorted scripts.
             //   * do I want to compile them separately or with the rest of the scripts in the main loop?
-            
             
             
             // I should be checking the list of new scripts once it exists
